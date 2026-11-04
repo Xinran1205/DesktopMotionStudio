@@ -10,8 +10,8 @@ The repository began with requirements documents only. F00 now has a prototype u
 | 1 | Core contracts / F01 Domain and versioned scene manifest | Validate scene metadata, stable IDs, asset references, and safe unsupported-version handling | F00 | Complete |
 | 2 | Persistence / F02 Local profile repository | Atomic, versioned binding/settings storage and safe migration behavior | F01 | Complete |
 | 3 | Scene library / F03 Built-in scene catalog | Discover packaged trusted scenes and assets without executing user content | F01 | Complete |
-| 4 | Launch / F04 Application launch adapters | Represent executable/shortcut/packaged launch identities and return structured results | F01 | In progress |
-| 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 | Spec baseline |
+| 4 | Launch / F04 Application launch adapters | Represent executable/shortcut/packaged launch identities and return structured results | F01 | Complete |
+| 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 | In progress |
 | 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 | Spec baseline |
 | 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 | Spec baseline |
 | 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04 | Spec baseline |
@@ -42,3 +42,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.3 | 2026-11-04 | Record F02 delivery status. |
 | 1.0.4 | 2026-11-04 | Mark F02 complete and start F03. |
 | 1.0.5 | 2026-11-04 | Record F03 completion and start launch adapter design. |
+| 1.0.6 | 2026-11-04 | Complete F04 with Windows launch evidence and start F05 instance coordination. |

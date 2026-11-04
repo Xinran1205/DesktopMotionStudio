@@ -27,9 +27,12 @@ Implement a typed launch contract with three Windows adapters: direct EXE, resol
 - Adapter dispatcher rejects unsupported target kinds before any side effect.
 - EXE adapter validates file and argument limits, then starts exactly once with a separate argument list.
 - Shortcut adapter resolves link data through COM, validates EXE target, then delegates to EXE adapter with link arguments/working directory.
-- Packaged adapter calls `ActivateApplication` and preserves HRESULT/PID.
-- Catch and translate only expected IO, permission, Win32, COM, and process-start failures.
+- Packaged adapter validates the 129-character Windows AUMID limit/control characters, calls `ActivateApplication`, and preserves HRESULT/PID.
+- Catch and translate expected IO, permission, Win32, COM, and process-start failures; include native/HRESULT data when available.
 - COM instances release deterministically; no unmanaged COM object escapes the adapter.
+- Each call dispatches once at most. Cross-call activation and duplicate suppression belong to F05, where the application identity can be checked first.
+- File validation is limited to the explicitly configured EXE or shortcut path; the adapter does not enumerate network locations or download target content.
+- Keep the public contract small: adapter paths are private implementation details in `ApplicationLauncher`, while request/result types live in `LaunchRequest`.
 
 ## Project Structure
 
@@ -37,9 +40,6 @@ Implement a typed launch contract with three Windows adapters: direct EXE, resol
 src/DesktopMotionStudio.Core/Launch/
   LaunchRequest.cs
   ApplicationLauncher.cs
-  ExecutableLaunchAdapter.cs
-  ShellLinkLaunchAdapter.cs
-  PackagedAppLaunchAdapter.cs
 tests/DesktopMotionStudio.Core.Checks/Program.cs
 ```
 

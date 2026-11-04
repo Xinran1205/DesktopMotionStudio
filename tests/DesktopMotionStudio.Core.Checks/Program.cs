@@ -1,4 +1,5 @@
 using System.Text;
+using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
 
@@ -47,6 +48,7 @@ if (!boundaryPassed) failures++;
 
 failures += RunRepositoryChecks();
 failures += RunCatalogChecks();
+failures += RunLaunchChecks();
 
 static int RunRepositoryChecks()
 {
@@ -210,5 +212,187 @@ static int RunCatalogChecks()
 
 static string Manifest(string sceneId, string asset) =>
     $$"""{"schemaVersion":1,"sceneId":"{{sceneId}}","sceneVersion":"1.0.0","name":"Test Scene","displayMode":"centered","assets":["{{asset}}"]}""";
+
+static int RunLaunchChecks()
+{
+    var launcher = new ApplicationLauncher();
+    string systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
+    string commandProcessor = Path.Combine(systemDirectory, "cmd.exe");
+    LaunchResult directResult = File.Exists(commandProcessor)
+        ? launcher.Launch(new ExecutableTarget(commandProcessor, ["/d", "/c", "exit 0"], systemDirectory))
+        : new LaunchResult(LaunchStatus.InvalidTarget);
+    bool validExe = directResult.Succeeded && directResult.ProcessId is not null;
+    bool missingExe = launcher.Launch(new ExecutableTarget(Path.Combine(systemDirectory, "missing.exe"), [])).Status == LaunchStatus.InvalidTarget;
+    bool invalidWorkingDirectory = launcher.Launch(new ExecutableTarget(commandProcessor, [], Path.Combine(systemDirectory, "dms-missing-directory"))).Status == LaunchStatus.InvalidTarget;
+    bool missingShortcut = launcher.Launch(new ShortcutTarget(Path.Combine(systemDirectory, "missing.lnk"))).Status == LaunchStatus.InvalidTarget;
+    bool nonExecutableShortcut = TryRejectNonExecutableShortcut(launcher);
+    bool invalidAumid = launcher.Launch(new PackagedAppTarget("not-an-aumid")).Status == LaunchStatus.InvalidTarget;
+    bool embeddedNullAumid = launcher.Launch(new PackagedAppTarget("Package_Family!App\0ignored")).Status == LaunchStatus.InvalidTarget;
+    bool oversizedAumid = launcher.Launch(new PackagedAppTarget($"Package_Family!{new string('a', 115)}")).Status == LaunchStatus.InvalidTarget;
+    bool argumentLimit = launcher.Launch(new ExecutableTarget(commandProcessor, Enumerable.Repeat("x", 257).ToArray())).Status == LaunchStatus.InvalidTarget;
+    bool commandLineLimit = launcher.Launch(new ExecutableTarget(commandProcessor, [new string('x', 30_001)], systemDirectory)).Status == LaunchStatus.InvalidTarget;
+    bool validShortcut = TryLaunchTestShortcut(launcher, commandProcessor, systemDirectory);
+    bool shortcutArgumentsPreserved = TryPreserveShortcutArguments(commandProcessor, systemDirectory);
+    var deniedLauncher = new ApplicationLauncher(_ => throw new UnauthorizedAccessException("access denied"));
+    LaunchResult deniedResult = deniedLauncher.Launch(new ExecutableTarget(commandProcessor, [], systemDirectory));
+    bool permissionFailure = deniedResult.Status == LaunchStatus.StartFailed && deniedResult.NativeErrorCode is not null;
+    string[]? receivedArguments = null;
+    int dispatchCount = 0;
+    var fakeLauncher = new ApplicationLauncher(startInfo =>
+    {
+        dispatchCount++;
+        receivedArguments = startInfo.ArgumentList.ToArray();
+        return 4242;
+    });
+    string[] expectedArguments = ["argument with spaces", "embedded\"quote"];
+    LaunchResult fakeResult = fakeLauncher.Launch(new ExecutableTarget(commandProcessor, expectedArguments, systemDirectory));
+    bool argumentsPreserved = fakeResult.Succeeded && fakeResult.ProcessId == 4242 && dispatchCount == 1 &&
+                              receivedArguments is not null && receivedArguments.SequenceEqual(expectedArguments);
+    string? testAumid = Environment.GetEnvironmentVariable("DMS_TEST_AUMID");
+    bool packagedTarget = string.IsNullOrWhiteSpace(testAumid) ||
+        launcher.Launch(new PackagedAppTarget(testAumid)).Status == LaunchStatus.Activated;
+    bool missingPackagedTarget = string.IsNullOrWhiteSpace(testAumid) ||
+        TryRejectMissingPackagedTarget(launcher, testAumid);
+    foreach ((string name, bool passed) in new[]
+    {
+        ("direct executable launch", validExe), ("missing executable rejected", missingExe),
+        ("invalid working directory rejected", invalidWorkingDirectory), ("missing shortcut rejected", missingShortcut),
+        ("non-executable shortcut rejected", nonExecutableShortcut), ("invalid AUMID rejected", invalidAumid),
+        ("embedded null AUMID rejected", embeddedNullAumid), ("oversized AUMID rejected", oversizedAumid),
+        ("argument count limited", argumentLimit), ("command line length limited", commandLineLimit),
+        ("permission failure classified", permissionFailure), ("resolved executable shortcut", validShortcut),
+        ("shortcut arguments preserve spaces and quotes", shortcutArgumentsPreserved),
+        ("arguments preserved and launched once", argumentsPreserved),
+        (string.IsNullOrWhiteSpace(testAumid) ? "packaged activation skipped (no test AUMID)" : "packaged application activation", packagedTarget),
+        (string.IsNullOrWhiteSpace(testAumid) ? "missing packaged target check skipped (no test AUMID)" : "missing packaged target reports HRESULT", missingPackagedTarget)
+    })
+        Console.WriteLine($"{(passed ? "PASS" : "FAIL")} {name}");
+    return validExe && missingExe && invalidWorkingDirectory && missingShortcut && nonExecutableShortcut &&
+           invalidAumid && embeddedNullAumid && oversizedAumid && argumentLimit && commandLineLimit && permissionFailure && validShortcut &&
+           shortcutArgumentsPreserved && argumentsPreserved && packagedTarget && missingPackagedTarget ? 0 : 1;
+}
+
+static bool TryRejectMissingPackagedTarget(ApplicationLauncher launcher, string knownAumid)
+{
+    int delimiter = knownAumid.IndexOf('!');
+    if (delimiter <= 0) return false;
+    string missingAumid = $"{knownAumid[..(delimiter + 1)]}DMSMissing{Guid.NewGuid():N}";
+    LaunchResult result = launcher.Launch(new PackagedAppTarget(missingAumid));
+    return result.Status == LaunchStatus.StartFailed && result.NativeErrorCode is not null;
+}
+
+static bool TryRejectNonExecutableShortcut(ApplicationLauncher launcher)
+{
+    if (!OperatingSystem.IsWindows()) return false;
+    string root = Path.Combine(Path.GetTempPath(), $"dms-link-{Guid.NewGuid():N}");
+    string targetPath = Path.Combine(root, "readme.txt");
+    string shortcutPath = Path.Combine(root, "readme.lnk");
+    object? shell = null;
+    object? shortcut = null;
+    try
+    {
+        Directory.CreateDirectory(root);
+        File.WriteAllText(targetPath, "not an executable");
+        Type? shellType = Type.GetTypeFromProgID("WScript.Shell", throwOnError: false);
+        if (shellType is null) return false;
+        shell = Activator.CreateInstance(shellType);
+        if (shell is null) return false;
+        shortcut = shellType.InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod,
+            null, shell, [shortcutPath]);
+        if (shortcut is null) return false;
+        SetComProperty(shortcut.GetType(), shortcut, "TargetPath", targetPath);
+        shortcut.GetType().InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
+        return launcher.Launch(new ShortcutTarget(shortcutPath)).Status == LaunchStatus.InvalidTarget;
+    }
+    catch (Exception) { return false; }
+    finally
+    {
+        if (shortcut is not null && System.Runtime.InteropServices.Marshal.IsComObject(shortcut))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+        if (shell is not null && System.Runtime.InteropServices.Marshal.IsComObject(shell))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+        if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+    }
+}
+
+static bool TryLaunchTestShortcut(ApplicationLauncher launcher, string target, string workingDirectory)
+{
+    if (!OperatingSystem.IsWindows()) return false;
+    string shortcutPath = Path.Combine(Path.GetTempPath(), $"dms-launch-{Guid.NewGuid():N}.lnk");
+    object? shell = null;
+    object? shortcut = null;
+    try
+    {
+        Type? shellType = Type.GetTypeFromProgID("WScript.Shell", throwOnError: false);
+        if (shellType is null) return false;
+        shell = Activator.CreateInstance(shellType);
+        if (shell is null) return false;
+        shortcut = shellType.InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod,
+            null, shell, [shortcutPath]);
+        if (shortcut is null) return false;
+        Type shortcutType = shortcut.GetType();
+        SetComProperty(shortcutType, shortcut, "TargetPath", target);
+        SetComProperty(shortcutType, shortcut, "Arguments", "/d /c \"exit 0\"");
+        SetComProperty(shortcutType, shortcut, "WorkingDirectory", workingDirectory);
+        shortcutType.InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
+        LaunchResult result = launcher.Launch(new ShortcutTarget(shortcutPath));
+        return result.Succeeded && result.ProcessId is not null;
+    }
+    catch (Exception) { return false; }
+    finally
+    {
+        if (shortcut is not null && System.Runtime.InteropServices.Marshal.IsComObject(shortcut))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+        if (shell is not null && System.Runtime.InteropServices.Marshal.IsComObject(shell))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+        if (File.Exists(shortcutPath)) File.Delete(shortcutPath);
+    }
+}
+
+static bool TryPreserveShortcutArguments(string target, string workingDirectory)
+{
+    if (!OperatingSystem.IsWindows()) return false;
+    string shortcutPath = Path.Combine(Path.GetTempPath(), $"dms-args-{Guid.NewGuid():N}.lnk");
+    object? shell = null;
+    object? shortcut = null;
+    string[]? receivedArguments = null;
+    var fakeLauncher = new ApplicationLauncher(startInfo =>
+    {
+        receivedArguments = startInfo.ArgumentList.ToArray();
+        return 4242;
+    });
+    string[] expectedArguments = ["/d", "/c", "text with spaces and \"quotes\""];
+    try
+    {
+        Type? shellType = Type.GetTypeFromProgID("WScript.Shell", throwOnError: false);
+        if (shellType is null) return false;
+        shell = Activator.CreateInstance(shellType);
+        if (shell is null) return false;
+        shortcut = shellType.InvokeMember("CreateShortcut", System.Reflection.BindingFlags.InvokeMethod,
+            null, shell, [shortcutPath]);
+        if (shortcut is null) return false;
+        Type shortcutType = shortcut.GetType();
+        SetComProperty(shortcutType, shortcut, "TargetPath", target);
+        SetComProperty(shortcutType, shortcut, "Arguments", "/d /c \"text with spaces and \\\"quotes\\\"\"");
+        SetComProperty(shortcutType, shortcut, "WorkingDirectory", workingDirectory);
+        shortcutType.InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
+        LaunchResult result = fakeLauncher.Launch(new ShortcutTarget(shortcutPath));
+        return result.Status == LaunchStatus.Started && result.ProcessId == 4242 &&
+               receivedArguments is not null && receivedArguments.SequenceEqual(expectedArguments);
+    }
+    catch (Exception) { return false; }
+    finally
+    {
+        if (shortcut is not null && System.Runtime.InteropServices.Marshal.IsComObject(shortcut))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+        if (shell is not null && System.Runtime.InteropServices.Marshal.IsComObject(shell))
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+        if (File.Exists(shortcutPath)) File.Delete(shortcutPath);
+    }
+}
+
+static void SetComProperty(Type type, object target, string property, string value) =>
+    type.InvokeMember(property, System.Reflection.BindingFlags.SetProperty, null, target, [value]);
+
 
 return failures == 0 ? 0 : 1;

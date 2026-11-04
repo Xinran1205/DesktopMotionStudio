@@ -18,7 +18,8 @@
 
 - **Decision:** Use `IApplicationActivationManager::ActivateApplication` for a confirmed AUMID and represent its failing HRESULT as structured failure data.
 - **Rationale:** Microsoft's API is the generic Windows Store app launch contract and returns a process ID through its out parameter.
-- **Source:** [Microsoft ActivateApplication API](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-iapplicationactivationmanager-activateapplication), [IApplicationActivationManager interface](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iapplicationactivationmanager)
+- **Validation:** Accept the package-family-name / app-ID form, reject embedded control characters and enforce the Windows maximum of 129 content characters (the documented 130-character constant includes the terminating NUL).
+- **Source:** [Microsoft ActivateApplication API](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-iapplicationactivationmanager-activateapplication), [IApplicationActivationManager interface](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iapplicationactivationmanager), [Windows identity constants](https://learn.microsoft.com/en-us/windows/desktop/appxpkg/identity-constants), [Package identity overview](https://learn.microsoft.com/en-us/windows/apps/desktop/modernize/package-identity-overview)
 
 ## Known boundary
 
