@@ -12,3 +12,7 @@
 | Regression | The shared F01–F04 harness passed 45 checks; release build and both format verifications passed. |
 
 No unresolved discrepancy blocks F04. Repeated launch coordination and activation of an already-running app are explicitly assigned to F05.
+
+## F05 contract extension
+
+F05 adds `ProcessCreationFileTimeUtc` to `LaunchResult` as an optional value. The EXE adapter captures it immediately after `Process.Start`; packaged activation attempts to capture it immediately after `ActivateApplication`. F05 fails closed with `IdentityUnavailable` when this stamp is unavailable. The F04 launch statuses and single-dispatch behavior are unchanged.

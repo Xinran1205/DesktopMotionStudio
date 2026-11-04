@@ -32,7 +32,7 @@
 - **FR-002**: EXE 路径须存在且为 `.exe` 文件；启动参数按独立元素传递，不自行拼接 shell 命令；工作目录必须明确或默认为 EXE 所在目录。
 - **FR-003**: `.lnk` 必须先解析出有效 EXE 目标及快捷方式参数；快捷方式指向文档、URL、目录或无效目标时拒绝启动。
 - **FR-004**: AUMID 必须具有包族名和应用 ID 组成的格式、长度不超过 129 个 UTF-16 字符且不含控制字符，再通过 Windows 激活 API 激活；激活失败返回 HRESULT/稳定错误分类。
-- **FR-005**: 返回结构化结果（已发起、目标无效、拒绝、系统错误），进程 ID 可选；不保证目标主窗口已出现。
+- **FR-005**: 返回结构化结果（已发起、目标无效、拒绝、系统错误），进程 ID 和进程创建时间可选；不保证目标主窗口已出现。Windows EXE 启动和 AUMID 激活在可读取时随结果返回进程创建时间，供 F05 将 PID 与进程重用区分。
 - **FR-006**: 不提权、不修改目标应用、不主动建立网络连接或下载内容；仅按用户明确配置的 EXE/快捷方式路径访问目标，路径若位于系统挂载的网络位置则由 Windows 按该配置解析。单次请求最多发起一个目标启动，启动 API 失败时返回 `StartFailed` 和可用的原生错误码。
 
 ### Business Rules, Inputs & Outputs
@@ -64,3 +64,4 @@
 | 0.3.1 | 2026-11-04 | Enforce Windows AUMID length and control-character boundaries. |
 | 0.3.2 | 2026-11-04 | Clarify that explicit target paths are resolved by Windows while the adapter itself performs no network discovery or downloads. |
 | 1.0.0 | 2026-11-04 | Converged against the implementation and Windows integration evidence. |
+| 1.0.1 | 2026-11-04 | Extend the launch result with optional process creation file time so F05 can safely correlate a returned PID. |

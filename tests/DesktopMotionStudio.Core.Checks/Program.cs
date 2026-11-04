@@ -1,4 +1,6 @@
 using System.Text;
+using System.Diagnostics;
+using DesktopMotionStudio.Core.Instances;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
@@ -6,6 +8,9 @@ using DesktopMotionStudio.Core.State;
 const string Valid = """
     {"schemaVersion":1,"sceneId":"dragon-portal","sceneVersion":"1.0.0","name":"Dragon Portal","displayMode":"full","assets":["cover.png","video/intro.mp4"]}
     """;
+
+if (args.Length == 4 && args[0] == "--f05-instance-worker")
+    return RunInstanceWorker(args[1], args[2], args[3]);
 
 var cases = new (string Name, string Json, SceneManifestError Expected)[]
 {
@@ -49,6 +54,9 @@ if (!boundaryPassed) failures++;
 failures += RunRepositoryChecks();
 failures += RunCatalogChecks();
 failures += RunLaunchChecks();
+failures += RunInstanceChecks();
+failures += RunWindowHostIntegration();
+failures += RunPackagedInstanceIntegration();
 
 static int RunRepositoryChecks()
 {
@@ -225,6 +233,8 @@ static int RunLaunchChecks()
     bool missingExe = launcher.Launch(new ExecutableTarget(Path.Combine(systemDirectory, "missing.exe"), [])).Status == LaunchStatus.InvalidTarget;
     bool invalidWorkingDirectory = launcher.Launch(new ExecutableTarget(commandProcessor, [], Path.Combine(systemDirectory, "dms-missing-directory"))).Status == LaunchStatus.InvalidTarget;
     bool missingShortcut = launcher.Launch(new ShortcutTarget(Path.Combine(systemDirectory, "missing.lnk"))).Status == LaunchStatus.InvalidTarget;
+    bool missingResolvedExe = launcher.Launch(new ResolvedExecutableLaunch(
+        new ExecutableLaunchIdentity(Path.Combine(systemDirectory, "missing-resolved.exe")), [], systemDirectory)).Status == LaunchStatus.InvalidTarget;
     bool nonExecutableShortcut = TryRejectNonExecutableShortcut(launcher);
     bool invalidAumid = launcher.Launch(new PackagedAppTarget("not-an-aumid")).Status == LaunchStatus.InvalidTarget;
     bool embeddedNullAumid = launcher.Launch(new PackagedAppTarget("Package_Family!App\0ignored")).Status == LaunchStatus.InvalidTarget;
@@ -257,6 +267,7 @@ static int RunLaunchChecks()
     {
         ("direct executable launch", validExe), ("missing executable rejected", missingExe),
         ("invalid working directory rejected", invalidWorkingDirectory), ("missing shortcut rejected", missingShortcut),
+        ("invalid resolved launch rejected", missingResolvedExe),
         ("non-executable shortcut rejected", nonExecutableShortcut), ("invalid AUMID rejected", invalidAumid),
         ("embedded null AUMID rejected", embeddedNullAumid), ("oversized AUMID rejected", oversizedAumid),
         ("argument count limited", argumentLimit), ("command line length limited", commandLineLimit),
@@ -267,9 +278,500 @@ static int RunLaunchChecks()
         (string.IsNullOrWhiteSpace(testAumid) ? "missing packaged target check skipped (no test AUMID)" : "missing packaged target reports HRESULT", missingPackagedTarget)
     })
         Console.WriteLine($"{(passed ? "PASS" : "FAIL")} {name}");
-    return validExe && missingExe && invalidWorkingDirectory && missingShortcut && nonExecutableShortcut &&
+    return validExe && missingExe && invalidWorkingDirectory && missingShortcut && missingResolvedExe && nonExecutableShortcut &&
            invalidAumid && embeddedNullAumid && oversizedAumid && argumentLimit && commandLineLimit && permissionFailure && validShortcut &&
            shortcutArgumentsPreserved && argumentsPreserved && packagedTarget && missingPackagedTarget ? 0 : 1;
+}
+
+static int RunInstanceChecks()
+{
+    if (!OperatingSystem.IsWindows())
+    {
+        Console.WriteLine("SKIP F05 Windows-only instance checks");
+        return 0;
+    }
+
+    string executable = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+    var target = new ExecutableTarget(executable, []);
+    var identity = new ExecutableLaunchIdentity(Path.GetFullPath(executable));
+    var resolver = new LaunchTargetIdentityResolver();
+    LaunchTargetResolution exeIdentity = resolver.Resolve(target);
+    LaunchTargetResolution aumidIdentity = resolver.Resolve(new PackagedAppTarget("Package_Family!Application"));
+    bool identitiesResolved = exeIdentity.Succeeded && exeIdentity.Target?.Identity == identity &&
+                              aumidIdentity.Target?.Identity == new PackagedAppLaunchIdentity("Package_Family!Application");
+
+    int failures = 0;
+    Record("typed EXE and exact AUMID identity resolution", identitiesResolved, ref failures);
+
+    FakeWindowPlatform existingPlatform = new();
+    ProcessStamp existing = Stamp(5001, identity);
+    existingPlatform.AddProcess(existing, Candidate(existing, 101));
+    int duplicateDispatches = 0;
+    var existingCoordinator = Coordinator(existingPlatform, _ => { duplicateDispatches++; return new LaunchResult(LaunchStatus.Started, 7001); });
+    InstanceResult activated = existingCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("existing exact process activates without redispatch", activated.Outcome == InstanceOutcome.ActivatedExisting &&
+        duplicateDispatches == 0 && existingPlatform.ActivationCalls == 1, ref failures);
+
+    var unrelatedPlatform = new FakeWindowPlatform();
+    var unrelated = Stamp(5002, new ExecutableLaunchIdentity(Path.Combine(Path.GetDirectoryName(executable)!, "other", "cmd.exe")));
+    unrelatedPlatform.AddProcess(unrelated, Candidate(unrelated, 102));
+    var launched = Stamp(5003, identity);
+    int launchCount = 0;
+    var unrelatedCoordinator = Coordinator(unrelatedPlatform, _ =>
+    {
+        launchCount++;
+        unrelatedPlatform.AddProcess(launched, Candidate(launched, 103));
+        return new LaunchResult(LaunchStatus.Started, launched.ProcessId, ProcessCreationFileTimeUtc: launched.CreationFileTimeUtc);
+    });
+    InstanceResult unrelatedResult = unrelatedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("same executable basename is not an identity match", unrelatedResult.Outcome == InstanceOutcome.WindowReady &&
+        launchCount == 1 && unrelatedPlatform.ActivationCalls == 0, ref failures);
+
+    var unusablePlatform = new FakeWindowPlatform();
+    ProcessStamp unusable = Stamp(5004, identity);
+    unusablePlatform.AddProcess(unusable,
+        Candidate(unusable, 104, visible: false), Candidate(unusable, 105, cloaked: true),
+        Candidate(unusable, 106, owned: true), Candidate(unusable, 107, tool: true));
+    int unusableDispatches = 0;
+    var unusableCoordinator = Coordinator(unusablePlatform, _ => { unusableDispatches++; return new LaunchResult(LaunchStatus.Started, 7002); });
+    InstanceResult unusableResult = unusableCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("hidden cloaked owned and tool windows are excluded", unusableResult.Outcome == InstanceOutcome.NoUsableWindow &&
+        unusableDispatches == 0, ref failures);
+
+    var ambiguousPlatform = new FakeWindowPlatform();
+    ProcessStamp ambiguous = Stamp(5005, identity);
+    ambiguousPlatform.AddProcess(ambiguous, Candidate(ambiguous, 108), Candidate(ambiguous, 109));
+    var ambiguousCoordinator = Coordinator(ambiguousPlatform, _ => new LaunchResult(LaunchStatus.Started, 7003));
+    InstanceResult ambiguousResult = ambiguousCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("tied window candidates are reported as ambiguous", ambiguousResult.Outcome == InstanceOutcome.AmbiguousWindow &&
+        ambiguousPlatform.ActivationCalls == 0, ref failures);
+
+    var deniedPlatform = new FakeWindowPlatform { ActivationStatus = WindowActivationStatus.ForegroundDenied };
+    ProcessStamp denied = Stamp(5006, identity);
+    deniedPlatform.AddProcess(denied, Candidate(denied, 110));
+    var deniedCoordinator = Coordinator(deniedPlatform, _ => new LaunchResult(LaunchStatus.Started, 7004));
+    InstanceResult deniedResult = deniedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("foreground denial returns one notification outcome", deniedResult.Outcome == InstanceOutcome.ForegroundDenied &&
+        deniedPlatform.ActivationCalls == 1 && deniedPlatform.NotificationCalls == 1, ref failures);
+
+    var packagedTarget = new PackagedAppTarget("Package_Family!Application");
+    var packagedIdentity = new PackagedAppLaunchIdentity(packagedTarget.Aumid);
+    var packagedPlatform = new FakeWindowPlatform();
+    ProcessStamp packaged = Stamp(5007, packagedIdentity);
+    packagedPlatform.AddProcess(packaged, Candidate(packaged, 111));
+    int packagedDispatches = 0;
+    var packagedCoordinator = Coordinator(packagedPlatform, _ => { packagedDispatches++; return new LaunchResult(LaunchStatus.Activated, 7005); });
+    InstanceResult packagedResult = packagedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), packagedTarget).GetAwaiter().GetResult();
+    Record("exact AUMID match activates confirmed process", packagedResult.Outcome == InstanceOutcome.ActivatedExisting &&
+        packagedDispatches == 0, ref failures);
+
+    var reusedPlatform = new FakeWindowPlatform();
+    ProcessStamp reused = Stamp(5008, identity, creation: 20);
+    var actualReused = Stamp(5008, identity, creation: 21);
+    var reusedCoordinator = Coordinator(reusedPlatform, _ =>
+    {
+        reusedPlatform.AddProcess(actualReused, Candidate(actualReused, 112));
+        return new LaunchResult(LaunchStatus.Started, reused.ProcessId, ProcessCreationFileTimeUtc: reused.CreationFileTimeUtc);
+    });
+    InstanceResult reusedResult = reusedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("reused PID with a different creation time is rejected", reusedResult.Outcome == InstanceOutcome.IdentityChanged,
+        ref failures);
+
+    var delayedPlatform = new FakeWindowPlatform();
+    ProcessStamp delayed = Stamp(5009, identity);
+    var delayedClock = new FakeInstanceClock();
+    delayedClock.DelayHandler = (_, _) =>
+    {
+        if (delayedClock.ElapsedSince(0) >= TimeSpan.FromMilliseconds(200))
+            delayedPlatform.SetWindows(delayed.ProcessId, Candidate(delayed, 113));
+        return Task.CompletedTask;
+    };
+    var delayedCoordinator = Coordinator(delayedPlatform,
+        _ =>
+        {
+            delayedPlatform.AddProcess(delayed);
+            return new LaunchResult(LaunchStatus.Started, delayed.ProcessId, ProcessCreationFileTimeUtc: delayed.CreationFileTimeUtc);
+        },
+        delayedClock, TimeSpan.FromSeconds(15));
+    InstanceResult delayedResult = delayedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("delayed window returns ready after launch", delayedResult.Outcome == InstanceOutcome.WindowReady &&
+        delayedResult.ElapsedWait == TimeSpan.FromMilliseconds(200) && delayedClock.DelayCount == 2, ref failures);
+
+    var timeoutPlatform = new FakeWindowPlatform();
+    ProcessStamp timedOut = Stamp(5010, identity);
+    var timeoutClock = new FakeInstanceClock();
+    int timeoutDispatches = 0;
+    var timeoutCoordinator = Coordinator(timeoutPlatform, _ =>
+    {
+        timeoutDispatches++;
+        timeoutPlatform.AddProcess(timedOut);
+        return new LaunchResult(LaunchStatus.Started, timedOut.ProcessId, ProcessCreationFileTimeUtc: timedOut.CreationFileTimeUtc);
+    }, timeoutClock, TimeSpan.FromSeconds(15));
+    InstanceResult timeoutResult = timeoutCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("window wait times out at 15 seconds and leaves process running", timeoutResult.Outcome == InstanceOutcome.TimedOut &&
+        timeoutResult.ElapsedWait == TimeSpan.FromSeconds(15) && timeoutDispatches == 1 && timeoutPlatform.ProcessCount == 1,
+        ref failures);
+
+    var exitedPlatform = new FakeWindowPlatform();
+    ProcessStamp exited = Stamp(5011, identity);
+    var exitClock = new FakeInstanceClock { DelayHandler = (_, _) => { exitedPlatform.RemoveProcess(exited.ProcessId); return Task.CompletedTask; } };
+    var exitCoordinator = Coordinator(exitedPlatform, _ =>
+    {
+        exitedPlatform.AddProcess(exited);
+        return new LaunchResult(LaunchStatus.Started, exited.ProcessId, ProcessCreationFileTimeUtc: exited.CreationFileTimeUtc);
+    }, exitClock);
+    InstanceResult exitResult = exitCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("exited launched process reports ProcessExited", exitResult.Outcome == InstanceOutcome.ProcessExited, ref failures);
+
+    var changedPlatform = new FakeWindowPlatform();
+    ProcessStamp changed = Stamp(5012, identity);
+    var changedClock = new FakeInstanceClock
+    {
+        DelayHandler = (_, _) =>
+    { changedPlatform.ForcedVerificationStatus = ProcessVerificationStatus.IdentityChanged; return Task.CompletedTask; }
+    };
+    var changedCoordinator = Coordinator(changedPlatform,
+        _ =>
+        {
+            changedPlatform.AddProcess(changed);
+            return new LaunchResult(LaunchStatus.Started, changed.ProcessId, ProcessCreationFileTimeUtc: changed.CreationFileTimeUtc);
+        }, changedClock);
+    InstanceResult changedResult = changedCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("identity change during polling is rejected", changedResult.Outcome == InstanceOutcome.IdentityChanged, ref failures);
+
+    var canceledPlatform = new FakeWindowPlatform();
+    ProcessStamp canceled = Stamp(5013, identity);
+    using var cancelSource = new CancellationTokenSource();
+    var cancelClock = new FakeInstanceClock { DelayHandler = (_, _) => { cancelSource.Cancel(); return Task.CompletedTask; } };
+    var cancelCoordinator = Coordinator(canceledPlatform,
+        _ =>
+        {
+            canceledPlatform.AddProcess(canceled);
+            return new LaunchResult(LaunchStatus.Started, canceled.ProcessId, ProcessCreationFileTimeUtc: canceled.CreationFileTimeUtc);
+        }, cancelClock);
+    InstanceResult canceledResult = cancelCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, cancelSource.Token).GetAwaiter().GetResult();
+    Record("cancellation stops waiting without killing process", canceledResult.Outcome == InstanceOutcome.Canceled &&
+        canceledPlatform.ProcessCount == 1, ref failures);
+
+    var noStampPlatform = new FakeWindowPlatform();
+    ProcessStamp noStamp = Stamp(5015, identity);
+    var noStampCoordinator = Coordinator(noStampPlatform, _ =>
+    {
+        noStampPlatform.AddProcess(noStamp);
+        return new LaunchResult(LaunchStatus.Started, noStamp.ProcessId);
+    });
+    InstanceResult noStampResult = noStampCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target).GetAwaiter().GetResult();
+    Record("missing dispatch creation time fails closed", noStampResult.Outcome == InstanceOutcome.IdentityUnavailable &&
+        noStampPlatform.ProcessCount == 1, ref failures);
+
+    var concurrentPlatform = new FakeWindowPlatform();
+    ProcessStamp concurrent = Stamp(5014, identity);
+    int concurrentDispatches = 0;
+    var concurrentCoordinator = Coordinator(concurrentPlatform, _ =>
+    {
+        Interlocked.Increment(ref concurrentDispatches);
+        concurrentPlatform.AddProcess(concurrent, Candidate(concurrent, 114));
+        return new LaunchResult(LaunchStatus.Started, concurrent.ProcessId, ProcessCreationFileTimeUtc: concurrent.CreationFileTimeUtc);
+    });
+    string concurrentAppId = Guid.NewGuid().ToString("N");
+    Task<InstanceResult> first = concurrentCoordinator.OpenAsync(concurrentAppId, target);
+    Task<InstanceResult> second = concurrentCoordinator.OpenAsync(concurrentAppId, target);
+    Task.WaitAll(first, second);
+    Record("same AppId concurrent requests dispatch once and rescan", concurrentDispatches == 1 &&
+        new[] { first.Result.Outcome, second.Result.Outcome }.All(outcome => outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting) &&
+        first.Result.Process?.ProcessId == second.Result.Process?.ProcessId && first.Result.WindowHandle == second.Result.WindowHandle,
+        ref failures);
+
+    var independentPlatform = new FakeWindowPlatform();
+    int independentDispatches = 0;
+    int independentProcessId = 5020;
+    using var independentLaunches = new CountdownEvent(2);
+    var independentCoordinator = Coordinator(independentPlatform, _ =>
+    {
+        Interlocked.Increment(ref independentDispatches);
+        independentLaunches.Signal();
+        if (!independentLaunches.Wait(TimeSpan.FromSeconds(5))) return new LaunchResult(LaunchStatus.StartFailed);
+        int processId = Interlocked.Increment(ref independentProcessId);
+        ProcessStamp process = Stamp(processId, identity);
+        independentPlatform.AddProcess(process, Candidate(process, processId + 1000));
+        return new LaunchResult(LaunchStatus.Started, processId, ProcessCreationFileTimeUtc: process.CreationFileTimeUtc);
+    });
+    Task<InstanceResult> independentA = independentCoordinator.OpenAsync($"{Guid.NewGuid():N}-a", target);
+    Task<InstanceResult> independentB = independentCoordinator.OpenAsync($"{Guid.NewGuid():N}-b", target);
+    Task.WaitAll(independentA, independentB);
+    Record("different AppIds can dispatch independently", independentDispatches == 2 &&
+        independentA.Result.Outcome == InstanceOutcome.WindowReady && independentB.Result.Outcome == InstanceOutcome.WindowReady,
+        ref failures);
+
+    var gatePlatform = new FakeWindowPlatform();
+    ProcessStamp gateProcess = Stamp(5030, identity);
+    using var dispatchEntered = new ManualResetEventSlim();
+    var gateHolder = Coordinator(gatePlatform, _ =>
+    {
+        dispatchEntered.Set();
+        Thread.Sleep(300);
+        gatePlatform.AddProcess(gateProcess, Candidate(gateProcess, 5031));
+        return new LaunchResult(LaunchStatus.Started, gateProcess.ProcessId,
+            ProcessCreationFileTimeUtc: gateProcess.CreationFileTimeUtc);
+    });
+    string gateAppId = Guid.NewGuid().ToString("N");
+    Task<InstanceResult> gateHolderTask = Task.Run(() => gateHolder.OpenAsync(gateAppId, target).GetAwaiter().GetResult());
+    bool enteredDispatch = dispatchEntered.Wait(TimeSpan.FromSeconds(5));
+    var gateWaiter = new ApplicationInstanceCoordinator(gatePlatform, _ => new LaunchResult(LaunchStatus.Started, 5032),
+        gateWait: TimeSpan.FromMilliseconds(50));
+    InstanceResult gateTimeoutResult = gateWaiter.OpenAsync(gateAppId, target).GetAwaiter().GetResult();
+    bool holderCompleted = gateHolderTask.Wait(TimeSpan.FromSeconds(5));
+    Record("same-AppId gate wait has a bounded timeout", enteredDispatch && holderCompleted &&
+        gateTimeoutResult.Outcome == InstanceOutcome.GateTimedOut && gateHolderTask.Result.Outcome == InstanceOutcome.WindowReady,
+        ref failures);
+
+    string processGateDirectory = Path.Combine(Path.GetTempPath(), $"dms-f05-process-gate-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(processGateDirectory);
+    try
+    {
+        string appId = Guid.NewGuid().ToString("N");
+        string? processPath = Environment.ProcessPath;
+        if (processPath is null) throw new InvalidOperationException("Test process executable path is unavailable.");
+        ProcessStartInfo MakeWorker(string role)
+        {
+            bool isDotnetHost = string.Equals(Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase);
+            var start = new ProcessStartInfo(processPath)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            if (isDotnetHost) start.ArgumentList.Add(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            start.ArgumentList.Add("--f05-instance-worker");
+            start.ArgumentList.Add(processGateDirectory);
+            start.ArgumentList.Add(appId);
+            start.ArgumentList.Add(role);
+            start.Environment["DOTNET_ROOT"] = "C:\\Users\\AAA\\.dotnet";
+            return start;
+        }
+
+        using Process workerA = Process.Start(MakeWorker("a")) ?? throw new InvalidOperationException("Worker A did not start.");
+        using Process workerB = Process.Start(MakeWorker("b")) ?? throw new InvalidOperationException("Worker B did not start.");
+        Task<string> outputA = workerA.StandardOutput.ReadToEndAsync();
+        Task<string> errorA = workerA.StandardError.ReadToEndAsync();
+        Task<string> outputB = workerB.StandardOutput.ReadToEndAsync();
+        Task<string> errorB = workerB.StandardError.ReadToEndAsync();
+        bool exitedA = workerA.WaitForExit(10_000);
+        bool exitedB = workerB.WaitForExit(10_000);
+        string outcomeA = File.Exists(Path.Combine(processGateDirectory, "result-a.txt"))
+            ? File.ReadAllText(Path.Combine(processGateDirectory, "result-a.txt")) : "missing";
+        string outcomeB = File.Exists(Path.Combine(processGateDirectory, "result-b.txt"))
+            ? File.ReadAllText(Path.Combine(processGateDirectory, "result-b.txt")) : "missing";
+        bool separateProcessPass = exitedA && exitedB && workerA.ExitCode == 0 && workerB.ExitCode == 0 &&
+            File.Exists(Path.Combine(processGateDirectory, "dispatched.once")) &&
+            outcomeA is nameof(InstanceOutcome.WindowReady) or nameof(InstanceOutcome.ActivatedExisting) &&
+            outcomeB is nameof(InstanceOutcome.WindowReady) or nameof(InstanceOutcome.ActivatedExisting);
+        if (!separateProcessPass)
+            Console.WriteLine($"  worker details: A={workerA.ExitCode}/{outcomeA} {outputA.Result}{errorA.Result}; B={workerB.ExitCode}/{outcomeB} {outputB.Result}{errorB.Result}");
+        Record("same AppId is serialized across separate coordinator processes", separateProcessPass, ref failures);
+    }
+    finally { Directory.Delete(processGateDirectory, recursive: true); }
+
+    return failures;
+}
+
+static int RunInstanceWorker(string stateDirectory, string appId, string role)
+{
+    try
+    {
+        var platform = new FileBackedWindowPlatform(stateDirectory);
+        var coordinator = new ApplicationInstanceCoordinator(platform, _ => platform.DispatchOnce());
+        string executable = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+        InstanceResult result = coordinator.OpenAsync(appId, new ExecutableTarget(executable, [])).GetAwaiter().GetResult();
+        File.WriteAllText(Path.Combine(stateDirectory, $"result-{role}.txt"), result.Outcome.ToString());
+        Console.WriteLine(result.Outcome);
+        return result.Outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting ? 0 : 1;
+    }
+    catch (Exception ex)
+    {
+        File.WriteAllText(Path.Combine(stateDirectory, $"result-{role}.txt"), $"error:{ex.GetType().Name}");
+        Console.Error.WriteLine(ex);
+        return 1;
+    }
+}
+
+static int RunWindowHostIntegration()
+{
+    if (!OperatingSystem.IsWindows()) return 0;
+    string publishedHost = Path.Combine(AppContext.BaseDirectory,
+        "..", "..", "..", "..", "..", "src", "DesktopMotionStudio.WindowHost.Poc", "bin", "Release",
+        "net10.0-windows", "win-x64", "publish", "DesktopMotionStudio.WindowHost.Poc.exe");
+    publishedHost = Path.GetFullPath(publishedHost);
+    if (!File.Exists(publishedHost))
+    {
+        Console.WriteLine("SKIP real WindowHost integration (published POC is not built)");
+        return 0;
+    }
+
+    string temporaryDirectory = Path.Combine(Path.GetTempPath(), $"dms-f05-window-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(temporaryDirectory);
+    string testExecutable = Path.Combine(temporaryDirectory, "WindowHost.Poc.exe");
+    File.Copy(publishedHost, testExecutable);
+    var launcher = new ApplicationLauncher();
+    var platform = new WindowsWindowPlatform();
+    var coordinator = new ApplicationInstanceCoordinator(platform, launcher.Launch);
+    InstanceResult? result = null;
+    InstanceResult? reopened = null;
+    Process? host = null;
+    bool exited = false;
+    int failures = 0;
+    try
+    {
+        var target = new ExecutableTarget(testExecutable, [], temporaryDirectory);
+        string appId = Guid.NewGuid().ToString("N");
+        result = coordinator.OpenAsync(appId, target).GetAwaiter().GetResult();
+        if (result.Process is not null)
+        {
+            try { host = Process.GetProcessById(result.Process.ProcessId); }
+            catch (ArgumentException) { }
+        }
+
+        if (host is not null && result.WindowHandle is nint handle)
+        {
+            _ = NativeTestMethods.ShowWindowAsync(handle, 6); // SW_MINIMIZE
+            reopened = coordinator.OpenAsync(appId, target).GetAwaiter().GetResult();
+            Thread.Sleep(250); // Allow asynchronous restore to reach the window manager.
+            bool restored = !NativeTestMethods.IsIconic(handle);
+            bool selectedSameWindow = reopened.Outcome is InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied &&
+                reopened.Process?.ProcessId == result.Process?.ProcessId && reopened.WindowHandle == result.WindowHandle && restored;
+            Record($"real WindowHost restore and existing-instance activation ({reopened.Outcome})", selectedSameWindow,
+                ref failures);
+
+            _ = NativeTestMethods.PostMessage(handle, 0x0010, 0, 0); // WM_CLOSE; exercise the application's normal close path.
+            exited = host.WaitForExit(5_000);
+        }
+        if (!exited && host is not null)
+        {
+            _ = host.CloseMainWindow();
+            exited = host.WaitForExit(3_000);
+        }
+
+        bool passed = result.Outcome == InstanceOutcome.WindowReady && result.Process is not null &&
+            string.Equals(result.Process.Identity.Value, Path.GetFullPath(testExecutable), StringComparison.OrdinalIgnoreCase) &&
+            result.WindowHandle is not null && host is not null && host.Id == result.Process.ProcessId && exited;
+        Record($"real WindowHost coordinator integration (PID {result.Process?.ProcessId}, HWND {result.WindowHandle})", passed,
+            ref failures);
+        if (!passed && failures == 0) failures++;
+        return failures;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"FAIL real WindowHost coordinator integration: {ex.GetType().Name}: {ex.Message}");
+        return 1;
+    }
+    finally
+    {
+        host?.Dispose();
+        if ((exited || host is null) && Directory.Exists(temporaryDirectory)) Directory.Delete(temporaryDirectory, recursive: true);
+        else if (Directory.Exists(temporaryDirectory)) Console.WriteLine($"  test host cleanup pending at {temporaryDirectory}");
+    }
+}
+
+static int RunPackagedInstanceIntegration()
+{
+    if (!OperatingSystem.IsWindows()) return 0;
+    string? aumid = Environment.GetEnvironmentVariable("DMS_F05_TEST_AUMID");
+    if (string.IsNullOrWhiteSpace(aumid))
+    {
+        Console.WriteLine("SKIP real packaged-instance integration (DMS_F05_TEST_AUMID is unset)");
+        return 0;
+    }
+
+    var identity = new PackagedAppLaunchIdentity(aumid);
+    var platform = new WindowsWindowPlatform();
+    ProcessScanResult before = platform.FindMatchingProcesses(identity);
+    if (!before.IsComplete)
+    {
+        Console.WriteLine("FAIL real packaged-instance integration: process scan unavailable");
+        return 1;
+    }
+    if (before.Matches.Count > 0)
+    {
+        Console.WriteLine("SKIP real packaged-instance integration (matching app is already running)");
+        return 0;
+    }
+
+    var launcher = new ApplicationLauncher();
+    var coordinator = new ApplicationInstanceCoordinator(platform, launcher.Launch);
+    string appId = $"f05-packaged-{Guid.NewGuid():N}";
+    InstanceResult? result = null;
+    Process? targetProcess = null;
+    bool exited = false;
+    try
+    {
+        result = coordinator.OpenAsync(appId, new PackagedAppTarget(aumid)).GetAwaiter().GetResult();
+        if (result.Process is not null)
+        {
+            try { targetProcess = Process.GetProcessById(result.Process.ProcessId); }
+            catch (ArgumentException) { }
+        }
+
+        if (targetProcess is not null)
+        {
+            if (result.WindowHandle is nint handle)
+                _ = NativeTestMethods.PostMessage(handle, 0x0010, 0, 0);
+            else
+                _ = targetProcess.CloseMainWindow();
+            exited = targetProcess.WaitForExit(5_000);
+            if (!exited)
+            {
+                _ = targetProcess.CloseMainWindow();
+                exited = targetProcess.WaitForExit(3_000);
+            }
+        }
+
+        bool passed = result.Outcome == InstanceOutcome.WindowReady && result.Process is not null &&
+            result.Process.Identity is PackagedAppLaunchIdentity returnedIdentity &&
+            string.Equals(returnedIdentity.Aumid, aumid, StringComparison.OrdinalIgnoreCase) &&
+            result.WindowHandle is not null && targetProcess?.Id == result.Process.ProcessId && exited;
+        int failures = 0;
+        Record($"real packaged AUMID instance integration ({result.Outcome}, PID {result.Process?.ProcessId})", passed,
+            ref failures);
+        return failures;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"FAIL real packaged-instance integration: {ex.GetType().Name}: {ex.Message}");
+        return 1;
+    }
+    finally
+    {
+        targetProcess?.Dispose();
+    }
+}
+
+static ApplicationInstanceCoordinator Coordinator(
+    FakeWindowPlatform platform,
+    Func<ResolvedLaunchTarget, LaunchResult> launch,
+    IInstanceClock? clock = null,
+    TimeSpan? windowWait = null) =>
+    new(platform, launch, clock: clock, windowWait: windowWait);
+
+static ProcessStamp Stamp(int processId, LaunchTargetIdentity identity, long creation = 10) =>
+    new(processId, creation, 1, identity);
+
+static WindowCandidate Candidate(
+    ProcessStamp process,
+    nint handle,
+    bool visible = true,
+    bool cloaked = false,
+    bool minimized = false,
+    bool owned = false,
+    bool tool = false,
+    bool foreground = false,
+    bool main = true) =>
+    new(handle, process, visible, cloaked, minimized, owned, tool, foreground, main);
+
+static void Record(string name, bool passed, ref int failures)
+{
+    Console.WriteLine($"{(passed ? "PASS" : "FAIL")} {name}");
+    if (!passed) failures++;
 }
 
 static bool TryRejectMissingPackagedTarget(ApplicationLauncher launcher, string knownAumid)
@@ -356,8 +858,10 @@ static bool TryPreserveShortcutArguments(string target, string workingDirectory)
     object? shell = null;
     object? shortcut = null;
     string[]? receivedArguments = null;
+    int dispatches = 0;
     var fakeLauncher = new ApplicationLauncher(startInfo =>
     {
+        dispatches++;
         receivedArguments = startInfo.ArgumentList.ToArray();
         return 4242;
     });
@@ -376,8 +880,14 @@ static bool TryPreserveShortcutArguments(string target, string workingDirectory)
         SetComProperty(shortcutType, shortcut, "Arguments", "/d /c \"text with spaces and \\\"quotes\\\"\"");
         SetComProperty(shortcutType, shortcut, "WorkingDirectory", workingDirectory);
         shortcutType.InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, null);
-        LaunchResult result = fakeLauncher.Launch(new ShortcutTarget(shortcutPath));
-        return result.Status == LaunchStatus.Started && result.ProcessId == 4242 &&
+        var resolver = new LaunchTargetIdentityResolver();
+        LaunchTargetResolution resolution = resolver.Resolve(new ShortcutTarget(shortcutPath));
+        bool sideEffectFree = resolution.Succeeded && dispatches == 0 &&
+            resolution.Target is ResolvedExecutableLaunch resolved &&
+            string.Equals(resolved.ExecutableIdentity.Path, Path.GetFullPath(target), StringComparison.OrdinalIgnoreCase);
+        if (!sideEffectFree || resolution.Target is null) return false;
+        LaunchResult result = fakeLauncher.Launch(resolution.Target);
+        return sideEffectFree && result.Status == LaunchStatus.Started && result.ProcessId == 4242 && dispatches == 1 &&
                receivedArguments is not null && receivedArguments.SequenceEqual(expectedArguments);
     }
     catch (Exception) { return false; }
