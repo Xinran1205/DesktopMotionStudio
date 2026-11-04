@@ -2,14 +2,14 @@
 
 **Feature Branch**: `main`
 **Created**: 2026-11-03
-**Status**: Draft baseline
+**Status**: Ready for implementation
 **Input**: PRD V1.0, TDD V1.0, FEATURES.md
 
 ## User Scenarios & Testing
 
 ### User Story 1 - 应用启动适配 (Priority: P1)
 
-用户添加本机应用并可从 Studio 发起启动。
+用户添加本机 EXE、Windows 快捷方式或已验证的 MSIX/AUMID 应用并可从 Studio/Launcher 发起启动。该 Feature 仅负责启动请求，不负责查找运行窗口或交接动画。
 
 **Independent Test**: 在独立测试环境执行本功能，不依赖后续 UI 或发行功能。
 
@@ -27,23 +27,26 @@
 
 ### Functional Requirements
 
-- **FR-001**: 支持已验证的 EXE/快捷方式/包应用身份；参数边界明确；返回结构化启动结果。
-- **FR-002**: 输入必须进行身份、版本与范围验证；输出包含成功状态或明确错误码。
-- **FR-003**: 失败后不得修改与本功能无关的用户数据或目标应用。
-- **FR-004**: 功能必须在无网络和普通用户权限下运行。
+- **FR-001**: 使用 discriminated launch target 表示绝对 EXE 路径、`.lnk` 路径或 AUMID；不得接受任意 shell command 字符串。
+- **FR-002**: EXE 路径须存在且为 `.exe` 文件；启动参数按独立元素传递，不自行拼接 shell 命令；工作目录必须明确或默认为 EXE 所在目录。
+- **FR-003**: `.lnk` 必须先解析出有效 EXE 目标及快捷方式参数；快捷方式指向文档、URL、目录或无效目标时拒绝启动。
+- **FR-004**: AUMID 必须格式有效并通过 Windows 激活 API 激活；激活失败返回 HRESULT/稳定错误分类。
+- **FR-005**: 返回结构化结果（已发起、目标无效、拒绝、系统错误），进程 ID 可选；不保证目标主窗口已出现。
+- **FR-006**: 不提权、不修改目标应用、不访问网络；每次请求最多发起一个目标启动。
 
 ### Business Rules, Inputs & Outputs
 
-- **Input**: 用户操作、受控本地配置和已验证的上游模块结果。
-- **Output**: 持久化状态或可见结果，以及必要的脱敏诊断状态。
+- **Input**: typed launch target、分离参数、可选工作目录。
+- **Output**: started/activated result with optional PID, or structured failure code and native error code.
 - **Rule**: V1 不加载用户提供的可执行场景代码，也不修改第三方应用文件。
 
 ## Success Criteria
 
 ### Measurable Outcomes
 
-- **SC-001**: 合法目标启动一次；失败有可诊断结果且不启动其他程序。
-- **SC-002**: 已列边界和异常情形均有自动测试或 Windows 桌面验收证据。
+- **SC-001**: EXE、EXE-targeting `.lnk` 和已安装 AUMID 测试目标均可启动一次。
+- **SC-002**: 无效路径、非 EXE 快捷方式、错误 AUMID 和无权限失败均返回明确错误且不启动其他程序。
+- **SC-003**: 参数作为独立值保留空格/引号，不被 shell 重新解释。
 
 ## Assumptions
 
@@ -55,3 +58,4 @@
 | Version | Date | Change |
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
+| 0.2.0 | 2026-11-04 | Separate launch request from instance detection; define typed target and safe failure behavior. |

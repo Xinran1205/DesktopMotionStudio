@@ -46,6 +46,7 @@ Console.WriteLine($"{(boundaryPassed ? "PASS" : "FAIL")} exact size limit");
 if (!boundaryPassed) failures++;
 
 failures += RunRepositoryChecks();
+failures += RunCatalogChecks();
 
 static int RunRepositoryChecks()
 {
@@ -145,5 +146,69 @@ static bool JsonHasTheme(byte[] bytes, string theme)
     using var document = System.Text.Json.JsonDocument.Parse(bytes);
     return document.RootElement.GetProperty("settings").GetProperty("theme").GetString() == theme;
 }
+
+static int RunCatalogChecks()
+{
+    string root = Path.Combine(Path.GetTempPath(), $"dms-catalog-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        string valid = Path.Combine(root, "z-valid");
+        Directory.CreateDirectory(Path.Combine(valid, "art"));
+        File.WriteAllText(Path.Combine(valid, "scene.json"), Manifest("dragon-portal", "art/cover.png"));
+        File.WriteAllText(Path.Combine(valid, "art", "cover.png"), "placeholder");
+
+        foreach (string name in new[] { "a-duplicate", "b-duplicate" })
+        {
+            string directory = Path.Combine(root, name);
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "scene.json"), Manifest("same-scene", "art.png"));
+            File.WriteAllText(Path.Combine(directory, "art.png"), "placeholder");
+        }
+
+        string missing = Path.Combine(root, "c-missing-asset");
+        Directory.CreateDirectory(missing);
+        File.WriteAllText(Path.Combine(missing, "scene.json"), Manifest("missing-asset", "absent.png"));
+        string noManifest = Path.Combine(root, "d-no-manifest");
+        Directory.CreateDirectory(noManifest);
+        string bad = Path.Combine(root, "e-bad-manifest");
+        Directory.CreateDirectory(bad);
+        File.WriteAllText(Path.Combine(bad, "scene.json"), "{");
+        File.WriteAllText(Path.Combine(root, "outside-secret.txt"), "must not be read");
+        string traversal = Path.Combine(root, "f-traversal");
+        Directory.CreateDirectory(traversal);
+        File.WriteAllText(Path.Combine(traversal, "scene.json"), Manifest("traversal-test", "../outside-secret.txt"));
+
+        var catalog = new BuiltInSceneCatalog();
+        SceneCatalogScanResult result = catalog.Scan(root);
+        bool rootPassed = result.RootAvailable;
+        bool stableOrder = result.Items.Select(item => item.DirectoryName).SequenceEqual(
+            new[] { "a-duplicate", "b-duplicate", "c-missing-asset", "d-no-manifest", "e-bad-manifest", "f-traversal", "z-valid" });
+        bool duplicateIdsRejected = result.Items.Where(item => item.Manifest?.SceneId == "same-scene")
+            .All(item => item.Diagnostic == SceneCatalogDiagnostic.DuplicateSceneId);
+        bool validFound = result.Items.Single(item => item.DirectoryName == "z-valid").IsAvailable;
+        bool faultsIsolated = result.Items.Single(item => item.DirectoryName == "c-missing-asset").Diagnostic == SceneCatalogDiagnostic.MissingAsset &&
+                             result.Items.Single(item => item.DirectoryName == "d-no-manifest").Diagnostic == SceneCatalogDiagnostic.MissingManifest &&
+                             result.Items.Single(item => item.DirectoryName == "e-bad-manifest").Diagnostic == SceneCatalogDiagnostic.InvalidManifest &&
+                             result.Items.Single(item => item.DirectoryName == "f-traversal").Diagnostic == SceneCatalogDiagnostic.InvalidManifest;
+        bool missingRoot = !catalog.Scan(Path.Combine(root, "not-present")).RootAvailable;
+        foreach ((string name, bool passed) in new[]
+        {
+            ("catalog root", rootPassed), ("catalog stable ordering", stableOrder),
+            ("duplicate IDs unavailable", duplicateIdsRejected), ("valid resources discovered", validFound),
+            ("catalog errors isolated", faultsIsolated), ("missing root reported", missingRoot)
+        })
+            Console.WriteLine($"{(passed ? "PASS" : "FAIL")} {name}");
+
+        return rootPassed && stableOrder && duplicateIdsRejected && validFound && faultsIsolated && missingRoot ? 0 : 1;
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static string Manifest(string sceneId, string asset) =>
+    $$"""{"schemaVersion":1,"sceneId":"{{sceneId}}","sceneVersion":"1.0.0","name":"Test Scene","displayMode":"centered","assets":["{{asset}}"]}""";
 
 return failures == 0 ? 0 : 1;
