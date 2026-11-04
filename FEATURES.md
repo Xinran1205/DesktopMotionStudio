@@ -4,23 +4,23 @@
 
 The repository began with requirements documents only. F00 now has a prototype under development. Dependencies below are sequencing gates, not claims of implementation.
 
-| Order | Module / Feature | Outcome | Depends on |
-|---:|---|---|---|
-| 0 | Engineering foundation / F00 Windows host feasibility spike | Confirm a .NET/Win32 transparent overlay, keyboard close, monitor/DPI behavior and cleanup on target Windows before committing to rendering architecture | — |
-| 1 | Core contracts / F01 Domain and versioned scene manifest | Validate scene metadata, IDs, capability declarations, and safe unsupported-version handling | F00 |
-| 2 | Persistence / F02 Local profile repository | Atomic, versioned binding/settings storage and safe migration behavior | F01 |
-| 3 | Scene library / F03 Built-in scene catalog | Discover packaged trusted scenes and assets without executing user content | F01 |
-| 4 | Launch / F04 Application launch adapters | Represent executable/shortcut/packaged launch identities and return structured results | F01 |
-| 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 |
-| 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 |
-| 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 |
-| 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04 |
-| 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F07, F08 |
-| 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create/repair/disable only verified owned shortcuts | F02, F04, F07 |
-| 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F10 |
-| 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 |
-| 13 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 |
-| 14 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 |
+| Order | Module / Feature | Outcome | Depends on | Status |
+|---:|---|---|---|---|
+| 0 | Engineering foundation / F00 Windows host feasibility spike | Confirm a .NET/Win32 transparent overlay, keyboard close, monitor/DPI behavior and cleanup on target Windows before committing to rendering architecture | — | Complete (current desktop POC) |
+| 1 | Core contracts / F01 Domain and versioned scene manifest | Validate scene metadata, stable IDs, asset references, and safe unsupported-version handling | F00 | Complete |
+| 2 | Persistence / F02 Local profile repository | Atomic, versioned binding/settings storage and safe migration behavior | F01 | Complete |
+| 3 | Scene library / F03 Built-in scene catalog | Discover packaged trusted scenes and assets without executing user content | F01 | Spec baseline |
+| 4 | Launch / F04 Application launch adapters | Represent executable/shortcut/packaged launch identities and return structured results | F01 | Spec baseline |
+| 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 | Spec baseline |
+| 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 | Spec baseline |
+| 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 | Spec baseline |
+| 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04 | Spec baseline |
+| 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F07, F08 | Spec baseline |
+| 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create/repair/disable only verified owned shortcuts | F02, F04, F07 | Spec baseline |
+| 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F10 | Spec baseline |
+| 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Spec baseline |
+| 13 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 | Spec baseline |
+| 14 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 | Spec baseline |
 
 ## Selection for first feature
 
@@ -38,3 +38,5 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 |---|---|---|
 | 1.0.0 | 2026-11-03 | Initial module map and dependency order. |
 | 1.0.1 | 2026-11-03 | Align F00 with isolated Win32 host POC; add second scene to cover PRD launch scope. |
+| 1.0.2 | 2026-11-04 | Record F00/F01 delivery status. |
+| 1.0.3 | 2026-11-04 | Record F02 delivery status. |

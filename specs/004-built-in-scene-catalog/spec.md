@@ -1,8 +1,8 @@
 # Feature Specification: 内置场景库
 
-**Feature Branch**: `main`  
-**Created**: 2026-11-03  
-**Status**: Draft baseline  
+**Feature Branch**: `main`
+**Created**: 2026-11-03
+**Status**: Draft baseline
 **Input**: PRD V1.0, TDD V1.0, FEATURES.md
 
 ## User Scenarios & Testing
@@ -55,4 +55,3 @@
 | Version | Date | Change |
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
-

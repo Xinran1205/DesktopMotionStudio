@@ -1,8 +1,8 @@
 # Feature Specification: 第二套授权内置场景
 
-**Feature Branch**: `main`  
-**Created**: 2026-11-03  
-**Status**: Draft baseline  
+**Feature Branch**: `main`
+**Created**: 2026-11-03
+**Status**: Draft baseline
 **Input**: PRD V1.0 §3, §6, §11; TDD V1.0 §14–15
 
 ## User Scenarios & Testing

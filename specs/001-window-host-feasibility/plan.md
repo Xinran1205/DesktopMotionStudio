@@ -8,13 +8,13 @@ Build a standalone Windows x64 prototype that creates a per-monitor, DPI-aware t
 
 ## Technical Context
 
-**Language/Version**: C# / .NET 10  
-**Primary Dependencies**: Windows Forms (Win32 window wrapper); no NuGet dependency for the prototype  
-**Storage**: None  
-**Testing**: build/format plus interactive Windows acceptance checklist  
-**Target Platform**: Windows 11 x64  
-**Project Type**: standalone desktop executable  
-**Performance Goal**: window appears without long blocking; measure before fixing budget  
+**Language/Version**: C# / .NET 10
+**Primary Dependencies**: Windows Forms (Win32 window wrapper); no NuGet dependency for the prototype
+**Storage**: None
+**Testing**: build/format plus interactive Windows acceptance checklist
+**Target Platform**: Windows 11 x64
+**Project Type**: standalone desktop executable
+**Performance Goal**: window appears without long blocking; measure before fixing budget
 **Constraint**: ordinary user permission, no global hooks or third-party app mutation
 
 ## Constitution Check

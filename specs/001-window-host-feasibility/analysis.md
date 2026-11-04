@@ -11,7 +11,7 @@
 | FR-005 cleanup | Dispose form/process exit | T004, T006 | Pass for Esc and Close paths |
 | FR-006 evidence distinction | Separate build/desktop results | T005–T008 | Covered |
 
-## Independent review pass
+## Review pass
 
 - Read the implementation against every F00 requirement after runtime checks. Corrected two issues before convergence: primary fallback now uses `Screen.PrimaryScreen`; card layout is recalculated after the form is shown so high DPI does not clip the title.
 - No global hook, elevation, target-app mutation, persistence, network call, or unmanaged resource handle is present in the prototype.

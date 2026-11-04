@@ -1,8 +1,8 @@
 # Feature Specification: Windows 动效宿主可行性
 
-**Feature Branch**: `main`  
-**Created**: 2026-11-03  
-**Status**: In progress  
+**Feature Branch**: `main`
+**Created**: 2026-11-03
+**Status**: Converged F00 POC
 **Input**: PRD V1.0 §5–6; TDD V1.0 §8.2, §15
 
 ## User Scenarios & Testing
