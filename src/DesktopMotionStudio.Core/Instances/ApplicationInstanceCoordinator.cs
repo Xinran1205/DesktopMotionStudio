@@ -40,7 +40,11 @@ public sealed class ApplicationInstanceCoordinator
             throw new ArgumentOutOfRangeException(nameof(pollInterval));
     }
 
-    public async Task<InstanceResult> OpenAsync(string appId, LaunchTarget target, CancellationToken cancellationToken = default)
+    public async Task<InstanceResult> OpenAsync(
+        string appId,
+        LaunchTarget target,
+        CancellationToken cancellationToken = default,
+        Action? beforeDispatch = null)
     {
         long requestedAt = _clock.Timestamp;
         if (!IsValidAppId(appId)) return new InstanceResult(InstanceOutcome.InvalidTarget);
@@ -71,7 +75,7 @@ public sealed class ApplicationInstanceCoordinator
             try
             {
                 if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
-                return await OpenInsideGateAsync(resolution.Target, requestedAt, cancellationToken).ConfigureAwait(false);
+                return await OpenInsideGateAsync(resolution.Target, requestedAt, cancellationToken, beforeDispatch).ConfigureAwait(false);
             }
             finally { gate.Release(); }
         }
@@ -80,7 +84,8 @@ public sealed class ApplicationInstanceCoordinator
     private async Task<InstanceResult> OpenInsideGateAsync(
         ResolvedLaunchTarget target,
         long requestedAt,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action? beforeDispatch)
     {
         ProcessScanResult processScan = _platform.FindMatchingProcesses(target.Identity);
         if (processScan.NativeErrorCode is not null && !processScan.IsComplete)
@@ -110,51 +115,68 @@ public sealed class ApplicationInstanceCoordinator
         if (!processScan.IsComplete)
             return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: processScan.NativeErrorCode);
 
+        int? preparationErrorCode = null;
+        try { beforeDispatch?.Invoke(); }
+        catch (Exception ex) { preparationErrorCode = ex.HResult; }
+
         LaunchResult launch = _launch(target);
-        if (!launch.Succeeded) return new InstanceResult(InstanceOutcome.LaunchFailed, NativeErrorCode: launch.NativeErrorCode);
+        if (!launch.Succeeded)
+            return new InstanceResult(InstanceOutcome.LaunchFailed, NativeErrorCode: launch.NativeErrorCode,
+                LaunchPreparationErrorCode: preparationErrorCode);
         if (launch.ProcessId is not int processId || processId <= 0)
-            return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: launch.NativeErrorCode);
+            return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: launch.NativeErrorCode,
+                LaunchPreparationErrorCode: preparationErrorCode);
         if (launch.ProcessCreationFileTimeUtc is not long dispatchCreationTime)
-            return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: launch.NativeErrorCode);
+            return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: launch.NativeErrorCode,
+                LaunchPreparationErrorCode: preparationErrorCode);
 
         long waitStarted = _clock.Timestamp; // The 15-second deadline begins only after F04 dispatch returns.
         ProcessVerificationResult verification = _platform.VerifyProcess(
             processId, target.Identity, _platform.CurrentSessionId, dispatchCreationTime);
         if (verification.Status != ProcessVerificationStatus.Confirmed || verification.Process is null)
-            return new InstanceResult(MapVerification(verification.Status), NativeErrorCode: verification.NativeErrorCode);
+            return new InstanceResult(MapVerification(verification.Status), NativeErrorCode: verification.NativeErrorCode,
+                LaunchPreparationErrorCode: preparationErrorCode);
         ProcessStamp process = verification.Process;
 
         while (true)
         {
             if (cancellationToken.IsCancellationRequested)
-                return new InstanceResult(InstanceOutcome.Canceled, process, ElapsedWait: _clock.ElapsedSince(waitStarted));
+                return new InstanceResult(InstanceOutcome.Canceled, process, ElapsedWait: _clock.ElapsedSince(waitStarted),
+                    LaunchPreparationErrorCode: preparationErrorCode);
 
             verification = _platform.VerifyProcess(process.ProcessId, target.Identity, process.SessionId, process.CreationFileTimeUtc);
             if (verification.Status != ProcessVerificationStatus.Confirmed)
                 return new InstanceResult(MapVerification(verification.Status), process,
-                    ElapsedWait: _clock.ElapsedSince(waitStarted), NativeErrorCode: verification.NativeErrorCode);
+                    ElapsedWait: _clock.ElapsedSince(waitStarted), NativeErrorCode: verification.NativeErrorCode,
+                    LaunchPreparationErrorCode: preparationErrorCode);
 
             WindowScanResult windows = _platform.FindWindows(process);
             if (!windows.IsComplete)
                 return new InstanceResult(InstanceOutcome.IdentityUnavailable, process,
-                    ElapsedWait: _clock.ElapsedSince(waitStarted), NativeErrorCode: windows.NativeErrorCode);
+                    ElapsedWait: _clock.ElapsedSince(waitStarted), NativeErrorCode: windows.NativeErrorCode,
+                    LaunchPreparationErrorCode: preparationErrorCode);
 
             CandidateSelection selection = SelectWindow([process], windows.Candidates);
             if (selection.Outcome == InstanceOutcome.AmbiguousWindow)
-                return Result(selection, process, _clock.ElapsedSince(waitStarted));
+                return Result(selection, process, _clock.ElapsedSince(waitStarted)) with
+                { LaunchPreparationErrorCode = preparationErrorCode };
             if (selection.Candidate is not null)
                 return new InstanceResult(InstanceOutcome.WindowReady, selection.Candidate.Process, selection.Candidate.Handle,
-                    _clock.ElapsedSince(waitStarted));
+                    _clock.ElapsedSince(waitStarted), LaunchPreparationErrorCode: preparationErrorCode);
 
             TimeSpan elapsed = _clock.ElapsedSince(waitStarted);
             if (elapsed >= _windowWait)
-                return new InstanceResult(InstanceOutcome.TimedOut, process, ElapsedWait: elapsed);
+                return new InstanceResult(InstanceOutcome.TimedOut, process, ElapsedWait: elapsed,
+                    LaunchPreparationErrorCode: preparationErrorCode);
 
             TimeSpan remaining = _windowWait - elapsed;
             TimeSpan delay = remaining < _pollInterval ? remaining : _pollInterval;
             try { await _clock.DelayAsync(delay, cancellationToken).ConfigureAwait(false); }
             catch (OperationCanceledException)
-            { return new InstanceResult(InstanceOutcome.Canceled, process, ElapsedWait: _clock.ElapsedSince(waitStarted)); }
+            {
+                return new InstanceResult(InstanceOutcome.Canceled, process, ElapsedWait: _clock.ElapsedSince(waitStarted),
+                    LaunchPreparationErrorCode: preparationErrorCode);
+            }
         }
     }
 

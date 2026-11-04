@@ -12,6 +12,9 @@ public static class SceneManifestReader
     public static bool IsValidSceneId(string? sceneId) =>
         sceneId is not null && sceneId.Length <= 64 && SceneIdPattern.IsMatch(sceneId);
 
+    public static bool IsValidSceneVersion(string? sceneVersion) =>
+        sceneVersion is not null && sceneVersion.Length <= 128 && IsValidSemVer(sceneVersion);
+
     private static readonly Regex SceneIdPattern = new(
         "^[a-z0-9][a-z0-9-]{2,63}$", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
     private static readonly Regex VersionPattern = new(
@@ -48,7 +51,7 @@ public static class SceneManifestReader
             fieldError = GetRequiredString(root, "displayMode", out string? modeText);
             if (fieldError != SceneManifestError.None) return Fail(fieldError);
 
-            if (sceneVersion!.Length > 128 || !IsValidSceneId(sceneId) || !IsValidSemVer(sceneVersion) ||
+            if (!IsValidSceneVersion(sceneVersion) || !IsValidSceneId(sceneId) ||
                 string.IsNullOrWhiteSpace(name) || name.Length > 120)
                 return Fail(SceneManifestError.InvalidField);
 

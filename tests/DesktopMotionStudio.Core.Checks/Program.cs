@@ -11,6 +11,12 @@ const string Valid = """
 
 if (args.Length == 4 && args[0] == "--f05-instance-worker")
     return RunInstanceWorker(args[1], args[2], args[3]);
+if (args.Length == 3 && args[0] == "--f06-disconnect-worker")
+    return RunF06DisconnectWorker(args[1], args[2]);
+if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")
+    return DesktopMotionStudio.Core.Checks.F06DesktopAcceptance.Run();
+if (args.Length == 1 && args[0] == "--f06-process-integration")
+    return F06Checks.RunWindowsProcessIntegration();
 
 var cases = new (string Name, string Json, SceneManifestError Expected)[]
 {
@@ -55,6 +61,7 @@ failures += RunRepositoryChecks();
 failures += RunCatalogChecks();
 failures += RunLaunchChecks();
 failures += RunInstanceChecks();
+failures += F06Checks.Run();
 failures += RunWindowHostIntegration();
 failures += RunPackagedInstanceIntegration();
 
@@ -594,6 +601,19 @@ static int RunInstanceWorker(string stateDirectory, string appId, string role)
         Console.Error.WriteLine(ex);
         return 1;
     }
+}
+
+static int RunF06DisconnectWorker(string hostExecutablePath, string visibleDelayText)
+{
+    if (!OperatingSystem.IsWindows() || !int.TryParse(visibleDelayText, out int visibleDelayMs) ||
+        visibleDelayMs is < 0 or > 10_000)
+        return 2;
+    var factory = new DesktopMotionStudio.Core.MotionHost.WindowsMotionHostProcessFactory(hostExecutablePath);
+    _ = factory.Start(new DesktopMotionStudio.Core.MotionHost.MotionHostStartRequest(
+        Guid.NewGuid(), "dragon-portal", "1.0.0", SceneDisplayMode.Centered));
+    Thread.Sleep(visibleDelayMs);
+    Environment.Exit(0);
+    return 0;
 }
 
 static int RunWindowHostIntegration()

@@ -64,7 +64,8 @@ public sealed record InstanceResult(
     ProcessStamp? Process = null,
     nint? WindowHandle = null,
     TimeSpan ElapsedWait = default,
-    int? NativeErrorCode = null);
+    int? NativeErrorCode = null,
+    int? LaunchPreparationErrorCode = null);
 
 public interface IInstanceClock
 {

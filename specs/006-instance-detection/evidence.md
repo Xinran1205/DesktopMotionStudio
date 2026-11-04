@@ -34,3 +34,9 @@ Ran the complete executable contract harness with `DMS_F05_TEST_AUMID=Microsoft.
 - Foreground permission is controlled by Windows. `ForegroundDenied` is a supported result, not a launch failure; no focus bypass is attempted.
 - Packaged apps whose window owner process does not expose the requested exact AUMID fail closed. F05 does not infer identity through a parent/child relationship.
 - Without reading titles/content or using app-specific metadata, an unowned visible splash window cannot be distinguished generically. `WindowReady` confirms a structurally usable window, not that app content has finished loading.
+
+## F06 additive pre-dispatch integration
+
+- A subsequent F06 regression pass verified that an existing matching instance activates without invoking the observer or target dispatch.
+- The new-launch path invoked the host observer before exactly one target dispatch. A simulated observer/process-start exception was recorded in `LaunchPreparationErrorCode`; the target still reached `WindowReady`.
+- Existing calls without an observer remain valid. The F06 integration seam is additive to the F05 behavior and does not alter its target identity, wait, or activation rules.

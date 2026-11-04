@@ -57,6 +57,7 @@ The user opens an application that is not running. The target is dispatched once
 - **FR-008**: Serialize concurrent requests for the same application ID within the current Windows user session. After acquiring the gate, each request rechecks current instances; at most one request dispatches F04 while the others reuse/activate the resulting instance. A caller waits at most 30 seconds for the gate, then returns `GateTimedOut` without dispatch.
 - **FR-009**: Return structured outcomes for existing-instance activation, new launch/window ready, no usable window, timeout, denied focus, invalid identity, and native errors.
 - **FR-010**: Run without administrator rights, network discovery, target process termination, or mutation of target files/configuration.
+- **FR-011**: Support an optional synchronous best-effort `beforeDispatch` observer after the no-existing-instance scan and immediately before F04 dispatch. Invoke it only for the new-launch path under the AppId gate. Catch observer exceptions, record the native preparation error on the result, and still dispatch F04 exactly once. Calls that omit the observer retain their existing source behavior.
 
 ## Business Rules, Inputs & Outputs
 
@@ -74,6 +75,7 @@ The user opens an application that is not running. The target is dispatched once
 - **SC-003**: New-window polling returns within 15 seconds and distinguishes ready, process-exited, identity-changed, and timeout outcomes.
 - **SC-004**: A simulated foreground denial returns `ForegroundDenied` and makes one notification call with no retry loop.
 - **SC-005**: A timeout or no-window result leaves the target process alive and does not modify unrelated files.
+- **SC-006**: The optional pre-dispatch observer runs zero times for an existing instance and once before one dispatch for a new instance; an observer exception is reported without suppressing or repeating the target dispatch.
 
 ## Dependencies and Assumptions
 
@@ -91,3 +93,4 @@ The user opens an application that is not running. The target is dispatched once
 | 1.0.0 | 2026-11-04 | Finalize independent user stories, Windows API research, measurable acceptance criteria, and verified desktop proof. |
 | 1.0.1 | 2026-11-04 | Bound same-AppId gate wait to 30 seconds; define window readiness as structural visibility and document the generic splash-classification limit under the no-title-read rule. |
 | 1.0.2 | 2026-11-04 | Converge all ten tasks with 67 executed contract assertions and real Windows EXE/AUMID integration evidence. |
+| 1.0.3 | 2026-11-04 | Add the F06-required best-effort pre-dispatch observer contract and regression criteria without changing existing F05 launch behavior. |

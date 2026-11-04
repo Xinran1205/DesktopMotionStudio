@@ -1,8 +1,8 @@
 # Feature inventory and delivery order
 
-**Status:** Development baseline · **Version:** 1.0.7 · **Date:** 2026-11-04
+**Status:** Incremental implementation · **Version:** 1.0.9 · **Date:** 2026-11-04
 
-The repository began with requirements documents only. F00 now has a prototype under development. Dependencies below are sequencing gates, not claims of implementation.
+The repository began with requirements documents only. F00–F06 are complete with automated, process, and interactive Windows acceptance evidence. Dependencies below are sequencing gates, not claims of implementation.
 
 | Order | Module / Feature | Outcome | Depends on | Status |
 |---:|---|---|---|---|
@@ -12,7 +12,7 @@ The repository began with requirements documents only. F00 now has a prototype u
 | 3 | Scene library / F03 Built-in scene catalog | Discover packaged trusted scenes and assets without executing user content | F01 | Complete |
 | 4 | Launch / F04 Application launch adapters | Represent executable/shortcut/packaged launch identities and return structured results | F01 | Complete |
 | 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 | Complete |
-| 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 | In progress |
+| 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 | Complete |
 | 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 | Spec baseline |
 | 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04 | Spec baseline |
 | 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F07, F08 | Spec baseline |
@@ -44,3 +44,5 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.5 | 2026-11-04 | Record F03 completion and start launch adapter design. |
 | 1.0.6 | 2026-11-04 | Complete F04 with Windows launch evidence and start F05 instance coordination. |
 | 1.0.7 | 2026-11-04 | Complete F05 with cross-process synchronization and live Windows EXE/AUMID evidence; start F06 MotionHost lifecycle. |
+| 1.0.8 | 2026-11-04 | Record F06's process/pipe evidence and 287 ms handoff; desktop acceptance remained open. |
+| 1.0.9 | 2026-11-04 | Complete F06 after 96 passing checks and Windows 11 desktop acceptance for Skip, Esc, host-crash cleanup, no-taskbar style, placement, reduced-motion close, and a 291.3 ms standard fade. |

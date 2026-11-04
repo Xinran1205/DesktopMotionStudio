@@ -31,6 +31,10 @@
 
 - [x] T010 Run formatting, analyzers, Release build, all contract checks, independent review, and convergence; record results in `specs/006-instance-detection/evidence.md` and `specs/006-instance-detection/review.md`.
 
+## Phase 6: Additive lifecycle integration
+
+- [x] T011 Add the optional, exception-isolated `beforeDispatch` observer after the exact existing-instance scan and before the single F04 dispatch; preserve source-compatible existing calls and record the preparation HRESULT in `InstanceResult`.
+
 ## Dependencies
 
 `T001` precedes `T002`. T003's proof is complete and gates native implementation. `T004` precedes T005/T006. `T007` precedes T008. T009 depends on the complete coordinator and Windows platform. T010 follows all implementation and test tasks. Tasks share the single executable harness and are intentionally sequential.
