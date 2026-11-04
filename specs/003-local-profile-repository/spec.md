@@ -32,6 +32,7 @@
 - **FR-003**: 数据保存于 `%LOCALAPPDATA%/DesktopMotionStudio/state/studio-state.json`；写入临时文件、flush 后在同卷替换，保留最近一次有效备份。
 - **FR-004**: 超过 4 MiB 的数据、损坏 JSON、无效值和未知高版本返回明确错误，不覆盖原文件；将来的迁移必须在单独版本任务实现。
 - **FR-005**: 仓库不启动应用、不创建快捷方式、不访问网络；不保存令牌或屏幕内容。
+- **FR-006**: F07 增量提供同步 Update 事务：同一路径的 Save/Update 共用跨进程写锁，Update 在锁内读取并验证最新状态、调用一次转换并原子保存；等待锁最多两秒，失败返回 Busy。返回同一快照引用不写文件或轮转备份。Save 仍为整体快照替换，不合并过时快照；编辑客户端使用 Update。
 
 ### Business Rules, Inputs & Outputs
 
@@ -59,3 +60,4 @@
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
 | 0.2.0 | 2026-11-04 | Define schema, ownership, atomic replacement, validation, backup, and error behavior. |
+| 0.3.0 | 2026-11-04 | Add F07 transactional Update and path-scoped cross-process Save/Update lock; preserve schema 1 and snapshot Save semantics. |

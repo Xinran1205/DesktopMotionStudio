@@ -1,10 +1,11 @@
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DesktopMotionStudio.Core.State;
 
-public sealed class StudioStateRepository(string filePath)
+public sealed class StudioStateRepository(string filePath) : IStudioStateStore
 {
-    private static readonly object SaveGate = new();
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = false,
@@ -20,19 +21,22 @@ public sealed class StudioStateRepository(string filePath)
 
     public RepositoryResult Load()
     {
-        if (!File.Exists(_filePath)) return new RepositoryResult(StudioState.Empty, RepositoryError.None);
         try
         {
-            if (new FileInfo(_filePath).Length > 4 * 1024 * 1024)
-                return Fail(RepositoryError.InvalidState);
-            byte[] bytes = File.ReadAllBytes(_filePath);
-            if (bytes.Length > 4 * 1024 * 1024) return Fail(RepositoryError.InvalidState);
+            using var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read,
+                FileShare.Read | FileShare.Delete);
+            if (stream.Length > 4 * 1024 * 1024) return Fail(RepositoryError.InvalidState);
+            byte[] bytes = new byte[checked((int)stream.Length)];
+            stream.ReadExactly(bytes);
+            if (stream.ReadByte() != -1) return Fail(RepositoryError.InvalidState);
             StudioState? state = JsonSerializer.Deserialize<StudioState>(bytes, JsonOptions);
             if (state is null) return Fail(RepositoryError.InvalidJson);
             if (state.SchemaVersion > StudioState.CurrentSchemaVersion) return Fail(RepositoryError.UnsupportedSchema);
             if (state.SchemaVersion != StudioState.CurrentSchemaVersion) return Fail(RepositoryError.InvalidState);
             return Validate(state) ? new RepositoryResult(state, RepositoryError.None) : Fail(RepositoryError.InvalidState);
         }
+        catch (FileNotFoundException) { return new RepositoryResult(StudioState.Empty, RepositoryError.None); }
+        catch (DirectoryNotFoundException) { return new RepositoryResult(StudioState.Empty, RepositoryError.None); }
         catch (JsonException) { return Fail(RepositoryError.InvalidJson); }
         catch (IOException) { return Fail(RepositoryError.IoError); }
         catch (UnauthorizedAccessException) { return Fail(RepositoryError.IoError); }
@@ -40,7 +44,45 @@ public sealed class StudioStateRepository(string filePath)
 
     public RepositoryError Save(StudioState state)
     {
-        lock (SaveGate) return SaveCore(state);
+        return WithWriteLock(() =>
+        {
+            RepositoryError error = SaveCore(state);
+            return error == RepositoryError.None ? new RepositoryResult(state, error) : Fail(error);
+        }).Error;
+    }
+
+    public RepositoryResult Update(Func<StudioState, StudioState> transition)
+    {
+        ArgumentNullException.ThrowIfNull(transition);
+        return WithWriteLock(() =>
+        {
+            RepositoryResult current = Load();
+            if (!current.IsSuccess) return current;
+            StudioState next = transition(current.State!);
+            if (ReferenceEquals(next, current.State)) return current;
+            RepositoryError error = SaveCore(next);
+            return error == RepositoryError.None ? new RepositoryResult(next, error) : Fail(error);
+        });
+    }
+
+    private RepositoryResult WithWriteLock(Func<RepositoryResult> action)
+    {
+        string key = OperatingSystem.IsWindows() ? _filePath.ToUpperInvariant() : _filePath;
+        string prefix = OperatingSystem.IsWindows() ? "Local\\" : string.Empty;
+        string name = prefix + "DesktopMotionStudio.State." + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+        Mutex mutex;
+        try { mutex = new Mutex(initiallyOwned: false, name); }
+        catch (UnauthorizedAccessException) { return Fail(RepositoryError.IoError); }
+        catch (WaitHandleCannotBeOpenedException) { return Fail(RepositoryError.IoError); }
+        using (mutex)
+        {
+            bool acquired;
+            try { acquired = mutex.WaitOne(TimeSpan.FromSeconds(2)); }
+            catch (AbandonedMutexException) { acquired = true; }
+            if (!acquired) return Fail(RepositoryError.Busy);
+            try { return action(); }
+            finally { mutex.ReleaseMutex(); }
+        }
     }
 
     private RepositoryError SaveCore(StudioState state)
@@ -77,7 +119,9 @@ public sealed class StudioStateRepository(string filePath)
         finally
         {
             if (tempPath is not null)
-                try { File.Delete(tempPath); } catch (IOException) { }
+                try { File.Delete(tempPath); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
         }
     }
 

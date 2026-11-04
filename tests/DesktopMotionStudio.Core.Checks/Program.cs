@@ -17,6 +17,10 @@ if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")
     return DesktopMotionStudio.Core.Checks.F06DesktopAcceptance.Run();
 if (args.Length == 1 && args[0] == "--f06-process-integration")
     return F06Checks.RunWindowsProcessIntegration();
+if (args.Length == 6 && args[0] == "--f07-binding-worker")
+    return F07Checks.RunWorker(args[1], args[2], args[3], args[4], args[5]);
+if (args.Length == 1 && args[0] == "--f07-checks")
+    return F07Checks.Run();
 
 var cases = new (string Name, string Json, SceneManifestError Expected)[]
 {
@@ -62,6 +66,7 @@ failures += RunCatalogChecks();
 failures += RunLaunchChecks();
 failures += RunInstanceChecks();
 failures += F06Checks.Run();
+failures += F07Checks.Run();
 failures += RunWindowHostIntegration();
 failures += RunPackagedInstanceIntegration();
 

@@ -1,57 +1,108 @@
-# Feature Specification: 跨应用绑定
+# Feature Specification: Cross-application scene binding
 
-**Feature Branch**: `main`
-**Created**: 2026-11-03
-**Status**: Draft baseline
-**Input**: PRD V1.0, TDD V1.0, FEATURES.md
+**Feature Branch**: `codex/f07-cross-app-binding`
+**Created**: 2026-11-03 · **Revised**: 2026-11-04
+**Status**: Complete · **Version**: 1.0.0
+**Input**: PRD cross-application reuse, TDD binding rules, F02/F03/F04 contracts.
+
+## Goal
+
+Let a registered application select one complete, available built-in scene, while the same scene can serve multiple registered compatible applications. Resolve each binding to that application's own typed target and current scene; scene content never chooses the target.
 
 ## User Scenarios & Testing
 
-### User Story 1 - 跨应用绑定 (Priority: P1)
+### User Story 1 - Bind and replace a scene (Priority: P1)
 
-同一完整场景可绑定给多个兼容应用。
+An application owner assigns the same scene to two applications and later replaces only one application's choice.
 
-**Independent Test**: 在独立测试环境执行本功能，不依赖后续 UI 或发行功能。
+**Independent Test**: Register two fixtures, bind both to one scene, resolve each independently, replace one scene and reload.
 
 **Acceptance Scenarios**:
 
-1. **Given** 输入与依赖有效，**When** 用户执行本功能，**Then** 同一场景绑定两个应用时分别交接正确窗口。
-2. **Given** 输入不合法或依赖不可用，**When** 用户执行本功能，**Then** 不破坏现有配置、目标应用或其他用户文件，并给出可诊断结果。
+1. **Given** two registered applications with valid targets and one available scene, **When** both are bound, **Then** both persist with separate stable binding IDs, share only the scene ID, and resolve to their respective typed targets.
+2. **Given** an existing binding, **When** its scene is replaced, **Then** its binding ID remains and the other binding, profiles, settings, and scene assets are unchanged.
+3. **Given** an enabled identical binding, **When** assign is repeated, **Then** it reports unchanged and does not rewrite state or rotate backup.
+4. **Given** two edits to different applications from separate processes, **When** they overlap, **Then** every successful edit survives reload.
+
+### User Story 2 - Disable, enable, and remove (Priority: P1)
+
+The owner disables an animation without forgetting the scene, reenables it, or removes the binding.
+
+**Independent Test**: Disable and reload, resolve Disabled, reenable after validation, remove twice, compare unrelated state.
+
+**Acceptance Scenarios**:
+
+1. **Given** a binding, **When** disabled, **Then** its ID and scene remain stored and resolution returns Disabled without a visual launch context.
+2. **Given** a disabled binding whose target or scene is unavailable, **When** enabled, **Then** the specific status is returned and persistent bytes remain unchanged.
+3. **Given** a registered application, **When** remove is repeated, **Then** the first removal is applied, later removals are unchanged, and no other binding is removed.
+
+### User Story 3 - Diagnose unavailable bindings safely (Priority: P1)
+
+The owner distinguishes no binding, disabled, missing registration, invalid target, unavailable scene, and unreadable configuration.
+
+**Independent Test**: Remove target/scene fixtures after binding, corrupt a separate state fixture, verify typed status and preserved bytes.
+
+**Acceptance Scenarios**:
+
+1. **Given** a target or scene becomes unavailable, **When** resolved, **Then** status is explicit and the stored binding remains available for repair.
+2. **Given** unsupported, oversized, or corrupt state, **When** a command runs, **Then** it returns storage error and preserves the original file and backup.
+3. **Given** two bindings sharing a scene, **When** their resolved typed targets pass through existing launch/window coordination, **Then** each returns its own process/window identity.
 
 ### Edge Cases
 
-- 应用卸载、场景移除、重复绑定。
-- 并发或重复请求不得产生重复副作用；处理方式在 Plan 中确定。
+- Application and binding IDs use existing case-insensitive identity rules. Empty, whitespace, or IDs over 128 characters are rejected; scene IDs use manifest validation.
+- Missing/duplicate/invalid scenes, missing assets, unavailable roots, and provider exceptions return unavailable status.
+- Disable/remove work when target or scene is unavailable. Assign and enable require current eligibility.
+- Resolution is a current validation snapshot. Packaged-app identity validation does not promise installation or activation; F04 activation remains authoritative.
+- Lock acquisition is bounded to two seconds, returning storage Busy on contention; abandoned locks require revalidation.
+- Future application removal must remove its binding in the same transaction; F07 never silently discards an invalid reference.
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: 绑定引用稳定 sceneId 与 appId；场景不包含真实目标身份；失效引用明确展示。
-- **FR-002**: 输入必须进行身份、版本与范围验证；输出包含成功状态或明确错误码。
-- **FR-003**: 失败后不得修改与本功能无关的用户数据或目标应用。
-- **FR-004**: 功能必须在无网络和普通用户权限下运行。
+- **FR-001**: Store stable appId/sceneId references, one binding per application, and allow one scene on multiple applications without copying or changing content.
+- **FR-002**: A changed assign/replace requires registered application, validated typed upstream target, and one available built-in scene. Replacement retains binding ID; new bindings receive unique IDs.
+- **FR-003**: Identical assign, enable/disable, and repeated remove commands report unchanged without rewriting state or backup.
+- **FR-004**: Disable preserves selection; enable revalidates target and scene. Remove affects only the selected application.
+- **FR-005**: Resolve returns Ready, Unbound, Disabled, ApplicationMissing, TargetUnavailable, SceneUnavailable, InvalidRequest, or StorageError. Only Ready exposes a target-and-scene context.
+- **FR-006**: Resolve is read-only; binding commands do not launch processes, create shortcuts, change target applications or scene assets, or access the network.
+- **FR-007**: Mutations read current valid state and atomically save in one shared transaction across repository instances/processes, preserving successful unrelated binding edits.
+- **FR-008**: Preserve profiles/settings/unrelated bindings. Unsupported/corrupt/oversized state, provider failure, lock contention, and write failure return stable diagnostics and preserve the last valid state.
+- **FR-009**: Typed target identity comes from the application registry boundary and existing launch validation. Never infer executable/shortcut/packaged types from free-form strings or scene content.
+- **FR-010**: Preserve current state-schema compatibility and F00–F06 behavior; ordinary-user, local-only operation and backup/atomic replacement rules remain in force.
+
+### Key Entities
+
+- **Application binding**: stable binding ID, registered application ID, stable scene ID, enabled flag.
+- **Mutation result**: Applied/Unchanged or stable rejection, optional current binding and storage error.
+- **Resolution**: status, profile/binding for diagnosis, target/scene context only when Ready.
 
 ### Business Rules, Inputs & Outputs
 
-- **Input**: 用户操作、受控本地配置和已验证的上游模块结果。
-- **Output**: 持久化状态或可见结果，以及必要的脱敏诊断状态。
-- **Rule**: V1 不加载用户提供的可执行场景代码，也不修改第三方应用文件。
+- **Inputs**: application/scene IDs, enabled choice, registered profile, trusted catalog, explicit typed target provider, versioned local state.
+- **Outputs**: persistent binding mutation or read-only resolution snapshot with stable status; no process side effects.
+- Disabled takes precedence over target/scene unavailability. Resolution uses current manifest name/version under the stable scene ID without rewriting the binding.
+- No-op commands are recognized after registration lookup and before external validation; Resolve diagnoses external availability independently.
+- Every editing client must use the transaction operation. Whole-state snapshot replacement is explicit; a stale snapshot replacement is not a merge.
 
 ## Success Criteria
 
-### Measurable Outcomes
+- **SC-001**: One scene binds to two fixtures, survives reload, and resolves to distinct target/process/window identities through existing coordination.
+- **SC-002**: Replacing/disabling/removing one binding preserves other bindings, profiles, settings, and asset bytes.
+- **SC-003**: No-op commands preserve state/backup bytes; two process edits both survive reload. Lock acquisition is bounded to two seconds plus scheduling overhead.
+- **SC-004**: Every listed rejection/unavailability class has an automated check; F00–F06 checks continue to pass.
 
-- **SC-001**: 同一场景绑定两个应用时分别交接正确窗口。
-- **SC-002**: 已列边界和异常情形均有自动测试或 Windows 桌面验收证据。
+## Assumptions and Boundaries
 
-## Assumptions
-
-- 技术依赖：F02 F03 F04，对应 FEATURES.md 中的前置 Feature。
-- 精确性能阈值在首个可运行版本的真机基线后确定，不把未经验证的数值作为发布承诺。
+- F07 delivers binding domain and persistence transactions. Discovery/editing UI is F08/F09; shortcut creation and installed-launcher dispatch are F10.
+- Application target metadata belongs to the application registry. F07 requires an explicit typed provider; F08 will version its persistent representation. Binding operations add no fields or schema migration.
+- F02/F03/F04 are domain dependencies; F05/F06 provide integration evidence. Licensed scene media remains F13/F14.
 
 ## Change History
 
 | Version | Date | Change |
 |---|---|---|
-| 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
+| 0.1.0 | 2026-11-03 | Initial independent feature baseline. |
+| 0.2.0 | 2026-11-04 | Define binding lifecycle, atomic/no-op semantics, typed target boundary, availability states, and cross-app validation. |
+| 1.0.0 | 2026-11-04 | Implement and verify binding lifecycle/transactions; close two independent-review findings; 38 F07 checks and real two-target handoff passed. |

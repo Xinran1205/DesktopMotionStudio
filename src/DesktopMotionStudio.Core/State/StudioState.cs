@@ -19,7 +19,13 @@ public sealed record StudioState(
     public static StudioState Empty { get; } = new(CurrentSchemaVersion, [], [], StudioSettings.Default);
 }
 
-public enum RepositoryError { None, InvalidJson, UnsupportedSchema, InvalidState, IoError }
+public enum RepositoryError { None, InvalidJson, UnsupportedSchema, InvalidState, IoError, Busy }
+
+public interface IStudioStateStore
+{
+    RepositoryResult Load();
+    RepositoryResult Update(Func<StudioState, StudioState> transition);
+}
 
 public sealed record RepositoryResult(StudioState? State, RepositoryError Error)
 {
