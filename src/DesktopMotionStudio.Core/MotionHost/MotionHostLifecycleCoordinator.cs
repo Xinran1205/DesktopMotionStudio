@@ -22,16 +22,17 @@ public sealed class MotionHostLifecycleCoordinator
         string appId,
         LaunchTarget target,
         SceneManifest? scene,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        ScenePlaybackDefinition? playback = null)
     {
-        if (scene is null || !IsValidScene(scene))
+        if (scene is null || !IsValidScene(scene) || playback is not null && (!playback.IsValid || playback.SceneId != scene.SceneId || playback.SceneVersion != scene.SceneVersion))
         {
             InstanceResult invalidSceneTarget = await _instances.OpenAsync(appId, target, cancellationToken).ConfigureAwait(false);
             return new MotionHostLifecycleResult(invalidSceneTarget, MotionHostOutcome.Failed, MotionHostError.InvalidMessage);
         }
 
         var startRequest = new MotionHostStartRequest(
-            Guid.NewGuid(), scene.SceneId, scene.SceneVersion, scene.DisplayMode);
+            Guid.NewGuid(), scene.SceneId, scene.SceneVersion, scene.DisplayMode, Playback: playback);
         IMotionHostSession? session = null;
         bool beforeDispatchCalled = false;
         MotionHostError? hostError = null;

@@ -2,10 +2,12 @@
 
 **Feature Branch**: `main`
 **Created**: 2026-11-04
-**Status**: Implementation in progress · v0.3.0
+**Status**: Complete (F06 baseline); compatibility amended by F09 · v0.5.0
 **Input**: PRD V1.0, Technical Design V1.0, F00–F05 contracts, project constitution
 
 ## Goal
+
+**F09 compatibility amendment (2026-11-05):** Current production IPC is explicitly v2, with Launch/Preview mode and an optional bounded playback snapshot. The visual watchdog cap is10s, reduced from the historical F06 15s; F05's independent target-window wait stays15s. Lifecycle-only Launch diagnostics and fail-open single target dispatch remain supported. The v1 contract below is retained as historical evidence; current playback behavior is specified in `../010-scene-preview-binding-ui/contracts/playback-ipc.md`.
 
 For a managed launch whose target is not already running, show an optional, isolated visual host while the launcher starts the real application. Esc, a visible Skip action, deadline, host crash, invalid host input, and renderer failures must end only the visual layer. An existing application must be activated without starting MotionHost. The launcher remains the only component that chooses and starts the target application.
 
@@ -140,3 +142,4 @@ The launcher and host communicate through a versioned, per-request, same-user lo
 | 0.2.0 | 2026-11-04 | Define launcher/renderer responsibility, protocol, skip, deadline, safe handoff, failure matrix, measurable acceptance, test evidence, and additive F05 pre-dispatch seam. |
 | 0.3.0 | 2026-11-04 | Clarify orphan-host cleanup if the F05 coordinator throws; require strict frame decoding and structured host failure propagation. |
 | 0.4.0 | 2026-11-04 | Preserve an actual Skip/Esc result if user input races with a pending handoff; require a taskbar-excluded host style and record real Windows acceptance. |
+| 0.5.0 | 2026-11-05 | F09 explicitly upgrades IPC to2 with target-free Preview/Completed and bounded playback; tighten visual watchdog to10s while preserving F05 target wait and F06 fail-open lifecycle semantics. |

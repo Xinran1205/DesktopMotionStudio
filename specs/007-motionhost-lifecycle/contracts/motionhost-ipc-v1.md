@@ -1,5 +1,7 @@
 # MotionHost IPC v1
 
+Historical F06 baseline. Superseded in production by explicit F09 IPC v2 (`../../010-scene-preview-binding-ui/contracts/playback-ipc.md`); retained packet examples and15s limit describe the original release checkpoint, not the current wire contract or10s visual cap.
+
 **Owner:** Core / MotionHost · **Transport:** one request-scoped duplex Windows named pipe · **Trust:** same interactive user only
 
 ## Process arguments

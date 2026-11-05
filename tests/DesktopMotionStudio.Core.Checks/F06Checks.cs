@@ -55,10 +55,10 @@ internal static class F06Checks
         catch (InvalidDataException) { malformedRejected = true; }
         Record("IPC rejects malformed JSON", malformedRejected, ref failures);
 
-        bool unknownKindRejected = RejectRawFrame($"{{\"protocolVersion\":1,\"requestId\":\"{requestId:D}\",\"kind\":\"FutureKind\"}}");
-        bool numericKindRejected = RejectRawFrame($"{{\"protocolVersion\":1,\"requestId\":\"{requestId:D}\",\"kind\":0}}");
-        bool duplicatePropertyRejected = RejectRawFrame($"{{\"protocolVersion\":1,\"protocolVersion\":1,\"requestId\":\"{requestId:D}\",\"kind\":\"Ready\"}}");
-        bool unknownFieldRejected = RejectRawFrame($"{{\"protocolVersion\":1,\"requestId\":\"{requestId:D}\",\"kind\":\"Ready\",\"unexpected\":true}}");
+        bool unknownKindRejected = RejectRawFrame($"{{\"protocolVersion\":{MotionHostFrame.CurrentProtocolVersion},\"requestId\":\"{requestId:D}\",\"kind\":\"FutureKind\"}}");
+        bool numericKindRejected = RejectRawFrame($"{{\"protocolVersion\":{MotionHostFrame.CurrentProtocolVersion},\"requestId\":\"{requestId:D}\",\"kind\":0}}");
+        bool duplicatePropertyRejected = RejectRawFrame($"{{\"protocolVersion\":{MotionHostFrame.CurrentProtocolVersion},\"protocolVersion\":{MotionHostFrame.CurrentProtocolVersion},\"requestId\":\"{requestId:D}\",\"kind\":\"Ready\"}}");
+        bool unknownFieldRejected = RejectRawFrame($"{{\"protocolVersion\":{MotionHostFrame.CurrentProtocolVersion},\"requestId\":\"{requestId:D}\",\"kind\":\"Ready\",\"unexpected\":true}}");
         Record("IPC rejects unknown and numeric message kinds", unknownKindRejected && numericKindRejected, ref failures);
         Record("IPC rejects duplicate and unknown frame properties", duplicatePropertyRejected && unknownFieldRejected, ref failures);
 
@@ -208,6 +208,28 @@ internal static class F06Checks
             invalidScene.TargetResult.Outcome == InstanceOutcome.WindowReady && invalidScene.HostOutcome == MotionHostOutcome.Failed &&
             invalidSceneFactory.StartCount == 0, ref failures);
 
+        ScenePlaybackDefinition playback = ScenePlaybackReader.Read(Encoding.UTF8.GetBytes(F09Checks.PlaybackJson.Replace("studio-pulse", scene.SceneId)), scene).Value!;
+        MotionHostStartRequest? captured = null;
+        var playbackFactory = new FakeMotionHostSessionFactory { StartHandler = request => { captured = request; return new FakeMotionHostSession(); } };
+        var playbackPlatform = new FakeWindowPlatform();
+        int playbackDispatches = 0;
+        var playbackCoordinator = CreateLifecycle(playbackPlatform, playbackFactory, resolved =>
+        {
+            playbackDispatches++; AddReadyProcess(playbackPlatform, resolved.Identity, 50_120, 120);
+            return new LaunchResult(LaunchStatus.Started, 50_120, ProcessCreationFileTimeUtc: 120);
+        });
+        MotionHostLifecycleResult played = playbackCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, scene, playback: playback).GetAwaiter().GetResult();
+        Record("shared playback launch carries only validated scene data and keeps ready-driven handoff", played.TargetResult.Outcome == InstanceOutcome.WindowReady && played.HostOutcome == MotionHostOutcome.HandedOff && playbackDispatches == 1 && captured is { Mode: MotionHostMode.Launch, Playback: not null } && captured.Playback.Keyframes.SequenceEqual(playback.Keyframes), ref failures);
+        var invalidPlaybackFactory = new FakeMotionHostSessionFactory();
+        var invalidPlaybackPlatform = new FakeWindowPlatform();
+        int invalidPlaybackDispatches = 0;
+        var invalidPlaybackCoordinator = CreateLifecycle(invalidPlaybackPlatform, invalidPlaybackFactory, resolved =>
+        {
+            invalidPlaybackDispatches++; AddReadyProcess(invalidPlaybackPlatform, resolved.Identity, 50_121, 121);
+            return new LaunchResult(LaunchStatus.Started, 50_121, ProcessCreationFileTimeUtc: 121);
+        });
+        MotionHostLifecycleResult invalidPlayback = invalidPlaybackCoordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, scene, playback: playback with { SceneId = "wrong-scene" }).GetAwaiter().GetResult();
+        Record("invalid playback snapshot fails open to exactly one target dispatch without host", invalidPlayback.TargetResult.Outcome == InstanceOutcome.WindowReady && invalidPlaybackDispatches == 1 && invalidPlaybackFactory.StartCount == 0 && invalidPlayback.HostError == MotionHostError.InvalidMessage, ref failures);
         return failures;
     }
 

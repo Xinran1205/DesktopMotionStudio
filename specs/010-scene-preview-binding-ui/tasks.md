@@ -21,10 +21,10 @@
 **Goal/test:** Real selected scene output uses a shared definition/evaluator/paint and preview has no target authority.
 
 - [X] T007 [US2] Add pure timeline/finite-value/endpoint/interpolation/reduced-motion checks to `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs`; implement Core `Scenes/SceneTimeline.cs` after T001.
-- [ ] T008 [US2] Add IPC v2 and state-transition tests in `F09Checks.cs`: old/future version rejection, strict bounded snapshot, request mismatch, Preview requires playback, natural Completed only for Preview, legacy lifecycle Launch and fail-open behavior. Keep F06 assertions meaningful.
-- [ ] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
+- [X] T008 [US2] Add IPC v2 and state-transition tests in `F09Checks.cs`: old/future version rejection, strict bounded snapshot, request mismatch, Preview requires playback, natural Completed only for Preview, legacy lifecycle Launch and fail-open behavior. Keep F06 assertions meaningful.
+- [X] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
 - [ ] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
-- [ ] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Preview must never fall back to the lifecycle status card.
+- [ ] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Remove the temporary unsupported-playback guard only with the real surface. Preview must never fall back to the lifecycle status card.
 - [ ] T012 [US2] Implement target-free session contracts and serial generation coordinator in Core `Preview/{PreviewContracts,PreviewCoordinator}.cs`; cover cancel during startup, replacement, stale completions and closed-owner cleanup with controlled-session tests in Studio Checks `PreviewRaceChecks.cs`.
 
 ## Phase 4: US1/US3 - Library and binding UI
@@ -63,4 +63,5 @@ First prove rendering/ownership risks, then a catalog/read-only preview slice, t
 ## Implementation review follow-up
 
 - [X] T025 Require at least one visible base Unicode rune in the bounded glyph, reject mark-only/variation-selector-only strings while accepting visible base plus combining mark; add regressions in F09Checks and strengthen ScenePlayback validation per data-model glyph rule/FR-002 (partial, P2).
-- [ ] T026 Enforce explicit closed JSON member sets for sidecars, including computed ignored properties such as isValid, and include the same injection case in T008 playback IPC tests; keep future-version precedence and nested keyframe shape checks per FR-002/011 (partial, P2).
+- [X] T026 Enforce explicit closed JSON member sets for sidecars, including computed ignored properties such as isValid, and include the same injection case in T008 playback IPC tests; keep future-version precedence and nested keyframe shape checks per FR-002/011 (partial, P2).
+- [X] T027 Preserve precise compatibility failures from host-side Start decoding: while the client still owns a writable pipe, send bounded Failed(UnsupportedPlayback/UnsupportedProtocol) before disposal; test the actual host receiving a future snapshot and emitting no Started/display per FR-002/005/011 (partial, P2).

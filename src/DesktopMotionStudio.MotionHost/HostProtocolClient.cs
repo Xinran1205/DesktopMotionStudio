@@ -12,6 +12,7 @@ internal sealed class HostProtocolClient : IAsyncDisposable
     private MotionHostProtocolState _state = MotionHostProtocolState.AwaitingReady;
     private Task? _listenerTask;
     private int _disposed;
+    private MotionHostMode _mode;
 
     private HostProtocolClient(NamedPipeClientStream pipe, Guid requestId)
     {
@@ -34,20 +35,33 @@ internal sealed class HostProtocolClient : IAsyncDisposable
 
             MotionHostFrame? frame = await MotionHostFrameCodec.ReadAsync(pipe)
                 .WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-            if (frame is null || MotionHostFrameValidator.ValidateEnvelope(frame, arguments.RequestId) != MotionHostError.None ||
-                frame.Kind != MotionHostMessageKind.Start || frame.Start is null)
+            if (frame is null) throw new EndOfStreamException("Parent disconnected before Start.");
+            MotionHostError validation = MotionHostFrameValidator.ValidateEnvelope(frame, arguments.RequestId);
+            if (validation != MotionHostError.None) throw new MotionHostProtocolException(validation);
+            if (frame.Kind != MotionHostMessageKind.Start || frame.Start is null)
                 throw new InvalidDataException("Launcher did not send a valid MotionHost start frame.");
+            client._mode = frame.Start.Mode;
             if (!client.TryAdvance(MotionHostPeer.Launcher, frame.Kind))
                 throw new InvalidDataException("MotionHost start frame is out of sequence.");
 
             var request = new MotionHostStartRequest(arguments.RequestId, frame.Start.SceneId,
-                frame.Start.SceneVersion, frame.Start.DisplayMode, frame.Start.MaximumVisibleMilliseconds);
+                frame.Start.SceneVersion, frame.Start.DisplayMode, frame.Start.MaximumVisibleMilliseconds, frame.Start.Mode, frame.Start.Playback);
             if (!request.IsValid) throw new InvalidDataException("MotionHost start payload is invalid.");
             client.StartPayload = frame.Start;
             return client;
         }
-        catch
+        catch (Exception ex)
         {
+            MotionHostError error = ex switch
+            {
+                MotionHostProtocolException protocol => protocol.Error,
+                TimeoutException => MotionHostError.ConnectionTimeout,
+                InvalidDataException => MotionHostError.InvalidMessage,
+                IOException => MotionHostError.ParentDisconnected,
+                _ => MotionHostError.HostInitializationFailed
+            };
+            try { await client.ReportFailureAsync(error).WaitAsync(TimeSpan.FromMilliseconds(250)).ConfigureAwait(false); }
+            catch (Exception) { }
             await client.DisposeAsync().ConfigureAwait(false);
             throw;
         }
@@ -188,7 +202,7 @@ internal sealed class HostProtocolClient : IAsyncDisposable
     {
         lock (_stateLock)
         {
-            if (!MotionHostFrameValidator.TryAdvance(_state, peer, kind, out MotionHostProtocolState next))
+            if (!MotionHostFrameValidator.TryAdvance(_state, peer, kind, out MotionHostProtocolState next, _mode))
                 return false;
             _state = next;
             return true;

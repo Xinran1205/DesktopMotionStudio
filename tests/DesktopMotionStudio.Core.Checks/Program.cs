@@ -11,6 +11,8 @@ const string Valid = """
 
 if (args.Length == 4 && args[0] == "--f05-instance-worker")
     return RunInstanceWorker(args[1], args[2], args[3]);
+if (args.Length == 4 && args[0] == "--pipe" && args[2] == "--request-id")
+    return F09Checks.StaleHostWorker(args[1], args[3]);
 if (args.Length == 3 && args[0] == "--f06-disconnect-worker")
     return RunF06DisconnectWorker(args[1], args[2]);
 if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")

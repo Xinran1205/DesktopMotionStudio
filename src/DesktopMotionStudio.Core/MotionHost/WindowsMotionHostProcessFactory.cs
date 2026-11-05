@@ -99,6 +99,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
         public async Task<MotionHostOutcome> HandoffAsync(CancellationToken cancellationToken = default)
         {
+            if (_request.Mode == MotionHostMode.Preview) throw new InvalidOperationException("Preview has no target handoff authority.");
             MotionHostOutcome? started;
             try { started = await _started.Task.WaitAsync(cancellationToken).ConfigureAwait(false); }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
@@ -204,6 +205,11 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
                     switch (frame.Kind)
                     {
+                        case MotionHostMessageKind.Completed:
+                            MotionHostOutcome completedOutcome;
+                            lock (_stateLock) completedOutcome = _requestedOutcome ?? MotionHostOutcome.Completed;
+                            Complete(completedOutcome);
+                            return;
                         case MotionHostMessageKind.Started:
                             _started.TrySetResult(null);
                             break;
@@ -232,6 +238,11 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
             catch (TimeoutException)
             {
                 SetFailure(MotionHostError.ConnectionTimeout);
+                Complete(MotionHostOutcome.Failed);
+            }
+            catch (MotionHostProtocolException ex)
+            {
+                SetFailure(ex.Error);
                 Complete(MotionHostOutcome.Failed);
             }
             catch (InvalidDataException)
@@ -263,7 +274,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
             lock (_stateLock)
             {
-                if (!MotionHostFrameValidator.TryAdvance(_state, MotionHostPeer.Host, frame.Kind, out MotionHostProtocolState next))
+                if (!MotionHostFrameValidator.TryAdvance(_state, MotionHostPeer.Host, frame.Kind, out MotionHostProtocolState next, _request.Mode))
                     return false;
                 _state = next;
                 return true;
@@ -281,7 +292,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
                 lock (_stateLock)
                 {
                     if (!MotionHostFrameValidator.TryAdvance(_state, MotionHostPeer.Launcher, kind,
-                            out MotionHostProtocolState next))
+                            out MotionHostProtocolState next, _request.Mode))
                         throw new InvalidDataException("MotionHost command is not valid in the current state.");
                     _state = next;
                 }

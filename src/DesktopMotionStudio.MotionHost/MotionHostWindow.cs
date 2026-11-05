@@ -28,9 +28,11 @@ internal sealed class MotionHostWindow : Form
     public MotionHostWindow(MotionHostStartPayload start)
     {
         ArgumentNullException.ThrowIfNull(start);
+        if (start.Mode == MotionHostMode.Preview || start.Playback is not null)
+            throw new NotSupportedException("Scene playback is unavailable until the shared surface is integrated.");
         _start = start;
         if (start.DisplayMode is not (SceneDisplayMode.Full or SceneDisplayMode.Centered) ||
-            start.MaximumVisibleMilliseconds is <= 0 or > 15_000)
+            start.MaximumVisibleMilliseconds is <= 0 or > 10_000)
             throw new ArgumentException("MotionHost display request is invalid.", nameof(start));
 
         Screen screen = Screen.PrimaryScreen ?? throw new InvalidOperationException("No primary display is available.");

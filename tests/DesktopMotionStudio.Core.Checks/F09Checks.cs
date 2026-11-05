@@ -1,7 +1,11 @@
 using System.Diagnostics;
+using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json.Nodes;
 using DesktopMotionStudio.Core.Scenes;
+using DesktopMotionStudio.Core.MotionHost;
+using System.IO.Pipes;
+using System.Runtime.InteropServices;
 
 internal static class F09Checks
 {
@@ -14,7 +18,7 @@ internal static class F09Checks
         int failures = 0;
         string root = Path.Combine(Path.GetTempPath(), $"dms-f09-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
-        try { Readers(ref failures); FilesAndLibrary(root, ref failures); Timeline(ref failures); }
+        try { Readers(ref failures); FilesAndLibrary(root, ref failures); Timeline(ref failures); PlaybackProtocol(ref failures); }
         catch (Exception ex) { Console.WriteLine($"FAIL F09 checks: {ex.GetType().Name}: {ex.Message}"); failures++; }
         finally { Directory.Delete(root, recursive: true); }
         return failures;
@@ -28,6 +32,21 @@ internal static class F09Checks
         Check("F09 shipped development data has validated identity and required playback", result.Error == SceneLibraryError.None && work is { IsPlayable: true, Playback.RuntimeId: "vector-orbit", Playback.DurationMilliseconds: 5000 } && work.Catalog.Manifest!.SceneVersion == "0.1.0", ref failures);
         Check("F09 shipped work is labelled as development content", work?.Presentation?.Theme.Contains("开发", StringComparison.Ordinal) == true && work.Catalog.Manifest!.Name.Contains("开发", StringComparison.Ordinal), ref failures);
         return failures;
+    }
+
+    internal static int StaleHostWorker(string pipeName, string requestText)
+    {
+        if (!Guid.TryParseExact(requestText, "D", out Guid request) || request == Guid.Empty || pipeName != $"dms-motionhost-{request:N}") return 2;
+        try
+        {
+            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            pipe.ConnectAsync().WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+            pipe.Write(RawFrame($"{{\"protocolVersion\":1,\"requestId\":\"{request:D}\",\"kind\":\"Ready\"}}"));
+            pipe.Flush();
+            _ = pipe.ReadAsync(new byte[1]).AsTask().WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+            return 0;
+        }
+        catch (Exception) { return 3; }
     }
 
     private static void Readers(ref int failures)
@@ -187,6 +206,127 @@ internal static class F09Checks
         try { _ = new SceneTimeline(definition with { Keyframes = definition.Keyframes.SetItem(0, definition.Keyframes[0] with { Scale = double.PositiveInfinity }) }); }
         catch (ArgumentException) { rejected = true; }
         Check("F09 timeline rejects invalid snapshots before execution", rejected, ref failures);
+    }
+
+    private static void PlaybackProtocol(ref int failures)
+    {
+        SceneManifest manifest = SceneManifestReader.Read(Bytes(ManifestJson)).Manifest!;
+        ScenePlaybackDefinition definition = ScenePlaybackReader.Read(Bytes(PlaybackJson), manifest).Value!;
+        Guid id = Guid.NewGuid();
+        var request = new MotionHostStartRequest(id, manifest.SceneId, manifest.SceneVersion, manifest.DisplayMode, 10_000, MotionHostMode.Preview, definition);
+        MotionHostFrame frame = request.ToStartFrame();
+        MotionHostFrame decoded = MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(frame));
+        Check("F09 IPC v2 roundtrips explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 2 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        Check("F09 preview requires playback, matching identity and watchdog headroom", !(request with { Playback = null }).IsValid && !(request with { SceneId = "wrong-scene" }).IsValid && !(request with { MaximumVisibleMilliseconds = 3000 }).IsValid, ref failures);
+        Check("F09 lifecycle-only diagnostic launch stays valid", (request with { Mode = MotionHostMode.Launch, Playback = null }).IsValid, ref failures);
+        string json = Encoding.UTF8.GetString(MotionHostFrameCodec.Encode(frame).AsSpan(MotionHostFrameCodec.HeaderSize));
+        foreach ((string name, Action<JsonObject> mutate) in new (string, Action<JsonObject>)[]
+        {
+            ("missing kind", node => node.Remove("kind")),
+            ("missing mode", node => node["start"]!.AsObject().Remove("mode")),
+            ("numeric mode", node => node["start"]!["mode"] = 1),
+            ("unknown mode", node => node["start"]!["mode"] = "Future"),
+            ("target authority", node => node["start"]!["appId"] = "not-allowed"),
+            ("ignored start property", node => node["start"]!["isValid"] = true),
+            ("ignored snapshot property", node => node["start"]!["playback"]!["isValid"] = true),
+            ("unknown keyframe property", node => node["start"]!["playback"]!["keyframes"]![0]!["eval"] = "script")
+            ,("invalid snapshot channels", node => node["start"]!["playback"]!["keyframes"]![0]!["opacity"] = -1)
+            ,("missing preview playback", node => node["start"]!["playback"] = null)
+            ,("inconsistent scene identity", node => node["start"]!["playback"]!["sceneId"] = "other-scene")
+        })
+        {
+            JsonObject node = JsonNode.Parse(json)!.AsObject(); mutate(node);
+            bool rejected = false;
+            try { _ = MotionHostFrameCodec.Decode(RawFrame(node.ToJsonString())); }
+            catch (InvalidDataException) { rejected = true; }
+            Check($"F09 IPC rejects {name}", rejected, ref failures);
+        }
+        foreach (int version in new[] { 1, 3 })
+        {
+            bool rejected = false;
+            try { _ = MotionHostFrameCodec.Decode(RawFrame($"{{\"protocolVersion\":{version},\"unknownFutureShape\":{{}}}}")); }
+            catch (MotionHostProtocolException ex) { rejected = ex.Error == MotionHostError.UnsupportedProtocol; }
+            Check($"F09 IPC rejects protocol {version} before typed future shape", rejected, ref failures);
+        }
+        foreach (string field in new[] { "schemaVersion", "runtimeVersion" })
+        {
+            JsonObject node = JsonNode.Parse(json)!.AsObject();
+            node["start"]!["playback"] = new JsonObject { [field] = 99, ["unknownFutureShape"] = new JsonObject() };
+            bool rejected = false;
+            try { _ = MotionHostFrameCodec.Decode(RawFrame(node.ToJsonString())); }
+            catch (MotionHostProtocolException ex) { rejected = ex.Error == MotionHostError.UnsupportedPlayback; }
+            Check($"F09 IPC protects independent future playback {field}", rejected, ref failures);
+        }
+        Check("F09 IPC preview completion is mode-specific and handles stop race",
+            MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Host, MotionHostMessageKind.Completed, out var completed, MotionHostMode.Preview) && completed == MotionHostProtocolState.Closed &&
+            MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Closing, MotionHostPeer.Host, MotionHostMessageKind.Completed, out _, MotionHostMode.Preview) &&
+            !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Host, MotionHostMessageKind.Completed, out _, MotionHostMode.Launch) &&
+            !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Launcher, MotionHostMessageKind.Handoff, out _, MotionHostMode.Preview), ref failures);
+        Check("F09 IPC completion rejects premature or parent-authored events",
+            !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Starting, MotionHostPeer.Host, MotionHostMessageKind.Completed, out _, MotionHostMode.Preview) &&
+            !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Launcher, MotionHostMessageKind.Completed, out _, MotionHostMode.Preview), ref failures);
+        bool oversize = false;
+        try { _ = MotionHostFrameCodec.Decode(new byte[MotionHostFrameCodec.MaximumFrameBytes + MotionHostFrameCodec.HeaderSize + 1]); }
+        catch (InvalidDataException) { oversize = true; }
+        Check("F09 IPC retains frame bound and request correlation", oversize && MotionHostFrameValidator.ValidateEnvelope(frame, Guid.NewGuid()) == MotionHostError.RequestMismatch, ref failures);
+        if (OperatingSystem.IsWindows())
+        {
+            string harness = Path.Combine(AppContext.BaseDirectory, "DesktopMotionStudio.Core.Checks.exe");
+            var factory = new WindowsMotionHostProcessFactory(harness);
+            IMotionHostSession session = factory.Start(request with { Mode = MotionHostMode.Launch, Playback = null });
+            try
+            {
+                MotionHostOutcome outcome = session.HandoffAsync().WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                Check("F09 real pipe peer with old protocol reports structured mismatch", outcome == MotionHostOutcome.Failed && session.FailureReason == MotionHostError.UnsupportedProtocol, ref failures);
+            }
+            finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+            HostCompatibility(json, ref failures);
+        }
+    }
+
+    private static void HostCompatibility(string validStart, ref int failures)
+    {
+        string? executable = Environment.GetEnvironmentVariable("DMS_F06_HOST_PATH");
+        if (string.IsNullOrWhiteSpace(executable) || !File.Exists(executable)) { Console.WriteLine("SKIP F09 actual host compatibility (DMS_F06_HOST_PATH unset)"); return; }
+        foreach (string field in new[] { "schemaVersion", "runtimeVersion" })
+        {
+            Guid request = Guid.NewGuid(); string name = $"dms-motionhost-{request:N}";
+            using var pipe = new NamedPipeServerStream(name, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
+            foreach (string arg in new[] { "--pipe", name, "--request-id", request.ToString("D") }) start.ArgumentList.Add(arg);
+            using Process host = Process.Start(start) ?? throw new InvalidOperationException("Compatibility host did not start.");
+            try
+            {
+                pipe.WaitForConnectionAsync().WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+                MotionHostFrame? ready = MotionHostFrameCodec.ReadAsync(pipe).WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+                if (ready?.Kind != MotionHostMessageKind.Ready) throw new InvalidOperationException("Compatibility host did not send Ready.");
+                JsonObject node = JsonNode.Parse(validStart)!.AsObject(); node["requestId"] = request.ToString("D"); node["start"]!["playback"]![field] = 99;
+                pipe.Write(RawFrame(node.ToJsonString())); pipe.Flush();
+                MotionHostFrame? rejection = MotionHostFrameCodec.ReadAsync(pipe).WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+                bool visible = HasVisibleWindow(host.Id);
+                Check($"F09 actual host rejects future {field} with precise failure before Started/window", rejection is { Kind: MotionHostMessageKind.Failed, Error: MotionHostError.UnsupportedPlayback } && rejection.RequestId == request && !visible, ref failures);
+                Check($"F09 rejected {field} host exits without a display", host.WaitForExit(2000), ref failures);
+            }
+            finally { if (!host.HasExited) { host.Kill(); host.WaitForExit(1000); } }
+        }
+    }
+
+    private static bool HasVisibleWindow(int processId)
+    {
+        bool found = false;
+        EnumWindows((window, _) => { GetWindowThreadProcessId(window, out uint owner); if (owner == (uint)processId && IsWindowVisible(window)) found = true; return !found; }, 0);
+        return found;
+    }
+    private delegate bool WindowCallback(nint window, nint parameter);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, nint parameter);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out uint processId);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
+
+    private static byte[] RawFrame(string json)
+    {
+        byte[] payload = Bytes(json), frame = new byte[payload.Length + MotionHostFrameCodec.HeaderSize];
+        BinaryPrimitives.WriteUInt32LittleEndian(frame, (uint)payload.Length); payload.CopyTo(frame, MotionHostFrameCodec.HeaderSize);
+        return frame;
     }
 
     internal static string WriteScene(string catalog, string directory, string id = "studio-pulse")

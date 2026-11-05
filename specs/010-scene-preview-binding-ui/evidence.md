@@ -64,3 +64,13 @@ Local logs: `%TEMP%/dms-f09-foundation-red.log`, `dms-f09-foundation-green.log`,
 ## Remaining gates
 
 T008–T023 and T026 remain open: IPC v2/job adapter/independent deadlines, target-free session coordination, shared graphics integration, library/binding/home UI, real shared-scene F06 handoff, repeated/cancel/crash/hang/parent-exit tests, both actual system motion branches,100/125/150% scaling, integrated full regressions and final independent Converge. F09 is **not complete**. Changes to F03 resource bounds and F04's shared local policy have their own specification history and regression evidence.
+
+## IPC v2 implementation — T008/T009/T026/T027
+
+Explicit v2 requests separate Launch/Preview, retain lifecycle-only Launch diagnostics and single native dispatch, reject Preview handoff authority, and allow natural Completed only in Preview. Start/snapshot/keyframes use closed member sets including rejection of ignored computed isValid. Preview's watchdog reserves at least duration+500ms; the visual cap is10s while F05's target wait remains15s.
+
+Tests first exposed two actual host compatibility failures: a future snapshot was decoded while the handshake client was still private, then disposed before the caller could report its precise error. The corrected handshake attempts a bounded250ms Failed(UnsupportedPlayback/UnsupportedProtocol/RequestMismatch) while owning the channel, then disposes. Real future schema/runtime tests verify exact request-bound Failed, no Started/visible window and process exit. Independent read-only follow-up review found no remaining P1/P2.
+
+Final regression: **277 PASS/0 FAIL/1 explicit optional packaged-instance SKIP**; includes104 F09 cases, actual lifecycle handoff276ms and two F07 targets14988/HWND0xC0230 and22192/HWND0x1403E2 both HandedOff. Core, MotionHost and checks formatted; Core/Studio/host/checks/WindowHost Release builds passed0 warnings/errors. Local logs `%TEMP%/dms-f09-protocol-final-regression.log`, `dms-f09-host-compat-red.log`, `dms-f09-ipc-checks.log` preserve red/green evidence.
+
+This is protocol/lifecycle verification. A temporary explicit UnsupportedPlayback guard remains in MotionHost until T011 supplies the shared surface. Jobs, parent-owned deadlines, actual shared rendering, preview coordination and F09 UI/scaling remain open. The earlier Remaining gates paragraph is historical to the reader milestone; current outstanding tasks are T010–T023.

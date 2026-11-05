@@ -23,11 +23,11 @@ internal static class Program
             client.ReportExitAsync(window.ExitReason).GetAwaiter().GetResult();
             return window.ExitReason == MotionHostExitReason.Failed ? 4 : 0;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             if (client is not null)
             {
-                try { client.ReportFailureAsync(MotionHostError.HostInitializationFailed).GetAwaiter().GetResult(); }
+                try { client.ReportFailureAsync(ex is NotSupportedException ? MotionHostError.UnsupportedPlayback : MotionHostError.HostInitializationFailed).GetAwaiter().GetResult(); }
                 catch (Exception) { }
             }
             return 4;

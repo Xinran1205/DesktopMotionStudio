@@ -1,4 +1,5 @@
 using DesktopMotionStudio.Core.Scenes;
+using System.Text.Json.Serialization;
 
 namespace DesktopMotionStudio.Core.MotionHost;
 
@@ -12,7 +13,8 @@ public enum MotionHostMessageKind
     Finished,
     TimedOut,
     Failed,
-    Shutdown
+    Shutdown,
+    Completed
 }
 
 public enum MotionHostError
@@ -29,10 +31,17 @@ public enum MotionHostError
     StartFailed,
     HostInitializationFailed,
     TimedOut,
-    RendererFailed
+    RendererFailed,
+    UnsupportedPlayback
 }
 
-public enum MotionHostOutcome { NotStarted, HandedOff, Skipped, TimedOut, Failed, Exited }
+public enum MotionHostOutcome { NotStarted, HandedOff, Skipped, TimedOut, Failed, Exited, Completed }
+public enum MotionHostMode { Launch, Preview }
+
+public sealed class MotionHostProtocolException(MotionHostError error) : IOException("MotionHost protocol request failed validation.")
+{
+    public MotionHostError Error { get; } = error;
+}
 
 public enum MotionHostPeer { Launcher, Host }
 
@@ -43,36 +52,44 @@ public sealed record MotionHostStartRequest(
     string SceneId,
     string SceneVersion,
     SceneDisplayMode DisplayMode,
-    int MaximumVisibleMilliseconds = 15_000)
+    int MaximumVisibleMilliseconds = 10_000,
+    MotionHostMode Mode = MotionHostMode.Launch,
+    ScenePlaybackDefinition? Playback = null)
 {
     public bool IsValid => RequestId != Guid.Empty &&
-        SceneManifestReader.IsValidSceneId(SceneId) &&
-        SceneManifestReader.IsValidSceneVersion(SceneVersion) &&
-        DisplayMode is SceneDisplayMode.Full or SceneDisplayMode.Centered &&
-        MaximumVisibleMilliseconds is > 0 and <= 15_000;
+        new MotionHostStartPayload(SceneId, SceneVersion, DisplayMode, MaximumVisibleMilliseconds, Mode, Playback).IsValid;
 
     public MotionHostFrame ToStartFrame() => new(
         MotionHostFrame.CurrentProtocolVersion,
         RequestId,
         MotionHostMessageKind.Start,
-        new MotionHostStartPayload(SceneId, SceneVersion, DisplayMode, MaximumVisibleMilliseconds));
+        new MotionHostStartPayload(SceneId, SceneVersion, DisplayMode, MaximumVisibleMilliseconds, Mode, Playback));
 }
 
 public sealed record MotionHostStartPayload(
-    string SceneId,
-    string SceneVersion,
-    SceneDisplayMode DisplayMode,
-    int MaximumVisibleMilliseconds);
+    [property: JsonRequired] string SceneId,
+    [property: JsonRequired] string SceneVersion,
+    [property: JsonRequired] SceneDisplayMode DisplayMode,
+    [property: JsonRequired] int MaximumVisibleMilliseconds,
+    [property: JsonRequired] MotionHostMode Mode = MotionHostMode.Launch,
+    ScenePlaybackDefinition? Playback = null)
+{
+    [JsonIgnore]
+    public bool IsValid => SceneManifestReader.IsValidSceneId(SceneId) && SceneManifestReader.IsValidSceneVersion(SceneVersion) &&
+        DisplayMode is SceneDisplayMode.Full or SceneDisplayMode.Centered && Enum.IsDefined(Mode) && MaximumVisibleMilliseconds is > 0 and <= 10_000 &&
+        (Playback is null ? Mode == MotionHostMode.Launch : Playback.IsValid && Playback.SceneId == SceneId && Playback.SceneVersion == SceneVersion &&
+            (Mode == MotionHostMode.Launch || MaximumVisibleMilliseconds >= Playback.DurationMilliseconds + 500));
+}
 
 public sealed record MotionHostFrame(
-    int ProtocolVersion,
-    Guid RequestId,
-    MotionHostMessageKind Kind,
+    [property: JsonRequired] int ProtocolVersion,
+    [property: JsonRequired] Guid RequestId,
+    [property: JsonRequired] MotionHostMessageKind Kind,
     MotionHostStartPayload? Start = null,
     MotionHostError? Error = null,
     int? NativeErrorCode = null)
 {
-    public const int CurrentProtocolVersion = 1;
+    public const int CurrentProtocolVersion = 2;
 }
 
 public interface IMotionHostSession : IAsyncDisposable
@@ -110,11 +127,7 @@ public static class MotionHostFrameValidator
         {
             if (frame.Start is null || frame.Error is not null || frame.NativeErrorCode is not null)
                 return MotionHostError.InvalidMessage;
-            MotionHostStartPayload payload = frame.Start;
-            if (!SceneManifestReader.IsValidSceneId(payload.SceneId) ||
-                !SceneManifestReader.IsValidSceneVersion(payload.SceneVersion) ||
-                payload.DisplayMode is not (SceneDisplayMode.Full or SceneDisplayMode.Centered) ||
-                payload.MaximumVisibleMilliseconds is <= 0 or > 15_000)
+            if (!frame.Start.IsValid)
                 return MotionHostError.InvalidMessage;
         }
         else if (frame.Start is not null)
@@ -139,10 +152,18 @@ public static class MotionHostFrameValidator
         MotionHostProtocolState current,
         MotionHostPeer sender,
         MotionHostMessageKind kind,
-        out MotionHostProtocolState next)
+        out MotionHostProtocolState next,
+        MotionHostMode mode = MotionHostMode.Launch)
     {
         next = current;
-        if (!Enum.IsDefined(current) || !Enum.IsDefined(sender) || !Enum.IsDefined(kind)) return false;
+        if (!Enum.IsDefined(current) || !Enum.IsDefined(sender) || !Enum.IsDefined(kind) || !Enum.IsDefined(mode)) return false;
+        if (kind == MotionHostMessageKind.Completed)
+        {
+            if (mode != MotionHostMode.Preview || sender != MotionHostPeer.Host || current is not (MotionHostProtocolState.Visible or MotionHostProtocolState.Closing)) return false;
+            next = MotionHostProtocolState.Closed;
+            return true;
+        }
+        if (mode == MotionHostMode.Preview && kind == MotionHostMessageKind.Handoff) return false;
 
         if (kind == MotionHostMessageKind.Failed && current is not (MotionHostProtocolState.Closed or MotionHostProtocolState.Closing))
         {
