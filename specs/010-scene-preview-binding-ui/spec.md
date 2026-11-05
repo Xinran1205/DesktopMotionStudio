@@ -1,57 +1,114 @@
 # Feature Specification: 动效库预览与绑定界面
 
-**Feature Branch**: `main`
-**Created**: 2026-11-03
-**Status**: Draft baseline
-**Input**: PRD V1.0, TDD V1.0, FEATURES.md
+**Feature Branch**: `codex/f09-scene-preview-binding`
+**Created**: 2026-11-03 · **Revised**: 2026-11-05
+**Status**: Specified · **Version**: 0.2.0
+**Input**: PRD library/application journeys, TDD preview isolation/shared execution, F03/F06/F07/F08.
+
+## Goal
+
+Let the owner browse trusted complete built-in works, watch a bounded preview without opening any target application, and bind or replace a work for a saved application. Home reflects the committed relationship. This feature establishes truthful scene playback and library interaction; licensed launch content remains F13/F14.
 
 ## User Scenarios & Testing
 
-### User Story 1 - 动效库预览与绑定界面 (Priority: P1)
+### User Story 1 - Browse complete works (Priority: P1)
 
-用户浏览、预览作品并绑定目标应用。
+The owner opens the built-in library and inspects a work's cover, name, description, style/theme information and availability. Theme inspiration never restricts the target application.
 
-**Independent Test**: 在独立测试环境执行本功能，不依赖后续 UI 或发行功能。
+**Why this priority:** Work identity and compatibility must be clear before preview or binding.
+
+**Independent Test:** Use an isolated catalog with two valid works, duplicate IDs, unavailable resources and missing optional artwork; verify visible identity, fallback and action states.
 
 **Acceptance Scenarios**:
 
-1. **Given** 输入与依赖有效，**When** 用户执行本功能，**Then** 预览不创建目标进程；绑定完成后首页可见。
-2. **Given** 输入不合法或依赖不可用，**When** 用户执行本功能，**Then** 不破坏现有配置、目标应用或其他用户文件，并给出可诊断结果。
+1. **Given** valid built-in works, **When** library opens, **Then** names, covers or readable fallbacks, descriptions, theme/style and availability agree with trusted catalog data.
+2. **Given** duplicate IDs, missing/corrupt resources or unsupported playback, **When** inspected, **Then** the problem is visible and unavailable actions cannot report success; other valid works remain usable.
+3. **Given** an empty/unreadable catalog, **When** library opens, **Then** a recoverable empty/error state appears and My applications remains available.
+
+### User Story 2 - Preview without launching an application (Priority: P1)
+
+The owner previews a selected complete work, can stop it, and returns safely to Studio. Preview uses a clearly identified simulation of target handoff, without activating or modifying a real target.
+
+**Why this priority:** The owner needs to assess the actual work before committing a binding.
+
+**Independent Test:** Preview an authored test work with no target registration; verify visible changing scene output, completion/skip/crash cleanup and unchanged target-process count/state bytes. Exercise the same work through the launch renderer and compare the shared scene execution.
+
+**Acceptance Scenarios:**
+
+1. **Given** a playable work, **When** Preview is selected, **Then** its complete timed visual sequence plays using the same scene definition and execution as launch, with simulated handoff and no target launch or activation.
+2. **Given** an active preview, **When** Esc/Stop is used, the work ends, Studio closes or playback fails, **Then** owned preview resources are released within a bounded policy and Studio reports the actual result.
+3. **Given** rapid repeated preview or changing selection, **When** another preview is requested, **Then** at most one owned preview remains active and stale results cannot replace the latest status.
+4. **Given** the Windows reduced-motion preference, **When** preview plays, **Then** the renderer uses its reduced-motion path without disabling skip or watchdog cleanup. Preview does not change that system preference.
+
+### User Story 3 - Bind, replace and inspect from home (Priority: P1)
+
+The owner selects an already registered supported application and binds the chosen work. From home the owner can preview or replace its binding without editing configuration.
+
+**Why this priority:** This completes the application-to-work management flow on the verified F07 rules.
+
+**Independent Test:** Bind one work to two distinct saved applications through Studio, replace one, restart, and inspect both home details and persistent IDs. No application process is launched during these actions.
+
+**Acceptance Scenarios:**
+
+1. **Given** a valid work and saved supported app, **When** binding is confirmed, **Then** F07 commits one enabled relationship, home shows its current name/cover/status and the same work remains available to other apps.
+2. **Given** an existing binding, **When** another work is chosen and saved, **Then** appId and bindingId remain stable and unrelated registrations/settings/bindings are unchanged; cancelling changes nothing.
+3. **Given** no target selection, a removed/legacy-unconfirmed app, unavailable work, Busy/I/O failure or a concurrent edit, **When** binding is attempted, **Then** the actual failure is shown, no false success appears and valid prior state is preserved.
+4. **Given** the app's binding on home, **When** Preview or Replace is selected, **Then** the intended complete work/app is selected; preview remains read-only and replacement follows the same validation/transaction rules.
 
 ### Edge Cases
 
-- 预览资源损坏、目标未选、快速切换。
-- 并发或重复请求不得产生重复副作用；处理方式在 Plan 中确定。
+- Missing optional cover versus missing required playback assets; corrupt metadata; duplicate scene IDs; unsupported newer scene/presentation/runtime versions.
+- A scene disappears after selection; app is removed or repaired concurrently; stale asynchronous catalog or preview results.
+- Repeat preview, skip while starting, renderer start failure/crash/hang and Studio exit; no orphan overlay or target activation.
+- Theme description/cover is informational, never an executable target or app-specific restriction.
+- Ordinary keyboard use, scrolling, actual 100/125/150% scaling, reduced motion and recoverable errors.
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: 预览不得启动真实应用；支持主题/减少动态效果偏好；展示作品与兼容状态。
-- **FR-002**: 输入必须进行身份、版本与范围验证；输出包含成功状态或明确错误码。
-- **FR-003**: 失败后不得修改与本功能无关的用户数据或目标应用。
-- **FR-004**: 功能必须在无网络和普通用户权限下运行。
+- **FR-001:** Add a built-in library reachable from My applications, with name, cover/fallback, description, style/theme and explicit availability. Home remains the default destination.
+- **FR-002:** Load only trusted local catalog content through F03 validation. Keep scene identity/version separate from presentation/playback compatibility; protect unknown newer versions and unsafe paths. Missing optional artwork uses a fallback; required playback failures reject preview.
+- **FR-003:** Preview plays the selected complete work using the same definition/execution as launch. A status card or unrelated animation cannot stand in for an unsupported work; show unavailable playback instead.
+- **FR-004:** Preview never launches/activates a target or receives authority to select an executable. Simulated handoff is identified as preview. Preview/browsing/cancellation do not write profile state or shortcuts.
+- **FR-005:** Enforce one active owned preview, bounded startup/runtime/cleanup, Esc/Stop, parent-exit/crash cleanup, cancellation and stale-result rejection. Return a structured result and readable failure/retry state.
+- **FR-006:** Honor reduced motion in the shared renderer, maintain keyboard controls and avoid changing system preferences. Current Studio styling is retained; theme/mute settings UI is F11.
+- **FR-007:** Let the owner choose a saved app and bind/replace a complete work through F07 latest-state transactions. Each app has one current binding; multiple apps may share a work regardless of theme.
+- **FR-008:** Preserve appId/bindingId on replacement, no-op and cancellation behavior, unrelated changes and prior valid bytes on failure. Refresh actual saved state; display current errors if a post-commit reload fails.
+- **FR-009:** Home shows current bound work name/cover/status with Preview/Replace actions, including recoverable unavailable-scene status. Do not claim shortcut creation/health or dispatch a test launch in this feature.
+- **FR-010:** Operate locally with ordinary rights; no arbitrary scene code, plugins, network fetch, elevation, global hooks or target-file mutation. Validate identity, bounds, versions and ownership at process/catalog boundaries.
+- **FR-011:** Keep F00–F08 behavior and state compatibility passing. Any scene/runtime/IPC extension has an explicit independent version and protects existing/unknown formats.
+- **FR-012:** Prove risky shared playback and preview isolation with a minimum runnable experiment before formal integration. Record actual process/window, visual, cancellation, reduced-motion and scaling evidence before claiming completion.
 
 ### Business Rules, Inputs & Outputs
 
-- **Input**: 用户操作、受控本地配置和已验证的上游模块结果。
-- **Output**: 持久化状态或可见结果，以及必要的脱敏诊断状态。
-- **Rule**: V1 不加载用户提供的可执行场景代码，也不修改第三方应用文件。
+- **Inputs:** Selected trusted complete scene; saved application identity for binding only; current catalog/state and Windows motion preference.
+- **Outputs:** Read-only library/preview status, bounded owned scene playback, or a committed/refreshed binding result.
+- **Scene presentation:** Human-facing cover/description/style/theme tied to stable scene identity, with safe optional fallbacks.
+- **Playable scene:** Validated complete definition plus an explicitly supported built-in execution capability; no target identity.
+- **Preview session:** Owned request identity, selected scene snapshot, lifecycle/result; no executable or app-dispatch authority.
+- **Rule:** No import/export, user scene editing, per-effect sliders, arbitrary scripts/DLLs, test launch or owned-shortcut actions in F09.
 
 ## Success Criteria
 
 ### Measurable Outcomes
 
-- **SC-001**: 预览不创建目标进程；绑定完成后首页可见。
-- **SC-002**: 已列边界和异常情形均有自动测试或 Windows 桌面验收证据。
+- **SC-001:** Real Studio acceptance browses two isolated works, previews one without target registration/activation or profile writes, binds one work to two apps and replaces one while retaining IDs.
+- **SC-002:** An authored complete test work produces visible timed scene output through preview and launch using the shared execution; completion, Esc/Stop, repeated requests, host crash and parent exit all clean up owned resources within the documented bounds.
+- **SC-003:** Invalid/missing/future/unsafe catalog inputs and removed/unconfirmed targets/Busy/I/O failures have automated coverage with preserved valid bytes and accurate UI errors.
+- **SC-004:** Logged-in Windows evidence covers keyboard browse/preview/bind/replace at 100%, 125%, 150% actual scaling and both reduced-motion branches, restoring starting settings.
+- **SC-005:** Relevant Release builds/static/format checks and F00–F08 regression/integration checks pass; independent review and Spec Kit Analyze/Converge leave no unverified required tasks.
 
 ## Assumptions
 
-- 技术依赖：F03 F07 F08，对应 FEATURES.md 中的前置 Feature。
-- 精确性能阈值在首个可运行版本的真机基线后确定，不把未经验证的数值作为发布承诺。
+- Depends on F03/F06/F07/F08. The initial baseline omitted F06 from the preview dependency; it is now explicit.
+- F13/F14 deliver licensed launch works. F09 may include an original neutral development work/fixture to validate complete shared playback; it must not be represented as either licensed launch theme or release-quality content.
+- Existing lifecycle-only host output is not evidence of actual scene preview. Unsupported scene content remains unavailable until its execution is supported.
+- Renderer choice, metadata structure, version extensions and numeric lifecycle limits are Plan decisions; no formal runtime implementation precedes Plan/Tasks/Analyze.
 
 ## Change History
 
 | Version | Date | Change |
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
+| 0.2.0 | 2026-11-05 | Define library/presentation, truthful shared playback with target-free preview, F07 binding/replacement, home integration and real risk/scaling/reduced-motion gates; retain licensed content and shortcuts as separate features. |

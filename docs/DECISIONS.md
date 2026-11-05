@@ -24,6 +24,16 @@ Studio uses WPF on the pinned .NET 10 Desktop SDK. The management surface is acc
 
 References: [Desktop SDK WPF support](https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props-desktop), [Microsoft framework guidance](https://learn.microsoft.com/en-us/windows/apps/whats-new/coming-to-windows). The original PRD/TDD remain unchanged as baselines; actual keyboard/DPI behavior must be verified in F08.
 
+## ADR-004 — Versioned scene data and shared target-free preview
+
+**Date:** 2026-11-05 · **Status:** Accepted design for F09; production implementation pending
+
+Keep scene manifest1/profile2 and introduce independent presentation/playback sidecars. Use a bounded general vector runtime with one evaluator/paint implementation for preview and launch; compatible works add data rather than launcher switches. A neutral original development work proves the pipeline without claiming licensed F13/F14 content. Unknown playback stays unavailable; optional artwork can fall back safely.
+
+Explicit IPC2 carries an immutable validated playback snapshot and mode, including natural Preview completion. Version1 is not silently extended; bundle mismatch fails safely and native launch remains the priority. A separate v1 launch/preview protocol with fixed compiled scene IDs was considered, but one versioned general transport is more suitable for reusable data-defined works. F09 adds no profile migration or arbitrary scene code.
+
+Create the renderer directly in its non-inherited kill-on-close job, avoiding the create-to-Assign orphan window. A live-parent deadline runs independently of both UI dispatchers. Preview receives no target/profile/dispatcher authority. Isolated drawing/atomic-job experiments are verified; actual production IPC, resume/cleanup, shared F06 handoff and Studio acceptance remain task gates. Details and original Microsoft sources are in [F09 research](../specs/010-scene-preview-binding-ui/research.md).
+
 ## Change history
 
 | Date | Change |
@@ -31,3 +41,4 @@ References: [Desktop SDK WPF support](https://learn.microsoft.com/en-us/dotnet/c
 | 2026-11-03 | Record initial architecture and document-governance decisions. |
 | 2026-11-04 | Select WPF for F08 Studio with explicit runtime and validation tradeoffs. |
 | 2026-11-05 | Verify WPF Studio at actual 100/125/150% scaling; refine F02 schema migration and F04 local-only path capability through F08 specifications and regression evidence. |
+| 2026-11-05 | Plan F09 sidecars/shared renderer/IPC2 and ownership/watchdog gates; record isolated rendering and early-parent-exit experiments separately from production integration. |
