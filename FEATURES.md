@@ -1,6 +1,6 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.19 · **Date:** 2026-11-05
+**Status:** Incremental implementation · **Version:** 1.0.20 · **Date:** 2026-11-06
 
 The repository began with requirements documents only. F00–F09 are complete with automated, process, and interactive Windows acceptance evidence. Dependencies below are sequencing gates, not claims of implementation.
 
@@ -51,3 +51,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.12 | 2026-11-05 | Complete F08 WPF management, typed metadata/migration and bounded local discovery after independent review, 171 Core checks, 13 Studio checks and 16 UI assertions at each actual 100/125/150% scale; advance to F09. |
 | 1.0.13 | 2026-11-05 | Refine F09 with explicit F06 dependency and truthful shared-playback/target-free preview requirements; plan24 tasks and verify isolated drawing and creation-time ownership risks before production integration. |
 | 1.0.19 | 2026-11-05 | Verify F09 reader/resource/content/timeline increment:78 targeted checks,248-pass full Core regression,13 Studio checks,16 actual F08 UI checks and copied/published scene-data validation. Review fixes tracked as T025/T026; IPC/UI remain open. |
+| 1.0.20 | 2026-11-06 | Complete F09 with31/31 tasks, independent review/convergence,321 Core/53 Studio/10 drawing checks,16-case published UI and actual100/125/150% plus OS motion verification. Save user-requested pause in docs/RESUME.md; F10 remains a baseline. |

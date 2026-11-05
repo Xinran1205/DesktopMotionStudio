@@ -9,3 +9,5 @@ Verified:321 Core checks,53 Studio checks,10 production drawing checks; F08 exte
 Delivered library/cover/details, target-free shared-renderer preview/Stop, latest-state binding/picker/replacement/home, safe process ownership/deadlines and UI intent ordering. State2/manifest1 retained. Development content is labelled honestly. Framework-dependent publish runs with its own bundled MotionHost; installer and licensed release content remain later features.
 
 Next feature: F10, `specs/011-managed-shortcuts`. Refine its independent spec/plan/tasks and validate shortcut ownership risks before implementation. Do not infer shortcut ownership from filenames or overwrite user shortcuts. Use the pinned SDK and isolated fixture paths.
+
+**User-requested pause — 2026-11-06:** F09 implementation committed as `8182ecf`. F10 has not started. Read [the resume checkpoint](../../docs/RESUME.md) before continuing. A hash-verified local publish and64 verification logs are retained under ignored `artifacts/` paths documented there.
