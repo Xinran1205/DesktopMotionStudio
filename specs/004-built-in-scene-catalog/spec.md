@@ -31,6 +31,7 @@
 - **FR-002**: 清单引用的每个资源必须存在、是普通文件且规范化路径保持在该场景目录内；不跟随 reparse point/symlink。
 - **FR-003**: 重复 `sceneId` 的所有条目均标为无效；损坏或缺失清单只影响对应条目并返回诊断码。
 - **FR-004**: 只读、不启动场景代码、不扫描用户导入目录、不访问网络；场景目录按名称稳定排序。
+- **FR-005**: F09 增量在读取任何场景清单或 sidecar 前，有界枚举最多 257 个直接子目录；发现第 257 项即返回根级 TooManyScenes 和空条目列表，不返回部分可用结果、不先无界排序。根目录及所有祖先、清单和资源组件在内容读取前拒绝网络位置与 reparse point；普通文件读取有字节上限。
 
 ### Business Rules, Inputs & Outputs
 
@@ -57,3 +58,4 @@
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
 | 0.2.0 | 2026-11-04 | Define trusted root, direct-folder layout, resource containment, duplicate IDs, and diagnostics. |
+| 0.3.0 | 2026-11-05 | F09 adds pre-read local ancestry/resource validation, bounded manifest reads and whole-root rejection at directory257; preserve stable ordering and per-item diagnostics. |

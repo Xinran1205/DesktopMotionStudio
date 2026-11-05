@@ -16,6 +16,17 @@ $poc = '.\specs\010-scene-preview-binding-ui\poc\bin\Release\net10.0-windows\win
 
 The GUI experiment exits after8s or Esc/Stop; launch it visibly for inspection. A Shown event alone does not prove an actual painted window. `--reduced` injects a still branch and is not evidence of actual OS-preference acceptance. Job checks terminate only owned fixture processes and verify an unassigned fixture survives; the atomic case deliberately keeps the initial thread suspended to test early parent death.
 
+Reader/timeline checks now run through Core Checks:
+
+```powershell
+dotnet build .\tests\DesktopMotionStudio.Core.Checks -c Release
+dotnet .\tests\DesktopMotionStudio.Core.Checks\bin\Release\net10.0\DesktopMotionStudio.Core.Checks.dll --f09-checks
+dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
+dotnet .\tests\DesktopMotionStudio.Core.Checks\bin\Release\net10.0\DesktopMotionStudio.Core.Checks.dll --f09-catalog-check "$PWD\src\DesktopMotionStudio.Studio\bin\Release\net10.0-windows\win-x64\Scenes"
+```
+
+The last mode verifies the actual copied original development work. It can also inspect a publish output's Scenes directory; it neither starts playback nor writes configuration.
+
 Before production preview, prove owned-job cleanup with a hung owned worker and terminated owning parent; verify no target process joins the job. Contract checks then exercise strict sidecars, safety limits/fallback, interpolation/reduced motion and explicit IPC v2. Keep old manifest/state formats and F00–F08 regressions protected.
 
 Final acceptance: browse two fixtures; preview without an app/target dispatcher or profile writes; bind one work to two app fixtures; replace one with stable IDs and unrelated state preserved; cancel and exercise removed app/scene, Busy/I/O and post-save reload failure. Prove single-preview/stale/Stop/crash/parent exit behavior with actual host PIDs/HWNDs. Repeat keyboard/visual checks at actual100/125/150% and both system motion preferences, restoring all starting settings. Do not infer these results from unit tests or a successful build.

@@ -74,30 +74,6 @@ public sealed class LaunchTargetIdentityResolver
     private static LaunchTargetResolution Invalid() =>
         new(null, LaunchTargetResolutionStatus.InvalidTarget);
 
-    public static bool IsLocalPath(string? path)
-    {
-        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(path)) return false;
-        try
-        {
-            if (!Path.IsPathFullyQualified(path) || path.StartsWith("\\\\", StringComparison.Ordinal)) return false;
-            string normalized = Path.GetFullPath(path);
-            string? root = Path.GetPathRoot(normalized);
-            if (root is null || root.Length < 3 || root[1] != ':') return false;
-            if (new DriveInfo(root).DriveType is not (DriveType.Fixed or DriveType.Removable or DriveType.CDRom or DriveType.Ram)) return false;
-
-            // Inspect each component before descending: even a local drive can contain a
-            // junction/symlink to a network share. GetAttributes inspects the final link
-            // itself; probing the complete path first could already follow that link.
-            string current = root;
-            if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0) return false;
-            foreach (string component in normalized[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
-            {
-                current = Path.Combine(current, component);
-                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0) return false;
-            }
-            return true;
-        }
-        catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
-        { return false; }
-    }
+    public static bool IsLocalPath(string? path) => OperatingSystem.IsWindows() &&
+        DesktopMotionStudio.Core.IO.LocalPathPolicy.Inspect(path, out _, out _) == DesktopMotionStudio.Core.IO.LocalPathError.None;
 }

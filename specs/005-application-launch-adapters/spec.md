@@ -66,3 +66,4 @@
 | 1.0.0 | 2026-11-04 | Converged against the implementation and Windows integration evidence. |
 | 1.0.1 | 2026-11-04 | Extend the launch result with optional process creation file time so F05 can safely correlate a returned PID. |
 | 1.1.0 | 2026-11-05 | F08 local-only refinement: read stored shortcut metadata without Resolve; reject network drives, UNC and reparse ancestry before target probes. Regressions include equivalent .lnk identity and a real directory junction. |
+| 1.1.1 | 2026-11-05 | F09 shares the local ancestry policy with scene readers; reject ambiguous Win32 names/namespace aliases before probes, retaining Windows-only launch validation and prior network/reparse restrictions. |

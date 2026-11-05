@@ -35,6 +35,8 @@
 **Decision:** Cover bytes and dimensions are bounded; validate local ancestry/relative containment/reparse before reads. Studio uses OnLoad caching then freezes the image and closes the stream. Failures are nonfatal to playback.
 **Source:** [Microsoft BitmapImage.StreamSource](https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.imaging.bitmapimage.streamsource?view=windowsdesktop-10.0).
 
+**Resource policy implementation:** SceneAssetResolver and the launch adapter share a local ancestry policy. Each existing component is inspected before descending; relative references reject traversal/UNC/URI/ADS and ambiguous Win32 device or whitespace/dot names. GetFileAttributes inspects the final symbolic link itself. This is supported-path validation for trusted local content, not isolation against malicious same-user concurrent filesystem substitution. [Microsoft naming/namespace rules](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file), [GetFileAttributes](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfileattributesw).
+
 ## Resolved assumptions and gates
 
 No owner clarification is required: technical choices above are delegated, and product journeys follow the PRD/TDD. Shared playback POC proves only drawing/evaluation and actual bounded window life; production IPC, actual F06 target handoff, single-preview concurrency, jobs, crash/parent exit and system reduced-motion/scaling remain independent tasks with evidence gates.

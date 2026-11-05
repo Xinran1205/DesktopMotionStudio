@@ -1,6 +1,6 @@
 # F09 Risk-Gate Evidence
 
-**Date:** 2026-11-05 · **Status:** In progress; T001/T002 verified, production F09 remains incomplete.
+**Date:** 2026-11-05 · **Status:** In progress; risk gates, readers/content and pure timeline verified. Production F09 remains incomplete.
 **Environment:** Windows 11 x64 build26200, current display2560×1440 /125% /DPI120; .NET SDK10.0.403 /Desktop runtime10.0.14.
 
 ## Isolated shared playback POC — T001
@@ -44,6 +44,23 @@ Three P2 planning gaps were made explicit before formal integration:
 
 Spec/Plan/Tasks analysis covers12 FRs +5 SCs,24 tasks, zero uncovered keys or unresolved product clarifications. Requirements checklist16/16 passes. These coverage counts are planning completeness, not feature completion.
 
+## Reader / content / timeline implementation
+
+T003–T007 and T024/T025 are implemented. Core uses a shared local ancestry policy, bounded resource reads, strict independently versioned presentation/playback sidecars, immutable definitions/library items and a pure timeline. The original F03 manifest and F08 profile schemas remain1 and2. Entry257 rejects the entire catalog before manifest/sidecar reads or sorting, and a read-observer regression confirms no sidecar reads occur on overflow.
+
+The first test build identified the missing reader/timeline contracts before implementation. Once present, independent review and stronger black-box cases reproduced five actual failures: ignored computed JSON property accepted, two mark-only glyphs accepted, a leading-space device reference accepted, and a constructed invalid library item claiming playability. All five failed before correction and passed afterward. Explicit field sets, visible-base glyph checks and shared namespace/validity rules close these gaps. T026's IPC injection case remains pending with T008.
+
+Verification at this stage:
+
+- **78 F09 checks passed**, covering sidecar versions/closed shapes/required members/identity/runtime, finite numeric limits,2–8 keyframes,64KiB input boundary, optional cover fallback/oversize, profile/backup non-writing, missing/duplicate content, exact256/257 directory bounds, real junction ancestry/resource rejection, locked-file recovery and pure timeline behavior. Eight timeline checks include non-midpoint smoothstep, exact endpoints, reduced still geometry, elapsed-time completion and concurrent determinism.
+- Full F00–F09 Core regression at the production-source checkpoint: **248 PASS /0 FAIL /1 explicit optional packaged-instance SKIP** (then77 F09 checks). A subsequent non-midpoint test addition passed in the78-check targeted run; production behavior was unchanged by that test-only addition.
+- Real MotionHost handoff289ms; F07 shared scene target0 PID21416/HWND0x5078A and target1 PID23388/HWND0x6050C both HandedOff. This remains lifecycle regression evidence; shared production scene drawing is not yet integrated.
+- Studio worker/race checks: **13 PASS**; discovery Complete122 candidates/40 packaged. Existing F08 actual UI acceptance: **16 PASS**, PID24472/HWND0x5080A/DPI120, including manual/discovered add, stable repair/binding IDs, removal, recovery and legacy backup. F09 library UI/scaling are still open.
+- Core/Studio/MotionHost/check Release builds passed with0 warnings/errors; Core/check formatting verification passed. The original neutral development data is copied to Studio output, read/validated from that actual output, and visibly labelled development content. A framework-dependent publish output is also checked with `--f09-catalog-check`; this is not an installer claim.
+- Independent read-only review found no remaining P1/P2 in the implemented reader/resource/timeline boundary after fixes. UI image decoding/pixel limits, real rendering/IPC and process integration remain later tasks.
+
+Local logs: `%TEMP%/dms-f09-foundation-red.log`, `dms-f09-foundation-green.log`, `dms-f09-foundation-full-regression.log`. No real user state was used. Actual junction fixtures are removed non-recursively before deleting owned temp trees.
+
 ## Remaining gates
 
-T003–T024 remain open: production readers/resource bounds/evaluator/IPC v2/job adapter/independent deadlines, target-free session coordination, library/binding/home UI, real F06 target handoff, repeated/cancel/crash/hang/parent-exit tests, both actual system motion branches,100/125/150% scaling, full regressions and final independent Converge. F09 is **not complete**. F08 production code remains unchanged after milestone `90b70c9`.
+T008–T023 and T026 remain open: IPC v2/job adapter/independent deadlines, target-free session coordination, shared graphics integration, library/binding/home UI, real shared-scene F06 handoff, repeated/cancel/crash/hang/parent-exit tests, both actual system motion branches,100/125/150% scaling, integrated full regressions and final independent Converge. F09 is **not complete**. Changes to F03 resource bounds and F04's shared local policy have their own specification history and regression evidence.

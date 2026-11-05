@@ -11,16 +11,16 @@
 
 **Goal/test:** An isolated catalog yields correct identity/presentation/playability with per-item fallback/errors and zero state writes.
 
-- [ ] T003 [US1] Write metadata/path/future-version/size/count/fallback checks in `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs` before readers; preserve scene1/profile2 and F03 behavior.
-- [ ] T004 [US1] Implement reusable local ancestry/relative asset resolution in `src/DesktopMotionStudio.Core/Scenes/SceneAssetResolver.cs`; apply before F03 and new sidecar/cover probes in `BuiltInSceneCatalog.cs`, retaining diagnostics and ordinary-user/local-only boundaries.
-- [ ] T005 [US1] Implement strict bounded `ScenePresentation.cs`, `ScenePlaybackDefinition.cs` and `SceneLibrary.cs` readers/snapshots under Core/Scenes; separate IsAvailable, optional fallback and IsPlayable; preserve independent schema/runtime versions and validate all data-model limits.
-- [ ] T006 [US1] Add original neutral `Scenes/studio-pulse` data/attribution and an isolated second work fixture; copy shipped scene data through `DesktopMotionStudio.Studio.csproj` and MotionHost build layout as needed. Label development content honestly and do not claim F13/F14 delivery.
+- [X] T003 [US1] Write metadata/path/future-version/size/count/fallback checks in `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs` before readers; preserve scene1/profile2 and F03 behavior.
+- [X] T004 [US1] Implement reusable local ancestry/relative asset resolution in `src/DesktopMotionStudio.Core/Scenes/SceneAssetResolver.cs`; apply before F03 and new sidecar/cover probes in `BuiltInSceneCatalog.cs`, retaining diagnostics and ordinary-user/local-only boundaries.
+- [X] T005 [US1] Implement strict bounded `ScenePresentation.cs`, `ScenePlaybackDefinition.cs` and `SceneLibrary.cs` readers/snapshots under Core/Scenes; separate IsAvailable, optional fallback and IsPlayable; preserve independent schema/runtime versions and validate all data-model limits.
+- [X] T006 [US1] Add original neutral `Scenes/studio-pulse` data/attribution and an isolated second work fixture; copy shipped scene data through `DesktopMotionStudio.Studio.csproj` and MotionHost build layout as needed. Label development content honestly and do not claim F13/F14 delivery.
 
 ## Phase 3: US2 - Shared target-free playback
 
 **Goal/test:** Real selected scene output uses a shared definition/evaluator/paint and preview has no target authority.
 
-- [ ] T007 [US2] Add pure timeline/finite-value/endpoint/interpolation/reduced-motion checks to `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs`; implement Core `Scenes/SceneTimeline.cs` after T001.
+- [X] T007 [US2] Add pure timeline/finite-value/endpoint/interpolation/reduced-motion checks to `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs`; implement Core `Scenes/SceneTimeline.cs` after T001.
 - [ ] T008 [US2] Add IPC v2 and state-transition tests in `F09Checks.cs`: old/future version rejection, strict bounded snapshot, request mismatch, Preview requires playback, natural Completed only for Preview, legacy lifecycle Launch and fail-open behavior. Keep F06 assertions meaningful.
 - [ ] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
 - [ ] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
@@ -54,8 +54,13 @@ The POCs can be researched independently, but no other feature starts before F09
 
 - [ ] T022 Implement the live-parent non-UI deadline in Core/MotionHost session after Started, independent of child Timer/Stop; test parent alive + hung host + no user Stop returns TimedOut and owned-job cleanup within10s in F09Checks/desktop integration (FR-005/012). This gates T019 completion.
 - [ ] T023 Use STARTUPINFOEX/PROC_THREAD_ATTRIBUTE_JOB_LIST in the T010 Windows adapter, preserving native process/thread handles and non-inheritance; resume the initial thread only after ownership is established and clean the job if resume fails. Cover early parent death before normal handshake, creation/association failure and no orphan. The suspended POC must not be copied without this production resume lifecycle. T002 gates this adapter; T023 gates T011/T019 (FR-005/010).
-- [ ] T024 Implement root-level TooManyScenes on entry257 before sidecar reads/sorting, with no partial library; add 256/257/entry257-duplicate cases to T003 and bounded enumeration in T004/T005 (FR-002/010). This gates T013.
+- [X] T024 Implement root-level TooManyScenes on entry257 before sidecar reads/sorting, with no partial library; add 256/257/entry257-duplicate cases to T003 and bounded enumeration in T004/T005 (FR-002/010). This gates T013.
 
 ## Incremental implementation
 
 First prove rendering/ownership risks, then a catalog/read-only preview slice, then library→saved-app binding and home replacement. Finish failures/concurrency and full actual desktop evidence before claiming F09 complete. No licensed content, shortcut/test launch or installer work is folded into this feature.
+
+## Implementation review follow-up
+
+- [X] T025 Require at least one visible base Unicode rune in the bounded glyph, reject mark-only/variation-selector-only strings while accepting visible base plus combining mark; add regressions in F09Checks and strengthen ScenePlayback validation per data-model glyph rule/FR-002 (partial, P2).
+- [ ] T026 Enforce explicit closed JSON member sets for sidecars, including computed ignored properties such as isValid, and include the same injection case in T008 playback IPC tests; keep future-version precedence and nested keyframe shape checks per FR-002/011 (partial, P2).

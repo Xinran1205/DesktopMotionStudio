@@ -12,6 +12,8 @@ Required schemaVersion, matching sceneId/sceneVersion, description (0–1000 cha
 
 Required matching scene identity/version, runtimeId=`vector-orbit`, runtimeVersion=1, durationMilliseconds 1000–8000, accent `#RRGGBB`, glyph (1–8 visible chars), 2–8 keyframes. Keyframes have atMilliseconds, scale (0.1–1.5), opacity (0–1), rotationDegrees (-360–360); all numbers finite, times strictly increase from 0 to duration. Serialized validated snapshot <=4 KiB. Unknown schema/runtime is unavailable. Optional future asset-based capabilities require a new supported runtime contract, never arbitrary module loading.
 
+Text limits count UTF-16 units. Glyph must be valid Unicode, at most8 units, with at least one letter/number/punctuation/symbol base rune; combining/variation marks may accompany a base, but mark-only text and control/format characters are rejected. Closed JSON shapes use explicit allowed members, including rejecting computed ignored properties such as isValid. Safe relative paths also reject ambiguous Win32 device/whitespace/trailing-dot aliases before probes.
+
 SceneTimeline evaluates a validated immutable definition at clamped elapsed time using fixed interpolation. Reduced-motion evaluation holds scale/rotation constant and emits a stable visible frame until completion. Viewport and mode never change the authored timeline. Preview injects a labelled simulated handoff near the end; real launch may interrupt on actual target Ready.
 
 ## PreviewRequest / session
