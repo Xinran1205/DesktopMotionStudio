@@ -21,6 +21,7 @@ internal sealed class FakeMotionHostSession : IMotionHostSession
     public bool Disposed { get; private set; }
     public MotionHostError? FailureReason { get; set; }
     public int? NativeErrorCode { get; set; }
+    public int? HostProcessId => null;
     public Task<MotionHostOutcome?> Started => Task.FromResult<MotionHostOutcome?>(null);
     public Task<MotionHostOutcome> Completion => Task.FromResult(ShutdownOutcome);
 

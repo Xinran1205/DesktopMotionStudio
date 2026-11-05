@@ -84,6 +84,9 @@ internal sealed class HostProtocolClient : IAsyncDisposable
         {
             switch (reason)
             {
+                case MotionHostExitReason.Completed:
+                    await SendHostFrameAsync(MotionHostMessageKind.Completed).ConfigureAwait(false);
+                    break;
                 case MotionHostExitReason.SkipRequested:
                     await SendHostFrameAsync(MotionHostMessageKind.SkipRequested).ConfigureAwait(false);
                     break;

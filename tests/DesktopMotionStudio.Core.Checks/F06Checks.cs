@@ -354,7 +354,7 @@ internal static class F06Checks
         return failures;
     }
 
-    private static int RunRealTargetHostIntegration(string hostPath)
+    internal static int RunRealTargetHostIntegration(string hostPath, ScenePlaybackDefinition? playback = null)
     {
         string? publishedTarget = Environment.GetEnvironmentVariable("DMS_F06_TARGET_PATH");
         if (string.IsNullOrWhiteSpace(publishedTarget) || !File.Exists(publishedTarget))
@@ -379,7 +379,8 @@ internal static class F06Checks
         {
             var target = new ExecutableTarget(targetPath, [], temporaryDirectory);
             var scene = SceneManifestReader.Read(Encoding.UTF8.GetBytes(SceneJson)).Manifest!;
-            MotionHostLifecycleResult result = coordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, scene)
+            var elapsed = Stopwatch.StartNew();
+            MotionHostLifecycleResult result = coordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, scene, playback: playback)
                 .GetAwaiter().GetResult();
             targetWindow = result.TargetResult.WindowHandle;
             if (result.TargetResult.Process is ProcessStamp targetStamp && targetWindow is nint visibleTargetWindow)
@@ -394,6 +395,7 @@ internal static class F06Checks
                 result.TargetResult.WindowHandle is not null && result.HostOutcome == MotionHostOutcome.HandedOff &&
                 targetProcess is not null && !targetProcess.HasExited;
             Record("real target remains running through MotionHost handoff", readyAndHandedOff, ref failures);
+            if (playback is not null) Record("F09 real scene handoff follows target ready before full sequence ends", readyAndHandedOff && elapsed.ElapsedMilliseconds < playback.DurationMilliseconds, ref failures);
         }
         catch (Exception ex)
         {

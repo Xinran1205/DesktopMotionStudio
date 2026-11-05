@@ -7,7 +7,7 @@ using DesktopMotionStudio.Core.Scenes;
 
 namespace DesktopMotionStudio.MotionHost;
 
-internal enum MotionHostExitReason { None, SkipRequested, HandedOff, TimedOut, Shutdown, ParentDisconnected, Failed }
+internal enum MotionHostExitReason { None, SkipRequested, HandedOff, TimedOut, Shutdown, ParentDisconnected, Failed, Completed }
 
 internal sealed class MotionHostWindow : Form
 {
@@ -17,6 +17,8 @@ internal sealed class MotionHostWindow : Form
     private static readonly TimeSpan FadeDuration = TimeSpan.FromMilliseconds(250);
     private readonly MotionHostStartPayload _start;
     private readonly Panel _card;
+    private readonly SceneSurface? _surface;
+    private readonly bool _animationsEnabled;
     private readonly System.Windows.Forms.Timer _watchdogTimer;
     private readonly System.Windows.Forms.Timer _fadeTimer;
     private Font? _headingFont;
@@ -24,23 +26,24 @@ internal sealed class MotionHostWindow : Form
     private long _visibleTimestamp;
     private long _fadeTimestamp;
     private int _closing;
+    private int _handoffStarted;
+    private MotionHostExitReason _fadeExitReason;
 
-    public MotionHostWindow(MotionHostStartPayload start)
+    public MotionHostWindow(MotionHostStartPayload start, bool? animationsEnabled = null)
     {
         ArgumentNullException.ThrowIfNull(start);
-        if (start.Mode == MotionHostMode.Preview || start.Playback is not null)
-            throw new NotSupportedException("Scene playback is unavailable until the shared surface is integrated.");
         _start = start;
-        if (start.DisplayMode is not (SceneDisplayMode.Full or SceneDisplayMode.Centered) ||
-            start.MaximumVisibleMilliseconds is <= 0 or > 10_000)
+        if (!start.IsValid)
             throw new ArgumentException("MotionHost display request is invalid.", nameof(start));
 
         Screen screen = Screen.PrimaryScreen ?? throw new InvalidOperationException("No primary display is available.");
+        _animationsEnabled = animationsEnabled ?? SystemAnimationsEnabled();
+        Text = start.Mode == MotionHostMode.Preview ? "Desktop Motion Studio — Preview" : "Desktop Motion Studio — Launch";
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         TopMost = true;
         KeyPreview = true;
-        AccessibleName = "Desktop Motion Studio animation host";
+        AccessibleName = start.Mode == MotionHostMode.Preview ? "Desktop Motion Studio 场景预览" : "Desktop Motion Studio animation host";
         BackColor = TransparentColor;
         TransparencyKey = TransparentColor;
         StartPosition = FormStartPosition.Manual;
@@ -55,10 +58,16 @@ internal sealed class MotionHostWindow : Form
             BorderStyle = BorderStyle.FixedSingle,
             AccessibleName = "Animation status"
         };
-        Controls.Add(_card);
-        BuildCard();
+        if (start.Playback is not null)
+        {
+            _surface = new SceneSurface(start.Playback, !_animationsEnabled) { Dock = DockStyle.Fill };
+            _surface.RenderFailed += (_, _) => RequestImmediateExit(MotionHostExitReason.Failed);
+            Controls.Add(_surface);
+            BuildPlaybackFooter();
+        }
+        else { Controls.Add(_card); BuildCard(); }
 
-        _watchdogTimer = new System.Windows.Forms.Timer { Interval = 50 };
+        _watchdogTimer = new System.Windows.Forms.Timer { Interval = _surface is null ? 50 : 16 };
         _watchdogTimer.Tick += OnWatchdogTick;
         _fadeTimer = new System.Windows.Forms.Timer { Interval = 15 };
         _fadeTimer.Tick += OnFadeTick;
@@ -85,7 +94,7 @@ internal sealed class MotionHostWindow : Form
         }
     }
 
-    public void RequestHandoff() => PostToUiThread(BeginHandoff);
+    public void RequestHandoff() => PostToUiThread(() => BeginHandoff(MotionHostExitReason.HandedOff));
 
     public void RequestImmediateExit(MotionHostExitReason reason) => PostToUiThread(() => CloseWithReason(reason));
 
@@ -95,6 +104,7 @@ internal sealed class MotionHostWindow : Form
         {
             _watchdogTimer.Dispose();
             _fadeTimer.Dispose();
+            _card.Dispose();
         }
         base.Dispose(disposing);
         if (disposing)
@@ -156,6 +166,36 @@ internal sealed class MotionHostWindow : Form
         LayoutCard();
     }
 
+    private void BuildPlaybackFooter()
+    {
+        bool preview = _start.Mode == MotionHostMode.Preview;
+        int height = Math.Max(56, (int)Math.Round(64 * DeviceDpi / 96d));
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = height, BackColor = Color.FromArgb(24, 35, 58) };
+        var caption = new Label
+        {
+            Text = preview ? "预览 · 模拟交接，不会启动应用" : "应用正在打开 · 可随时跳过动画",
+            ForeColor = Color.White,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            AccessibleName = preview ? "预览模拟交接" : "启动动画"
+        };
+        var stop = new Button
+        {
+            Text = preview ? "停止 / Esc" : "跳过 / Esc",
+            AccessibleName = preview ? "停止预览" : "Skip animation",
+            Dock = DockStyle.Right,
+            Width = height * 2,
+            TabIndex = 0,
+            TabStop = true,
+            BackColor = Color.FromArgb(67, 86, 132),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat
+        };
+        stop.Click += (_, _) => CloseWithReason(MotionHostExitReason.SkipRequested);
+        footer.Controls.Add(caption); footer.Controls.Add(stop); Controls.Add(footer);
+        ActiveControl = stop;
+    }
+
     private void LayoutCard() => _card.Location = new Point(
         Math.Max(0, (ClientSize.Width - _card.Width) / 2),
         Math.Max(0, (ClientSize.Height - _card.Height) / 2));
@@ -170,16 +210,21 @@ internal sealed class MotionHostWindow : Form
 
     private void OnWatchdogTick(object? sender, EventArgs e)
     {
-        if (Stopwatch.GetElapsedTime(_visibleTimestamp) >= TimeSpan.FromMilliseconds(_start.MaximumVisibleMilliseconds))
+        TimeSpan elapsed = Stopwatch.GetElapsedTime(_visibleTimestamp);
+        _surface?.Present(elapsed);
+        if (elapsed >= TimeSpan.FromMilliseconds(_start.MaximumVisibleMilliseconds))
             CloseWithReason(MotionHostExitReason.TimedOut);
+        else if (_start.Mode == MotionHostMode.Preview && _start.Playback is not null && elapsed.TotalMilliseconds >= _start.Playback.DurationMilliseconds)
+            BeginHandoff(MotionHostExitReason.Completed);
     }
 
-    private void BeginHandoff()
+    private void BeginHandoff(MotionHostExitReason reason)
     {
-        if (Volatile.Read(ref _closing) != 0 || IsDisposed) return;
-        if (!SystemAnimationsEnabled())
+        if (Volatile.Read(ref _closing) != 0 || IsDisposed || Interlocked.Exchange(ref _handoffStarted, 1) != 0) return;
+        _fadeExitReason = reason;
+        if (!_animationsEnabled)
         {
-            CloseWithReason(MotionHostExitReason.HandedOff);
+            CloseWithReason(reason);
             return;
         }
 
@@ -190,7 +235,7 @@ internal sealed class MotionHostWindow : Form
         }
         catch (Exception)
         {
-            CloseWithReason(MotionHostExitReason.HandedOff);
+            CloseWithReason(reason);
         }
     }
 
@@ -200,7 +245,7 @@ internal sealed class MotionHostWindow : Form
         TimeSpan elapsed = Stopwatch.GetElapsedTime(_fadeTimestamp);
         if (elapsed >= FadeDuration)
         {
-            CloseWithReason(MotionHostExitReason.HandedOff);
+            CloseWithReason(_fadeExitReason);
             return;
         }
 
@@ -211,7 +256,7 @@ internal sealed class MotionHostWindow : Form
         }
         catch (Exception)
         {
-            CloseWithReason(MotionHostExitReason.HandedOff);
+            CloseWithReason(_fadeExitReason);
         }
     }
 

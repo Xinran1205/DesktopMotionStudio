@@ -30,3 +30,16 @@ The last mode verifies the actual copied original development work. It can also 
 Before production preview, prove owned-job cleanup with a hung owned worker and terminated owning parent; verify no target process joins the job. Contract checks then exercise strict sidecars, safety limits/fallback, interpolation/reduced motion and explicit IPC v2. Keep old manifest/state formats and F00–F08 regressions protected.
 
 Final acceptance: browse two fixtures; preview without an app/target dispatcher or profile writes; bind one work to two app fixtures; replace one with stable IDs and unrelated state preserved; cancel and exercise removed app/scene, Busy/I/O and post-save reload failure. Prove single-preview/stale/Stop/crash/parent exit behavior with actual host PIDs/HWNDs. Repeat keyboard/visual checks at actual100/125/150% and both system motion preferences, restoring all starting settings. Do not infer these results from unit tests or a successful build.
+
+Production ownership/surface checks:
+
+```powershell
+dotnet build .\tests\DesktopMotionStudio.MotionHost.Checks -c Release
+dotnet .\tests\DesktopMotionStudio.MotionHost.Checks\bin\Release\net10.0-windows\DesktopMotionStudio.MotionHost.Checks.dll
+dotnet .\tests\DesktopMotionStudio.Core.Checks\bin\Release\net10.0\DesktopMotionStudio.Core.Checks.dll --f09-ownership-checks
+$env:DMS_F06_HOST_PATH = "$PWD\src\DesktopMotionStudio.MotionHost\bin\Release\net10.0-windows\win-x64\DesktopMotionStudio.MotionHost.exe"
+$env:DMS_F06_TARGET_PATH = "$PWD\src\DesktopMotionStudio.WindowHost.Poc\bin\Release\net10.0-windows\win-x64\DesktopMotionStudio.WindowHost.Poc.exe"
+dotnet .\tests\DesktopMotionStudio.Core.Checks\bin\Release\net10.0\DesktopMotionStudio.Core.Checks.dll --f09-playback-process-checks
+```
+
+Build the host/target Release win-x64 outputs first. Core's no-argument run includes these checks; optional actual integrations report explicit SKIP when their fixture environment is absent. The new drawing checks instantiate the production window/control, compare fixed-time pixels and inject both motion policies; actual system preferences/scaling remain separate desktop acceptance.

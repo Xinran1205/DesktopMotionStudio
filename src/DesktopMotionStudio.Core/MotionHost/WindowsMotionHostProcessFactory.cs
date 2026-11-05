@@ -82,6 +82,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
         public Task<MotionHostOutcome?> Started => _started.Task;
         public Task<MotionHostOutcome> Completion => _completion.Task;
+        public int? HostProcessId => _process.Id;
 
         public MotionHostError? FailureReason
         {

@@ -24,7 +24,7 @@
 - [X] T008 [US2] Add IPC v2 and state-transition tests in `F09Checks.cs`: old/future version rejection, strict bounded snapshot, request mismatch, Preview requires playback, natural Completed only for Preview, legacy lifecycle Launch and fail-open behavior. Keep F06 assertions meaningful.
 - [X] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
 - [X] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
-- [ ] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Remove the temporary unsupported-playback guard only with the real surface. Preview must never fall back to the lifecycle status card.
+- [X] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Remove the temporary unsupported-playback guard only with the real surface. Preview must never fall back to the lifecycle status card.
 - [ ] T012 [US2] Implement target-free session contracts and serial generation coordinator in Core `Preview/{PreviewContracts,PreviewCoordinator}.cs`; cover cancel during startup, replacement, stale completions and closed-owner cleanup with controlled-session tests in Studio Checks `PreviewRaceChecks.cs`.
 
 ## Phase 4: US1/US3 - Library and binding UI
@@ -61,6 +61,8 @@ The POCs can be researched independently, but no other feature starts before F09
 First prove rendering/ownership risks, then a catalog/read-only preview slice, then library→saved-app binding and home replacement. Finish failures/concurrency and full actual desktop evidence before claiming F09 complete. No licensed content, shortcut/test launch or installer work is folded into this feature.
 
 ## Implementation review follow-up
+
+- [X] T028 Verify the production shared drawing control through `tests/DesktopMotionStudio.MotionHost.Checks`: exact fixed-time pixels from actual Preview/Launch window paths, visibly different authored data, reduced-motion stillness, explicit simulation/Stop controls and tiny bounds. Add real finite Preview/Stop process checks and shared-scene real target handoff to Core checks. This closes the T011 rendering integration gate before UI wiring (FR-003/004/006/012).
 
 - [X] T025 Require at least one visible base Unicode rune in the bounded glyph, reject mark-only/variation-selector-only strings while accepting visible base plus combining mark; add regressions in F09Checks and strengthen ScenePlayback validation per data-model glyph rule/FR-002 (partial, P2).
 - [X] T026 Enforce explicit closed JSON member sets for sidecars, including computed ignored properties such as isValid, and include the same injection case in T008 playback IPC tests; keep future-version precedence and nested keyframe shape checks per FR-002/011 (partial, P2).

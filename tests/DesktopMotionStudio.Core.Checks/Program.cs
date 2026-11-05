@@ -17,6 +17,7 @@ if (args.Length == 4 && args[0] == "--pipe" && args[2] == "--request-id")
 if (args.Length == 2 && args[0] == "--f09-owned-parent") return F09OwnershipChecks.Parent(args[1]);
 if (args.Length == 1 && args[0] == "--f09-unassigned-worker") { Thread.Sleep(Timeout.Infinite); return 0; }
 if (args.Length == 1 && args[0] == "--f09-ownership-checks") return F09OwnershipChecks.Run();
+if (args.Length == 1 && args[0] == "--f09-playback-process-checks") return F09PlaybackProcessChecks.Run();
 if (args.Length == 3 && args[0] == "--f06-disconnect-worker")
     return RunF06DisconnectWorker(args[1], args[2]);
 if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")
@@ -82,6 +83,7 @@ failures += F07Checks.Run();
 failures += F08Checks.Run();
 failures += F09Checks.Run();
 failures += F09OwnershipChecks.Run();
+failures += F09PlaybackProcessChecks.Run();
 failures += RunWindowHostIntegration();
 failures += RunPackagedInstanceIntegration();
 

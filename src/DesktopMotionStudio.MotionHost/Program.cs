@@ -16,18 +16,18 @@ internal static class Program
         try
         {
             client = HostProtocolClient.ConnectAndStartAsync(parsed).GetAwaiter().GetResult();
-            var window = new MotionHostWindow(client.StartPayload);
+            using var window = new MotionHostWindow(client.StartPayload);
             HostProtocolClient capturedClient = client;
             window.Shown += (_, _) => _ = NotifyVisibleAndStartListenerAsync(capturedClient, window);
             Application.Run(window);
             client.ReportExitAsync(window.ExitReason).GetAwaiter().GetResult();
             return window.ExitReason == MotionHostExitReason.Failed ? 4 : 0;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             if (client is not null)
             {
-                try { client.ReportFailureAsync(ex is NotSupportedException ? MotionHostError.UnsupportedPlayback : MotionHostError.HostInitializationFailed).GetAwaiter().GetResult(); }
+                try { client.ReportFailureAsync(MotionHostError.HostInitializationFailed).GetAwaiter().GetResult(); }
                 catch (Exception) { }
             }
             return 4;

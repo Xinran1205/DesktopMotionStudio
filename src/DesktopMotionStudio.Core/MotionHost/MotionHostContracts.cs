@@ -96,6 +96,7 @@ public interface IMotionHostSession : IAsyncDisposable
 {
     MotionHostError? FailureReason { get; }
     int? NativeErrorCode { get; }
+    int? HostProcessId { get; }
     Task<MotionHostOutcome?> Started { get; }
     Task<MotionHostOutcome> Completion { get; }
     Task<MotionHostOutcome> HandoffAsync(CancellationToken cancellationToken = default);
