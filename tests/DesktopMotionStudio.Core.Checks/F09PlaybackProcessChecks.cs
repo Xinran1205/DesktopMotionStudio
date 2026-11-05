@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Scenes;
+using DesktopMotionStudio.Core.Preview;
 
 internal static class F09PlaybackProcessChecks
 {
@@ -44,7 +45,60 @@ internal static class F09PlaybackProcessChecks
             finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
         }
         failures += F06Checks.RunRealTargetHostIntegration(hostPath, playback with { SceneId = "dragon-portal" });
+        failures += CoordinatorAsync(hostPath, playback).GetAwaiter().GetResult();
         return failures;
+    }
+
+    private static async Task<int> CoordinatorAsync(string hostPath, ScenePlaybackDefinition playback)
+    {
+        int failures = 0;
+        void Check(string name, bool passed) { Console.WriteLine($"{(passed ? "PASS" : "FAIL")} F09 actual coordinator {name}"); if (!passed) failures++; }
+        var tracked = new TrackedHostFactory(hostPath);
+        try
+        {
+            await using var coordinator = new PreviewCoordinator(new MotionHostPreviewSessionFactory(tracked));
+            Task<PreviewResult>? previous = null;
+            for (int index = 0; index < 3; index++)
+            {
+                Guid requestId = Guid.NewGuid();
+                Task<PreviewResult> pending = coordinator.PlayAsync(new(requestId, playback, SceneDisplayMode.Centered));
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                while (coordinator.Current.RequestId != requestId || coordinator.Current.Phase != PreviewPhase.Playing)
+                {
+                    if (pending.IsCompleted) throw new InvalidOperationException($"Actual coordinator did not play: {(await pending).Error}");
+                    await Task.Delay(5, timeout.Token);
+                }
+                Process current = tracked.Processes[^1]; nint window = FindHostWindow(current.Id);
+                Console.WriteLine($"  coordinated preview{index}: request={requestId:N}, PID={current.Id}, HWND=0x{window:X}");
+                Check($"request{index} has its own visible scene window", window != 0 && (previous is null || (await previous).Outcome == PreviewOutcome.Superseded));
+                previous = pending;
+            }
+            await coordinator.StopAsync();
+            Check("replacement waits for old process exit and Stop cleans the last", tracked.PreviousExited && tracked.Processes.Count == 3 && tracked.Processes.All(process => process.WaitForExit(1000)) && (await previous!).Outcome == PreviewOutcome.Stopped && coordinator.Current.Phase == PreviewPhase.Stopped);
+            await coordinator.DisposeAsync();
+            Check("owner close rejects another host", (await coordinator.PlayAsync(new(Guid.NewGuid(), playback, SceneDisplayMode.Centered))).Outcome == PreviewOutcome.OwnerClosed && tracked.Processes.Count == 3);
+        }
+        finally { foreach (Process process in tracked.Processes) process.Dispose(); }
+        return failures;
+    }
+
+    private sealed class TrackedHostFactory(string path) : IMotionHostSessionFactory
+    {
+        private readonly WindowsMotionHostProcessFactory _factory = new(path);
+        internal readonly List<Process> Processes = [];
+        internal bool PreviousExited = true;
+        public IMotionHostSession Start(MotionHostStartRequest request)
+        {
+            PreviousExited &= Processes.All(process => process.HasExited);
+            if (request.Mode != MotionHostMode.Preview) throw new InvalidOperationException("Preview adapter granted launch mode");
+            IMotionHostSession session = _factory.Start(request);
+            try
+            {
+                Process process = Process.GetProcessById(session.HostProcessId!.Value); _ = process.SafeHandle;
+                Processes.Add(process); return session;
+            }
+            catch { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); throw; }
+        }
     }
 
     private static nint FindHostWindow(int processId)

@@ -2,6 +2,8 @@
 
 **Branch**: `main` | **Date**: 2026-11-04 | **Spec**: [spec.md](spec.md)
 
+Historical F06 plan. The F09 compatibility amendment in spec v0.5.0 and `../010-scene-preview-binding-ui/plan.md` supersedes current IPC/visual watchdog/process ownership: IPC2,10s visual cap, creation-time owned job and independent parent deadlines. F05 target-window wait remains15s.
+
 ## Summary
 
 Add a bounded Windows MotionHost process with a versioned same-user named-pipe protocol and a neutral WinForms lifecycle surface. The launcher starts the host only after F05's existing-instance scan and immediately before F04 dispatch. Host initialization and IPC run asynchronously; F05 continues target dispatch/window detection independently. Skip, host failure, timeout, or parent exit only ends MotionHost. On a ready target window the launcher requests a standard fade; all other terminal target outcomes stop the host.

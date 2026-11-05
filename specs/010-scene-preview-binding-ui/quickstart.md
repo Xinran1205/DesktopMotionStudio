@@ -43,3 +43,5 @@ dotnet .\tests\DesktopMotionStudio.Core.Checks\bin\Release\net10.0\DesktopMotion
 ```
 
 Build the host/target Release win-x64 outputs first. Core's no-argument run includes these checks; optional actual integrations report explicit SKIP when their fixture environment is absent. The new drawing checks instantiate the production window/control, compare fixed-time pixels and inject both motion policies; actual system preferences/scaling remain separate desktop acceptance.
+
+Controlled preview races run with Studio Checks `--preview-races`; the normal Studio Checks run includes them and existing WPF/discovery regressions. Core's `--f09-playback-process-checks` now additionally creates/replaces/stops three real coordinator-owned hosts. These gates precede Studio UI wiring; they do not exercise a library or binding picker yet.

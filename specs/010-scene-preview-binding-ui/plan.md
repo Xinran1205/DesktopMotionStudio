@@ -11,6 +11,7 @@ Extend the trusted catalog with independently versioned presentation/playback si
 
 - C#/.NET SDK 10.0.403; WPF Studio and WinForms MotionHost; no new third-party packages.
 - Core owns strict contracts, pure timeline evaluation, preview orchestration and F07 transactions. Graphics/Win32 jobs remain Windows adapters; no System.Drawing in Core.
+- Preview orchestration uses a single asynchronous command reader and monotonic request tickets. Dispose old ownership before new Start; cleanup uncertainty blocks further hosts. Current is an immutable snapshot; StateChanged invalidates UI state rather than carrying stale queued payloads. See contracts/preview-coordination.md for startup/playback/cleanup budgets and cancellation/close semantics.
 - Optional `scene.presentation.json` schema 1 carries bounded description/style/theme/cover. Required `scene.playback.json` schema 1 carries supported runtime identity and complete bounded keyframes. Optional presentation failure falls back; playback failure is unavailable.
 - `vector-orbit` runtime version 1 is a compiled general renderer, not a switch on scene IDs. Maintainer-authored keyframes select transforms/opacity/accent; no expressions, scripts, arbitrary modules or user editor. New compatible works add data without editing the launcher.
 - The evaluator takes elapsed time; Timer only requests redraw and Stopwatch measures monotonic time. Shared paint maps frames to the viewport. Reduced motion uses static geometry with bounded completion, not ordinary pulse/rotation.

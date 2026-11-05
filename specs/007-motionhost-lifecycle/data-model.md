@@ -1,5 +1,7 @@
 # F06 Data Model
 
+Historical F06 baseline. Current compatibility follows spec v0.5.0 and F09 playback-ipc.md: explicit IPC2, Launch/Preview mode, optional bounded playback, Preview Completed and10s visual cap. Original v1 fields/15s examples below are retained for traceability, not current implementation instructions.
+
 F06 stores no persistent state. All records below live for one launch request only.
 
 ## MotionHostStartRequest

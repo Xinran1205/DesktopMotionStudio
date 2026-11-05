@@ -25,7 +25,7 @@
 - [X] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
 - [X] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
 - [X] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Remove the temporary unsupported-playback guard only with the real surface. Preview must never fall back to the lifecycle status card.
-- [ ] T012 [US2] Implement target-free session contracts and serial generation coordinator in Core `Preview/{PreviewContracts,PreviewCoordinator}.cs`; cover cancel during startup, replacement, stale completions and closed-owner cleanup with controlled-session tests in Studio Checks `PreviewRaceChecks.cs`.
+- [X] T012 [US2] Implement target-free session contracts and serial generation coordinator in Core `Preview/{PreviewContracts,PreviewCoordinator}.cs`; cover cancel during startup, replacement, stale completions and closed-owner cleanup with controlled-session tests in Studio Checks `PreviewRaceChecks.cs`.
 
 ## Phase 4: US1/US3 - Library and binding UI
 
