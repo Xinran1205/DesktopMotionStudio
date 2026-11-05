@@ -12,7 +12,11 @@ const string Valid = """
 if (args.Length == 4 && args[0] == "--f05-instance-worker")
     return RunInstanceWorker(args[1], args[2], args[3]);
 if (args.Length == 4 && args[0] == "--pipe" && args[2] == "--request-id")
-    return F09Checks.StaleHostWorker(args[1], args[3]);
+    return Environment.GetEnvironmentVariable("DMS_F09_HOST_FIXTURE") is string behavior
+        ? F09OwnershipChecks.HostWorker(args[1], args[3], behavior) : F09Checks.StaleHostWorker(args[1], args[3]);
+if (args.Length == 2 && args[0] == "--f09-owned-parent") return F09OwnershipChecks.Parent(args[1]);
+if (args.Length == 1 && args[0] == "--f09-unassigned-worker") { Thread.Sleep(Timeout.Infinite); return 0; }
+if (args.Length == 1 && args[0] == "--f09-ownership-checks") return F09OwnershipChecks.Run();
 if (args.Length == 3 && args[0] == "--f06-disconnect-worker")
     return RunF06DisconnectWorker(args[1], args[2]);
 if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")
@@ -77,6 +81,7 @@ failures += F06Checks.Run();
 failures += F07Checks.Run();
 failures += F08Checks.Run();
 failures += F09Checks.Run();
+failures += F09OwnershipChecks.Run();
 failures += RunWindowHostIntegration();
 failures += RunPackagedInstanceIntegration();
 

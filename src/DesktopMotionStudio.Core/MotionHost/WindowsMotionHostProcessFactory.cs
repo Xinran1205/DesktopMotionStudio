@@ -33,27 +33,15 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
             MotionHostFrameCodec.MaximumFrameBytes + MotionHostFrameCodec.HeaderSize,
             MotionHostFrameCodec.MaximumFrameBytes + MotionHostFrameCodec.HeaderSize);
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = _hostExecutablePath,
-            WorkingDirectory = Path.GetDirectoryName(_hostExecutablePath)!,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        startInfo.ArgumentList.Add("--pipe");
-        startInfo.ArgumentList.Add(pipeName);
-        startInfo.ArgumentList.Add("--request-id");
-        startInfo.ArgumentList.Add(request.RequestId.ToString("D"));
-
-        var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+        OwnedMotionHostProcess? owned = null;
         try
         {
-            if (!process.Start()) throw new InvalidOperationException("MotionHost process could not be started.");
-            return new WindowsMotionHostSession(pipe, process, request);
+            owned = OwnedMotionHostProcess.Start(_hostExecutablePath, pipeName, request.RequestId);
+            return new WindowsMotionHostSession(pipe, owned, request);
         }
         catch
         {
-            process.Dispose();
+            owned?.Dispose();
             pipe.Dispose();
             throw;
         }
@@ -63,12 +51,16 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
     {
         private readonly NamedPipeServerStream _pipe;
         private readonly Process _process;
+        private readonly OwnedMotionHostProcess _owned;
         private readonly MotionHostStartRequest _request;
         private readonly SemaphoreSlim _writeLock = new(1, 1);
         private readonly object _stateLock = new();
         private readonly TaskCompletionSource<MotionHostOutcome?> _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<MotionHostOutcome> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Task _protocolTask;
+        private readonly CancellationTokenSource _deadlineCancellation = new();
+        private Task _deadlineTask = Task.CompletedTask;
+        private Task? _stopDeadlineTask;
         private MotionHostProtocolState _state = MotionHostProtocolState.AwaitingReady;
         private MotionHostOutcome? _terminalOutcome;
         private MotionHostOutcome? _requestedOutcome;
@@ -78,14 +70,18 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
         public WindowsMotionHostSession(
             NamedPipeServerStream pipe,
-            Process process,
+            OwnedMotionHostProcess owned,
             MotionHostStartRequest request)
         {
             _pipe = pipe;
-            _process = process;
+            _owned = owned;
+            _process = owned.Process;
             _request = request;
             _protocolTask = RunProtocolAsync();
         }
+
+        public Task<MotionHostOutcome?> Started => _started.Task;
+        public Task<MotionHostOutcome> Completion => _completion.Task;
 
         public MotionHostError? FailureReason
         {
@@ -118,12 +114,20 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
             {
                 try { await SendCommandAsync(MotionHostMessageKind.Handoff, cancellationToken).ConfigureAwait(false); }
                 catch (InvalidDataException) when (IsClosingOrCompleted()) { }
+                catch (IOException) when (IsClosingOrCompleted()) { }
             }
             return await _completion.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async Task<MotionHostOutcome> ShutdownAsync(CancellationToken cancellationToken = default)
         {
+            if (_completion.Task.IsCompleted) return await _completion.Task.ConfigureAwait(false);
+            lock (_stateLock)
+            {
+                if (_state is MotionHostProtocolState.AwaitingReady or MotionHostProtocolState.AwaitingStart or MotionHostProtocolState.Starting)
+                    Complete(MotionHostOutcome.Exited); // The child cannot read Stop until Started; close early ownership directly.
+                else if (_terminalOutcome is null) _stopDeadlineTask ??= EnforceStopDeadlineAsync();
+            }
             if (_completion.Task.IsCompleted) return await _completion.Task.ConfigureAwait(false);
             if (_pipe.IsConnected)
             {
@@ -137,14 +141,14 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
                 if (shouldSendShutdown)
                 {
-                    try { await SendCommandAsync(MotionHostMessageKind.Shutdown, cancellationToken).ConfigureAwait(false); }
+                    try { await SendCommandAsync(MotionHostMessageKind.Shutdown, cancellationToken).WaitAsync(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false); }
                     catch (InvalidDataException) when (IsClosingOrCompleted()) { }
+                    catch (IOException) when (IsClosingOrCompleted()) { }
+                    catch (TimeoutException) { Complete(MotionHostOutcome.Exited); }
                 }
             }
-            await _process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
-            return _completion.Task.IsCompleted
-                ? await _completion.Task.ConfigureAwait(false)
-                : MotionHostOutcome.Exited;
+            else Complete(MotionHostOutcome.Exited);
+            return await _completion.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
 
         public async ValueTask DisposeAsync()
@@ -160,27 +164,12 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
             try { _pipe.Dispose(); }
             catch (IOException) { }
-
-            try
-            {
-                if (!_process.HasExited)
-                    await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-            }
-            catch (TimeoutException)
-            {
-                try
-                {
-                    if (!_process.HasExited) _process.Kill(entireProcessTree: false);
-                    await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
-                }
-                catch (Exception) { }
-            }
-            catch (Exception) { }
-
-            try { await _protocolTask.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false); }
+            Complete(MotionHostOutcome.Exited);
+            try { await Task.WhenAll(_protocolTask, _deadlineTask, _stopDeadlineTask ?? Task.CompletedTask, _process.WaitForExitAsync()).WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false); }
             catch (Exception) { }
             _pipe.Dispose();
-            _process.Dispose();
+            _owned.Dispose();
+            _deadlineCancellation.Dispose();
             _writeLock.Dispose();
         }
 
@@ -195,10 +184,13 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
                     throw new InvalidDataException("MotionHost did not complete the expected handshake.");
 
                 await SendCommandAsync(MotionHostMessageKind.Start, CancellationToken.None, _request.ToStartFrame()).ConfigureAwait(false);
-
+                bool waitingForStarted = true;
                 while (true)
                 {
-                    MotionHostFrame? frame = await MotionHostFrameCodec.ReadAsync(_pipe).ConfigureAwait(false);
+                    Task<MotionHostFrame?> read = MotionHostFrameCodec.ReadAsync(_pipe);
+                    MotionHostFrame? frame = waitingForStarted
+                        ? await read.WaitAsync(TimeSpan.FromMilliseconds(750)).ConfigureAwait(false)
+                        : await read.ConfigureAwait(false);
                     if (frame is null) throw new EndOfStreamException("MotionHost disconnected before completion.");
                     if (!AcceptIncoming(frame, frame.Kind))
                         throw new InvalidDataException("MotionHost sent an invalid protocol transition.");
@@ -211,22 +203,25 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
                             Complete(completedOutcome);
                             return;
                         case MotionHostMessageKind.Started:
-                            _started.TrySetResult(null);
+                            waitingForStarted = false;
+                            lock (_stateLock)
+                            {
+                                if (_terminalOutcome is null)
+                                {
+                                    _deadlineTask = EnforceDeadlineAsync();
+                                    _started.TrySetResult(null);
+                                }
+                            }
                             break;
                         case MotionHostMessageKind.SkipRequested:
                             Complete(MotionHostOutcome.Skipped);
-                            break;
+                            return;
                         case MotionHostMessageKind.TimedOut:
-                            Complete(MotionHostOutcome.TimedOut);
-                            break;
+                            Complete(MotionHostOutcome.TimedOut, MotionHostError.TimedOut);
+                            return;
                         case MotionHostMessageKind.Failed:
-                            lock (_stateLock)
-                            {
-                                _failureReason = frame.Error ?? MotionHostError.RendererFailed;
-                                _nativeErrorCode = frame.NativeErrorCode;
-                            }
-                            Complete(MotionHostOutcome.Failed);
-                            break;
+                            Complete(MotionHostOutcome.Failed, frame.Error ?? MotionHostError.RendererFailed, frame.NativeErrorCode);
+                            return;
                         case MotionHostMessageKind.Finished:
                             MotionHostOutcome finishedOutcome;
                             lock (_stateLock) finishedOutcome = _terminalOutcome ?? _requestedOutcome ?? MotionHostOutcome.Exited;
@@ -237,33 +232,35 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
             }
             catch (TimeoutException)
             {
-                SetFailure(MotionHostError.ConnectionTimeout);
-                Complete(MotionHostOutcome.Failed);
+                Complete(MotionHostOutcome.Failed, MotionHostError.ConnectionTimeout);
             }
             catch (MotionHostProtocolException ex)
             {
-                SetFailure(ex.Error);
-                Complete(MotionHostOutcome.Failed);
+                Complete(MotionHostOutcome.Failed, ex.Error);
             }
             catch (InvalidDataException)
             {
-                SetFailure(MotionHostError.InvalidMessage);
-                Complete(MotionHostOutcome.Failed);
+                Complete(MotionHostOutcome.Failed, MotionHostError.InvalidMessage);
             }
             catch (Exception)
             {
-                SetFailure(MotionHostError.RendererFailed);
-                Complete(MotionHostOutcome.Failed);
+                Complete(MotionHostOutcome.Failed, MotionHostError.RendererFailed);
             }
         }
 
-        private void SetFailure(MotionHostError reason, int? nativeErrorCode = null)
+        private async Task EnforceDeadlineAsync()
         {
-            lock (_stateLock)
-            {
-                _failureReason ??= reason;
-                _nativeErrorCode ??= nativeErrorCode;
-            }
+            try { await Task.Delay(_request.MaximumVisibleMilliseconds, _deadlineCancellation.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) { return; }
+            // Thread-pool timer, independent of either UI dispatcher and the host's ability to read Stop.
+            Complete(MotionHostOutcome.TimedOut, MotionHostError.TimedOut);
+        }
+
+        private async Task EnforceStopDeadlineAsync()
+        {
+            try { await Task.Delay(TimeSpan.FromSeconds(1), _deadlineCancellation.Token).ConfigureAwait(false); }
+            catch (OperationCanceledException) { return; }
+            Complete(MotionHostOutcome.Exited); // Stop cannot depend on another caller later disposing the session.
         }
 
         private bool AcceptIncoming(MotionHostFrame frame, MotionHostMessageKind expectedKind)
@@ -306,11 +303,20 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
             finally { _writeLock.Release(); }
         }
 
-        private void Complete(MotionHostOutcome outcome)
+        private void Complete(MotionHostOutcome outcome, MotionHostError? error = null, int? nativeErrorCode = null)
         {
-            lock (_stateLock) _terminalOutcome ??= outcome;
-            _started.TrySetResult(outcome);
-            _completion.TrySetResult(_terminalOutcome.Value);
+            lock (_stateLock)
+            {
+                if (_terminalOutcome is not null) return;
+                _terminalOutcome = outcome;
+                _failureReason ??= error;
+                _nativeErrorCode ??= nativeErrorCode;
+                _state = MotionHostProtocolState.Closed;
+                _deadlineCancellation.Cancel();
+                _owned.Terminate(); // Close ownership before signalling any terminal observer.
+                _started.TrySetResult(outcome);
+                _completion.TrySetResult(outcome);
+            }
         }
 
         private bool IsClosingOrCompleted()

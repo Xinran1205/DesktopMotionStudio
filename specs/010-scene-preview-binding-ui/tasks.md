@@ -23,7 +23,7 @@
 - [X] T007 [US2] Add pure timeline/finite-value/endpoint/interpolation/reduced-motion checks to `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs`; implement Core `Scenes/SceneTimeline.cs` after T001.
 - [X] T008 [US2] Add IPC v2 and state-transition tests in `F09Checks.cs`: old/future version rejection, strict bounded snapshot, request mismatch, Preview requires playback, natural Completed only for Preview, legacy lifecycle Launch and fail-open behavior. Keep F06 assertions meaningful.
 - [X] T009 [US2] Implement explicit version2 contracts/codec and lifecycle extensions in Core `MotionHost/{MotionHostContracts,MotionHostFrameCodec,WindowsMotionHostProcessFactory,MotionHostLifecycleCoordinator}.cs`; add optional validated playback to launch coordination without delaying real target-ready handoff.
-- [ ] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
+- [X] T010 [US2] Implement parent-owned safe job adapter with only the created host assigned before Start in Core/MotionHost, after T002; enforce graceful/forced cleanup bounds and handle assignment/start failure without leaks.
 - [ ] T011 [US2] Promote shared paint to MotionHost `SceneSurface.cs`; integrate actual drawing/preview simulation/reduced motion/completion with `HostProtocolClient.cs`, `MotionHostWindow.cs` and `Program.cs` after T001/T007–T010. Remove the temporary unsupported-playback guard only with the real surface. Preview must never fall back to the lifecycle status card.
 - [ ] T012 [US2] Implement target-free session contracts and serial generation coordinator in Core `Preview/{PreviewContracts,PreviewCoordinator}.cs`; cover cancel during startup, replacement, stale completions and closed-owner cleanup with controlled-session tests in Studio Checks `PreviewRaceChecks.cs`.
 
@@ -52,8 +52,8 @@ The POCs can be researched independently, but no other feature starts before F09
 
 ## Planning review supplements
 
-- [ ] T022 Implement the live-parent non-UI deadline in Core/MotionHost session after Started, independent of child Timer/Stop; test parent alive + hung host + no user Stop returns TimedOut and owned-job cleanup within10s in F09Checks/desktop integration (FR-005/012). This gates T019 completion.
-- [ ] T023 Use STARTUPINFOEX/PROC_THREAD_ATTRIBUTE_JOB_LIST in the T010 Windows adapter, preserving native process/thread handles and non-inheritance; resume the initial thread only after ownership is established and clean the job if resume fails. Cover early parent death before normal handshake, creation/association failure and no orphan. The suspended POC must not be copied without this production resume lifecycle. T002 gates this adapter; T023 gates T011/T019 (FR-005/010).
+- [X] T022 Implement the live-parent non-UI deadline in Core/MotionHost session after Started, independent of child Timer/Stop; test parent alive + hung host + no user Stop returns TimedOut and owned-job cleanup within10s in F09Checks/desktop integration (FR-005/012). This gates T019 completion.
+- [X] T023 Use STARTUPINFOEX/PROC_THREAD_ATTRIBUTE_JOB_LIST in the T010 Windows adapter, preserving native process/thread handles and non-inheritance; resume the initial thread only after ownership is established and clean the job if resume fails. Cover early parent death before normal handshake, creation/association failure and no orphan. The suspended POC must not be copied without this production resume lifecycle. T002 gates this adapter; T023 gates T011/T019 (FR-005/010).
 - [X] T024 Implement root-level TooManyScenes on entry257 before sidecar reads/sorting, with no partial library; add 256/257/entry257-duplicate cases to T003 and bounded enumeration in T004/T005 (FR-002/010). This gates T013.
 
 ## Incremental implementation
