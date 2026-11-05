@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
+using DesktopMotionStudio.Core.Applications;
 
 namespace DesktopMotionStudio.Core.State;
 
@@ -9,7 +11,10 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = false,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+        MaxDepth = 32,
+        Converters = { new JsonStringEnumConverter<ApplicationTargetKind>(allowIntegerValues: false) }
     };
     private readonly string _filePath = Path.GetFullPath(filePath);
 
@@ -29,10 +34,22 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
             byte[] bytes = new byte[checked((int)stream.Length)];
             stream.ReadExactly(bytes);
             if (stream.ReadByte() != -1) return Fail(RepositoryError.InvalidState);
+            using JsonDocument document = JsonDocument.Parse(bytes, new JsonDocumentOptions { MaxDepth = 32 });
+            if (HasDuplicateMembers(document.RootElement)) return Fail(RepositoryError.InvalidJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("schemaVersion", out JsonElement version) ||
+                version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out int schema))
+                return Fail(RepositoryError.InvalidState);
+            if (schema > StudioState.CurrentSchemaVersion) return Fail(RepositoryError.UnsupportedSchema);
+            if (schema is not (1 or StudioState.CurrentSchemaVersion)) return Fail(RepositoryError.InvalidState);
             StudioState? state = JsonSerializer.Deserialize<StudioState>(bytes, JsonOptions);
             if (state is null) return Fail(RepositoryError.InvalidJson);
-            if (state.SchemaVersion > StudioState.CurrentSchemaVersion) return Fail(RepositoryError.UnsupportedSchema);
-            if (state.SchemaVersion != StudioState.CurrentSchemaVersion) return Fail(RepositoryError.InvalidState);
+            if (schema == 1)
+            {
+                if (state.Applications is null || state.Applications.Any(app => app is null || app.Target is not null))
+                    return Fail(RepositoryError.InvalidState);
+                state = state with { SchemaVersion = StudioState.CurrentSchemaVersion };
+            }
             return Validate(state) ? new RepositoryResult(state, RepositoryError.None) : Fail(RepositoryError.InvalidState);
         }
         catch (FileNotFoundException) { return new RepositoryResult(StudioState.Empty, RepositoryError.None); }
@@ -136,7 +153,8 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
         foreach (ApplicationProfile? app in state.Applications)
             if (app is null || string.IsNullOrWhiteSpace(app.AppId) || app.AppId.Length > 128 ||
                 string.IsNullOrWhiteSpace(app.DisplayName) || app.DisplayName.Length > 120 ||
-                string.IsNullOrWhiteSpace(app.LaunchTarget) || app.LaunchTarget.Length > 2048 || !apps.Add(app.AppId)) return false;
+                string.IsNullOrWhiteSpace(app.LaunchTarget) || app.LaunchTarget.Length > 2048 ||
+                (app.Target is not null && !app.Target.IsValid) || !apps.Add(app.AppId)) return false;
 
         var bindings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var boundApps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -149,4 +167,18 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
     }
 
     private static RepositoryResult Fail(RepositoryError error) => new(null, error);
+
+    private static bool HasDuplicateMembers(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (JsonProperty property in element.EnumerateObject())
+                if (!names.Add(property.Name) || HasDuplicateMembers(property.Value)) return true;
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+            foreach (JsonElement item in element.EnumerateArray())
+                if (HasDuplicateMembers(item)) return true;
+        return false;
+    }
 }

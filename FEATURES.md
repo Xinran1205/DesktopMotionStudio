@@ -1,8 +1,8 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.11 · **Date:** 2026-11-04
+**Status:** Incremental implementation · **Version:** 1.0.12 · **Date:** 2026-11-05
 
-The repository began with requirements documents only. F00–F07 are complete with automated, process, and interactive Windows acceptance evidence. Dependencies below are sequencing gates, not claims of implementation.
+The repository began with requirements documents only. F00–F08 are complete with automated, process, and interactive Windows acceptance evidence. Dependencies below are sequencing gates, not claims of implementation.
 
 | Order | Module / Feature | Outcome | Depends on | Status |
 |---:|---|---|---|---|
@@ -14,8 +14,8 @@ The repository began with requirements documents only. F00–F07 are complete wi
 | 5 | Window coordination / F05 Instance detection and activation | Activate existing instance; bounded wait for newly launched app window | F04 | Complete |
 | 6 | Renderer / F06 MotionHost lifecycle and fail-open | Isolated renderer process, skip, timeout, crash cleanup, safe fade fallback | F01, F03, F05 | Complete |
 | 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 | Complete |
-| 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04, F07 | Specification refined; planning next |
-| 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F07, F08 | Spec baseline |
+| 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04, F07 | Complete; real UI at 100/125/150% |
+| 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F07, F08 | Next; specification refinement |
 | 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create/repair/disable only verified owned shortcuts | F02, F04, F07 | Spec baseline |
 | 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F10 | Spec baseline |
 | 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Spec baseline |
@@ -48,3 +48,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.9 | 2026-11-04 | Complete F06 after 96 passing checks and Windows 11 desktop acceptance for Skip, Esc, host-crash cleanup, no-taskbar style, placement, reduced-motion close, and a 291.3 ms standard fade. |
 | 1.0.10 | 2026-11-04 | Complete F07 binding lifecycle and transactional state updates after independent review, 134 total passing checks, and real same-scene/two-target handoff. |
 | 1.0.11 | 2026-11-04 | Start F08 with explicit application-management, typed-target, legacy migration and Windows UI acceptance specification. |
+| 1.0.12 | 2026-11-05 | Complete F08 WPF management, typed metadata/migration and bounded local discovery after independent review, 171 Core checks, 13 Studio checks and 16 UI assertions at each actual 100/125/150% scale; advance to F09. |

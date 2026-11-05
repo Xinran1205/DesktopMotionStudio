@@ -1,8 +1,8 @@
 # Feature Specification: My applications
 
 **Feature Branch**: `codex/f08-application-management`
-**Created**: 2026-11-03 · **Revised**: 2026-11-04
-**Status**: Specified · **Version**: 0.2.0
+**Created**: 2026-11-03 · **Revised**: 2026-11-05
+**Status**: Converged · **Version**: 1.0.0
 **Input**: PRD My applications, TDD application discovery/management, F02/F04/F07.
 
 ## Goal
@@ -114,3 +114,4 @@ Existing schema-1 profiles remain recoverable when typed target metadata is intr
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline. |
 | 0.2.0 | 2026-11-04 | Define saved-only Studio home, explicit target registration/discovery, repair/removal, F07 integration and versioned legacy preservation. |
+| 1.0.0 | 2026-11-05 | Converge against typed-state/registry/discovery implementation, 171-pass Core regression, 13 Studio checks, independent review and actual 100/125/150% UI acceptance. |

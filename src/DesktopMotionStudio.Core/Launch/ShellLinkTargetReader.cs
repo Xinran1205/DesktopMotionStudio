@@ -17,8 +17,7 @@ internal static class ShellLinkTargetReader
 
     public static ShellLinkTargetReadResult Read(string shortcutPath)
     {
-        if (!OperatingSystem.IsWindows() || string.IsNullOrWhiteSpace(shortcutPath) ||
-            !Path.IsPathFullyQualified(shortcutPath) || !File.Exists(shortcutPath) ||
+        if (!LaunchTargetIdentityResolver.IsLocalPath(shortcutPath) || !File.Exists(shortcutPath) ||
             !string.Equals(Path.GetExtension(shortcutPath), ".lnk", StringComparison.OrdinalIgnoreCase))
             return Invalid();
 
@@ -28,9 +27,6 @@ internal static class ShellLinkTargetReader
             link = new ShellLinkCom();
             ((IPersistFileCom)link).Load(shortcutPath, 0);
             var shellLink = (IShellLinkWCom)link;
-            int resolveResult = shellLink.Resolve(IntPtr.Zero, 1); // SLR_NO_UI
-            if (resolveResult < 0) return Invalid(resolveResult);
-
             var executablePath = new StringBuilder(32_768);
             var workingDirectory = new StringBuilder(32_768);
             var arguments = new StringBuilder(32_768);

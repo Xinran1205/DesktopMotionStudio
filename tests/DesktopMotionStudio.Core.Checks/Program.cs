@@ -21,6 +21,8 @@ if (args.Length == 6 && args[0] == "--f07-binding-worker")
     return F07Checks.RunWorker(args[1], args[2], args[3], args[4], args[5]);
 if (args.Length == 1 && args[0] == "--f07-checks")
     return F07Checks.Run();
+if (args.Length == 1 && args[0] == "--f08-checks")
+    return F08Checks.Run();
 
 var cases = new (string Name, string Json, SceneManifestError Expected)[]
 {
@@ -67,6 +69,7 @@ failures += RunLaunchChecks();
 failures += RunInstanceChecks();
 failures += F06Checks.Run();
 failures += F07Checks.Run();
+failures += F08Checks.Run();
 failures += RunWindowHostIntegration();
 failures += RunPackagedInstanceIntegration();
 
@@ -82,7 +85,7 @@ static int RunRepositoryChecks()
         bool emptyPassed = empty.IsSuccess && empty.State == StudioState.Empty;
         Console.WriteLine($"{(emptyPassed ? "PASS" : "FAIL")} empty state default");
 
-        var first = new StudioState(1,
+        var first = new StudioState(StudioState.CurrentSchemaVersion,
             [new ApplicationProfile("app-1", "Editor", "C:/Apps/editor.exe")],
             [new ApplicationBinding("binding-1", "app-1", "dragon-portal", true)], StudioSettings.Default);
         bool firstSave = repository.Save(first) == RepositoryError.None;
@@ -103,7 +106,7 @@ static int RunRepositoryChecks()
                              JsonHasTheme(File.ReadAllBytes(path + ".bak"), "dark");
         Console.WriteLine($"{(rotatedBackup ? "PASS" : "FAIL")} backup rotation");
 
-        byte[] future = Encoding.UTF8.GetBytes("{\"schemaVersion\":2}");
+        byte[] future = Encoding.UTF8.GetBytes($"{{\"schemaVersion\":{StudioState.CurrentSchemaVersion + 1}}}");
         File.WriteAllBytes(path, future);
         bool futureRejected = repository.Load().Error == RepositoryError.UnsupportedSchema;
         RepositoryError futureSaveResult = repository.Save(first);

@@ -1,6 +1,8 @@
+using DesktopMotionStudio.Core.Applications;
+
 namespace DesktopMotionStudio.Core.State;
 
-public sealed record ApplicationProfile(string AppId, string DisplayName, string LaunchTarget);
+public sealed record ApplicationProfile(string AppId, string DisplayName, string LaunchTarget, ApplicationTargetDefinition? Target = null);
 
 public sealed record ApplicationBinding(string BindingId, string AppId, string SceneId, bool Enabled);
 
@@ -15,7 +17,7 @@ public sealed record StudioState(
     IReadOnlyList<ApplicationBinding> Bindings,
     StudioSettings Settings)
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public static StudioState Empty { get; } = new(CurrentSchemaVersion, [], [], StudioSettings.Default);
 }
 

@@ -276,7 +276,7 @@ internal static class F07Checks
         return false;
     }
 
-    private static StudioState Seed() => new(1,
+    private static StudioState Seed() => new(StudioState.CurrentSchemaVersion,
         [new("app-one", "First", Environment.ProcessPath!), new("app-two", "Second", Environment.ProcessPath!)], [], new StudioSettings("dark", true));
 
     private static void WriteScene(string root, string directory, string json)
@@ -352,7 +352,7 @@ internal static class F07WindowsIntegration
             File.WriteAllText(Path.Combine(sceneRoot, "one", "scene.json"),
                 """{"schemaVersion":1,"sceneId":"scene-one","sceneVersion":"1.0.0","name":"Shared fixture","displayMode":"centered","assets":[]}""");
             var store = new StudioStateRepository(Path.Combine(root, "state.json"));
-            if (store.Save(new StudioState(1, apps, [], StudioSettings.Default)) != RepositoryError.None)
+            if (store.Save(new StudioState(StudioState.CurrentSchemaVersion, apps, [], StudioSettings.Default)) != RepositoryError.None)
                 throw new InvalidOperationException("Could not seed live binding fixtures.");
             var service = new BindingService(store, () => new BuiltInSceneCatalog().Scan(sceneRoot),
                 app => new ExecutableTarget(app.LaunchTarget, []));
