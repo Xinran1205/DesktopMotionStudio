@@ -14,7 +14,8 @@ internal sealed class MotionHostWindow : Form
     private const int ToolWindowExtendedStyle = 0x00000080;
     private const int AppWindowExtendedStyle = 0x00040000;
     private static readonly Color TransparentColor = Color.Magenta;
-    private static readonly TimeSpan FadeDuration = TimeSpan.FromMilliseconds(250);
+    // Leave IPC, painting and process-exit headroom inside the 300ms handoff acceptance bound.
+    private static readonly TimeSpan FadeDuration = TimeSpan.FromMilliseconds(200);
     private readonly MotionHostStartPayload _start;
     private readonly Panel _card;
     private readonly SceneSurface? _surface;

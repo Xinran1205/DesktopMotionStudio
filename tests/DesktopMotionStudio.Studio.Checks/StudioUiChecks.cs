@@ -30,6 +30,7 @@ internal static class StudioUiChecks
         string manifestPath = Path.Combine(sceneDirectory, "scene.json");
         const string manifest = """{"schemaVersion":1,"sceneId":"scene-one","sceneVersion":"1.0.0","name":"Fixture","displayMode":"centered","assets":[]}""";
         File.WriteAllText(manifestPath, manifest);
+        File.WriteAllText(Path.Combine(sceneDirectory, "scene.playback.json"), F09WindowChecks.PlaybackJson("scene-one"));
         string[] targets = Enumerable.Range(0, 2).Select(index =>
         {
             string directory = Path.Combine(root, $"target-{index}");
@@ -81,6 +82,7 @@ internal static class StudioUiChecks
             Program.Record("keyboard binding disable and unavailable-scene enable rejection preserve identity",
                 store.Load().State!.Bindings.Single() is { BindingId: "ui-binding", Enabled: false }, ref failures);
             File.WriteAllText(manifestPath, manifest);
+            File.WriteAllText(Path.Combine(sceneDirectory, "scene.playback.json"), F09WindowChecks.PlaybackJson("scene-one"));
             ((InvokePattern)Find(mainElement, "刷新应用").GetCurrentPattern(InvokePattern.Pattern)).Invoke();
             Require(Program.WaitFor(() => Find(mainElement, "切换动效启用状态").Current.IsEnabled), "Binding view did not become ready.");
             Find(mainElement, "切换动效启用状态").SetFocus(); Keys(main, 0x20);
@@ -172,14 +174,14 @@ internal static class StudioUiChecks
         return failures == 0 ? 0 : 1;
     }
 
-    private static Process Start(string executable, string state, string catalog)
+    internal static Process Start(string executable, string state, string catalog)
     {
         var start = new ProcessStartInfo(executable) { UseShellExecute = false };
         foreach (string arg in new[] { "--state-file", state, "--catalog-root", catalog }) start.ArgumentList.Add(arg);
         return Process.Start(start) ?? throw new InvalidOperationException("Studio did not start.");
     }
 
-    private static void Stop(Process process)
+    internal static void Stop(Process process)
     {
         try
         {
@@ -189,14 +191,14 @@ internal static class StudioUiChecks
         finally { process.Dispose(); }
     }
 
-    private static nint Window(Process process, string title)
+    internal static nint Window(Process process, string title)
     {
         nint window = 0;
         Require(Program.WaitFor(() => { window = FindWindow(process.Id, title); return window != 0; }, ReadyTimeout), $"Window not found: {title}");
         return window;
     }
 
-    private static nint FindWindow(int pid, string title)
+    internal static nint FindWindow(int pid, string title)
     {
         nint found = 0;
         EnumWindows((window, _) =>
@@ -209,19 +211,19 @@ internal static class StudioUiChecks
         return found;
     }
 
-    private static AutomationElement Find(AutomationElement root, string name) =>
+    internal static AutomationElement Find(AutomationElement root, string name) =>
         root.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, name))
         ?? throw new InvalidOperationException($"Control not found: {name}");
-    private static void Value(AutomationElement root, string name, string value) => ((ValuePattern)Find(root, name).GetCurrentPattern(ValuePattern.Pattern)).SetValue(value);
+    internal static void Value(AutomationElement root, string name, string value) => ((ValuePattern)Find(root, name).GetCurrentPattern(ValuePattern.Pattern)).SetValue(value);
     private static string ReadValue(AutomationElement root, string name) => ((ValuePattern)Find(root, name).GetCurrentPattern(ValuePattern.Pattern)).Current.Value;
-    private static string Status(AutomationElement root) => root.FindFirst(TreeScope.Descendants,
+    internal static string Status(AutomationElement root) => root.FindFirst(TreeScope.Descendants,
         new PropertyCondition(AutomationElement.AutomationIdProperty, "OperationStatus"))?.Current.Name ?? string.Empty;
     private static void InvokeById(AutomationElement root, string id) => ((InvokePattern)(root.FindFirst(TreeScope.Descendants,
         new PropertyCondition(AutomationElement.AutomationIdProperty, id)) ?? throw new InvalidOperationException("Confirmation button not found.")).GetCurrentPattern(InvokePattern.Pattern)).Invoke();
-    private static int CountTargets(string path) { Process[] processes = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(path)); int count = processes.Length; foreach (Process process in processes) process.Dispose(); return count; }
+    internal static int CountTargets(string path) { Process[] processes = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(path)); int count = processes.Length; foreach (Process process in processes) process.Dispose(); return count; }
     private static void Require(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
 
-    private static void Keys(nint window, params ushort[] keys)
+    internal static void Keys(nint window, params ushort[] keys)
     {
         SetForegroundWindow(window);
         Require(Program.WaitFor(() => GetForegroundWindow() == window, TimeSpan.FromMilliseconds(500)), "Could not focus the owned test window.");
@@ -239,8 +241,8 @@ internal static class StudioUiChecks
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out uint pid);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(nint window, StringBuilder text, int size);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
-    [DllImport("user32.dll")] private static extern uint GetDpiForWindow(nint window);
+    [DllImport("user32.dll")] internal static extern uint GetDpiForWindow(nint window);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(nint window);
-    [DllImport("user32.dll")] private static extern nint GetForegroundWindow();
+    [DllImport("user32.dll")] internal static extern nint GetForegroundWindow();
     [DllImport("user32.dll", SetLastError = true)] private static extern uint SendInput(uint count, Input[] inputs, int size);
 }

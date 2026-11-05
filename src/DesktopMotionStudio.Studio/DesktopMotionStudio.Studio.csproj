@@ -13,6 +13,21 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
+    <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_MotionHostTarget" />
+    </MSBuild>
+    <PropertyGroup><_MotionHostDirectory>@(_MotionHostTarget->'%(RootDir)%(Directory)')</_MotionHostDirectory></PropertyGroup>
+    <ItemGroup>
+      <_BundledMotionHostFile Include="$(_MotionHostDirectory)*" Exclude="$(_MotionHostDirectory)*.pdb" />
+      <Content Include="@(_BundledMotionHostFile)">
+        <Link>MotionHost/%(_BundledMotionHostFile.Filename)%(_BundledMotionHostFile.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
 </Project>

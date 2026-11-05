@@ -1,13 +1,11 @@
 # F09 Implementation Checkpoint
 
-**Updated:** 2026-11-05 · **Branch:** `codex/f09-scene-preview-binding`
+**Updated:** 2026-11-05 · **Branch:** `codex/f09-scene-preview-binding` · **Status:** Complete
 
-F08 converged at `90b70c9`. F09 milestones: risk/spec `1837210`, readers/timeline `d209862`, IPC2 `ed460cf`, owned jobs/deadlines `12641f3`, production shared drawing `b9d6436`. Requirements checklist16/16 passes. Task count28;19 complete,9 pending. No owner clarification is pending.
+F09 has31/31 tasks completed with evidence. Requirements checklist16/16 passes. Analyze maps12 FR+5 SC keys with100% coverage; independent reviews and Converge report no outstanding required gaps. See review.md and evidence.md for scope.
 
-Completed: T001–T012 and T022–T028. Implemented strict scene data/resource policy, original development content, pure timeline, IPC2, creation-time ownership/real resume/failure cleanup, independent runtime/Stop deadlines, shared production drawing and target-free single-session coordination. Replacement waits for actual old process exit; stale completion/cancel cannot alter latest state. Cleanup failure blocks another host. These implementation boundaries have independent reviews with no remaining P1/P2.
+Verified:321 Core checks,53 Studio checks,10 production drawing checks; F08 external UI16; final published F09 UI16 and shipped-catalog2. One optional packaged-instance integration is explicitly skipped. Actual100/125/150% and OS animation Off/On passed; original125%/On restored. Latest real owned-thread crash/hang suite15 passed after a test-only ownership correction. Actual scene handoff240ms and hung-UI cleanup1518ms.
 
-Latest verification:306 Core PASS/0 FAIL/1 optional packaged-instance SKIP;31 Studio worker/discovery/preview/WPF checks;10 production drawing/window checks. This includes18 controlled preview cases and5 actual coordinator checks across3 successive visible hosts. Selected scene Completed3279ms, Stop31ms, Handoff287ms; actual target scene handoff passes before sequence end. Formatting, Release builds and analyzers pass. See evidence.md for exact PIDs/HWNDs/logs and red/green regressions.
+Delivered library/cover/details, target-free shared-renderer preview/Stop, latest-state binding/picker/replacement/home, safe process ownership/deadlines and UI intent ordering. State2/manifest1 retained. Development content is labelled honestly. Framework-dependent publish runs with its own bundled MotionHost; installer and licensed release content remain later features.
 
-Resume at T013: WPF library/cover navigation and playable action states, followed by T014 current-playability F07 adapter, T015 picker, T016 home and T017 Studio preview/close wiring. T018–T021 require external UI, repeated/skip/crash/hang/close, actual100/125/150% and both OS motion preferences, final independent review/Analyze/Converge. Those gates remain open; injected motion pixel checks do not substitute for actual OS acceptance. No F10 until F09 converges.
-
-Use `C:\Users\AAA\.dotnet\dotnet.exe` and `DOTNET_ROOT=C:\Users\AAA\.dotnet`. Desktop acceptance uses isolated state/catalog/target fixtures. No user profile is a test fixture.
+Next feature: F10, `specs/011-managed-shortcuts`. Refine its independent spec/plan/tasks and validate shortcut ownership risks before implementation. Do not infer shortcut ownership from filenames or overwrite user shortcuts. Use the pinned SDK and isolated fixture paths.

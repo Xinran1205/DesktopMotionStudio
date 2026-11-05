@@ -15,6 +15,8 @@ internal static class WpfRaceChecks
         application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative) });
         try
         {
+            F09ViewChecks.Run(ref failures);
+            F09WindowChecks.Run(ref failures);
             using var saveStore = new GatedStore(delayUpdate: true);
             var editor = new ApplicationEditorWindow(new ApplicationRegistry(saveStore));
             ((TextBox)editor.FindName("DisplayNameBox")).Text = "Delayed fixture";

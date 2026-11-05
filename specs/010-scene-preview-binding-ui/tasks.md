@@ -31,18 +31,18 @@
 
 **Goal/test:** Browse and bind/replace from library/home with stable IDs, truthful errors and no app launch.
 
-- [ ] T013 [US1] Implement WPF `SceneLibraryWindow.*` and bounded `SceneCoverLoader.cs`, library navigation, cover/fallback/details/empty/loading/error, keyboard operation and current playable action states; image streams use OnLoad/freeze/close.
-- [ ] T014 [US3] Add default-compatible scene eligibility to Core `Bindings/BindingService.cs` and transaction-time current IsPlayable adapter for Studio; test removed work/app, old unavailable binding/no-op, Busy/I/O/concurrent changes and preservation in F09Checks.
-- [ ] T015 [US3] Implement `BindingPickerWindow.*` plus confirm/cancel/saved-target validation in Studio; call F07 transactions, preserve IDs/unrelated state and refresh committed state; never hide reload errors with old success text.
-- [ ] T016 [US3] Update Studio `MainWindow.*` with bound work name/cover/status, Preview/Replace entry points and intended scene/app selection; retain F08 generation/closed/readable protections and stored unavailable bindings.
-- [ ] T017 [US2] Wire library/home Preview/Stop and Studio close to the shared coordinator; keep only one active owned preview, report actual outcome and prevent stale errors/selection changes from overwriting latest UI.
+- [X] T013 [US1] Implement WPF `SceneLibraryWindow.*` and bounded `SceneCoverLoader.cs`, library navigation, cover/fallback/details/empty/loading/error, keyboard operation and current playable action states; image streams use OnLoad/freeze/close.
+- [X] T014 [US3] Add default-compatible scene eligibility to Core `Bindings/BindingService.cs` and transaction-time current IsPlayable adapter for Studio; test removed work/app, old unavailable binding/no-op, Busy/I/O/concurrent changes and preservation in F09Checks.
+- [X] T015 [US3] Implement `BindingPickerWindow.*` plus confirm/cancel/saved-target validation in Studio; call F07 transactions, preserve IDs/unrelated state and refresh committed state; never hide reload errors with old success text.
+- [X] T016 [US3] Update Studio `MainWindow.*` with bound work name/cover/status, Preview/Replace entry points and intended scene/app selection; retain F08 generation/closed/readable protections and stored unavailable bindings.
+- [X] T017 [US2] Wire library/home Preview/Stop and Studio close to the shared coordinator; keep only one active owned preview, report actual outcome and prevent stale errors/selection changes from overwriting latest UI.
 
 ## Phase 5: Validation and convergence
 
-- [ ] T018 Add actual external Studio acceptance in `tests/DesktopMotionStudio.Studio.Checks/F09UiChecks.cs`: two works, preview with no target, state/backup unchanged, bind one scene to two apps, replace with stable IDs, cancel, unavailable/error cases and no target activation. Extend fixture data without weakening F08 assertions.
-- [ ] T019 Run Release/analyzers/format/Core+Studio regression checks, preserving F00–F08 real same-scene/two-target integration; prove actual shared renderer under F06 real target-ready handoff, repeated preview, skip/stop/crash/hang/parent-exit cleanup; record actual timings/PIDs/HWNDs in `evidence.md`.
-- [ ] T020 Verify real Windows keyboard/visual browse/preview/bind/replace at actual100/125/150% and both reduced-motion preference branches, restore settings, and record each outcome rather than simulated-layout claims.
-- [ ] T021 Independently review, Analyze and Converge all spec/plan/tasks/code; append/fix gaps, update `review.md`, `FEATURES.md`, version/compatibility documentation and commit the verified milestone.
+- [X] T018 Add actual external Studio acceptance in `tests/DesktopMotionStudio.Studio.Checks/F09UiChecks.cs`: two works, preview with no target, state/backup unchanged, bind one scene to two apps, replace with stable IDs, cancel, unavailable/error cases and no target activation. Extend fixture data without weakening F08 assertions.
+- [X] T019 Run Release/analyzers/format/Core+Studio regression checks, preserving F00–F08 real same-scene/two-target integration; prove actual shared renderer under F06 real target-ready handoff, repeated preview, skip/stop/crash/hang/parent-exit cleanup; record actual timings/PIDs/HWNDs in `evidence.md`.
+- [X] T020 Verify real Windows keyboard/visual browse/preview/bind/replace at actual100/125/150% and both reduced-motion preference branches, restore settings, and record each outcome rather than simulated-layout claims.
+- [X] T021 Independently review, Analyze and Converge all spec/plan/tasks/code; append/fix gaps, update `review.md`, `FEATURES.md`, version/compatibility documentation and commit the verified milestone.
 
 ## Dependencies and execution
 
@@ -67,3 +67,9 @@ First prove rendering/ownership risks, then a catalog/read-only preview slice, t
 - [X] T025 Require at least one visible base Unicode rune in the bounded glyph, reject mark-only/variation-selector-only strings while accepting visible base plus combining mark; add regressions in F09Checks and strengthen ScenePlayback validation per data-model glyph rule/FR-002 (partial, P2).
 - [X] T026 Enforce explicit closed JSON member sets for sidecars, including computed ignored properties such as isValid, and include the same injection case in T008 playback IPC tests; keep future-version precedence and nested keyframe shape checks per FR-002/011 (partial, P2).
 - [X] T027 Preserve precise compatibility failures from host-side Start decoding: while the client still owns a writable pipe, send bounded Failed(UnsupportedPlayback/UnsupportedProtocol) before disposal; test the actual host receiving a future snapshot and emitting no Started/display per FR-002/005/011 (partial, P2).
+
+## UI and desktop verification follow-up
+
+- [X] T029 Order UI preview intent before asynchronous catalog validation; share a locked generation gate across home/library and invalidate pending work on Stop, selection, navigation and owner close. Cover delayed scans, queued-before-Starting library close, and preserve picker Busy/reload/concurrent-change errors in the parent per FR-005/008 (partial, P2).
+- [X] T030 Reserve scheduling/IPC/exit headroom within the <=300ms real handoff criterion: after a306ms regression with250ms fade, use200ms fade without widening assertions; verify real scene target-ready handoff and native crash/UI-hang cleanup per FR-003/005/011 and SC-002/005 (partial, P2).
+- [X] T031 Anchor the real UI-hang test to its opened thread handle: require query permission, verify GetProcessIdOfThread against the retained owned host identity before Suspend, and Resume only a successfully suspended handle; independently review and rerun the real failure checks per Constitution explicit ownership/FR-010 (partial, P2).

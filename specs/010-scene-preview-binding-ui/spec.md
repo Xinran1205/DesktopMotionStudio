@@ -2,7 +2,7 @@
 
 **Feature Branch**: `codex/f09-scene-preview-binding`
 **Created**: 2026-11-03 · **Revised**: 2026-11-05
-**Status**: Specified · **Version**: 0.2.0
+**Status**: Complete · **Version**: 1.0.0
 **Input**: PRD library/application journeys, TDD preview isolation/shared execution, F03/F06/F07/F08.
 
 ## Goal
@@ -112,3 +112,4 @@ The owner selects an already registered supported application and binds the chos
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline; refine before implementation. |
 | 0.2.0 | 2026-11-05 | Define library/presentation, truthful shared playback with target-free preview, F07 binding/replacement, home integration and real risk/scaling/reduced-motion gates; retain licensed content and shortcuts as separate features. |
+| 1.0.0 | 2026-11-05 | Verified complete library/preview/binding/home implementation;31 tasks, independent review, actual desktop/publish and final SDD convergence evidence recorded. |

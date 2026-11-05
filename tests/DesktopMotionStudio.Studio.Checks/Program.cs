@@ -12,6 +12,7 @@ internal static class Program
         if (args.Length == 3 && args[0] == "--worker") return Worker(args[1], args[2]);
         if (args is ["--discovery-worker"]) return DiscoveryWorker.Run();
         if (args is ["--ui"]) return StudioUiChecks.Run();
+        if (args is ["--f09-ui"]) return F09UiChecks.Run();
         if (args is ["--preview-races"]) { int previewFailures = 0; PreviewRaceChecks.Run(ref previewFailures); return previewFailures; }
         if (args.Length != 0) return 2;
         string root = Path.Combine(Path.GetTempPath(), $"dms-discovery-checks-{Guid.NewGuid():N}");
@@ -64,6 +65,7 @@ internal static class Program
             }
             else Console.WriteLine("SKIP real discovery (DMS_F08_STUDIO_PATH unset)");
             PreviewRaceChecks.Run(ref failures);
+            PreviewIntentChecks.Run(ref failures);
             WpfRaceChecks.Run(ref failures);
         }
         catch (Exception ex) { Console.WriteLine($"FAIL discovery checks: {ex.GetType().Name}: {ex.Message}"); failures++; }

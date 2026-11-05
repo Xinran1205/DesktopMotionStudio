@@ -5,36 +5,58 @@ using DesktopMotionStudio.Core.Bindings;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.MotionHost;
+using DesktopMotionStudio.Core.Preview;
+using System.IO;
 
 namespace DesktopMotionStudio.Studio;
 
-internal sealed record ApplicationRow(ApplicationProfile Profile, BindingResolution Binding, string TargetStatus)
+internal sealed record ApplicationRow(ApplicationProfile Profile, BindingResolution Binding, string TargetStatus, SceneLibraryItem? Work)
 {
     public string Name => Profile.DisplayName;
     public string Initial => Name[..1].ToUpperInvariant();
     public string Summary => UiText.Kind(Profile.Target?.Kind) + " · " + TargetStatus;
-    public string Scene => Binding.Binding is null ? "未绑定动效" : $"{Binding.Binding.SceneId} · {(Binding.Binding.Enabled ? "已启用" : "已停用")}";
+    public string Scene => Binding.Binding is null ? "未绑定动效" : $"{Work?.DisplayName ?? Binding.Binding.SceneId} · {(Binding.Binding.Enabled ? "已启用" : "已停用")}";
 }
 
 public partial class MainWindow : Window
 {
     private readonly ApplicationRegistry _registry;
     private readonly BindingService _bindings;
+    private readonly IStudioStateStore _store;
+    private readonly SceneWorkspace _workspace;
+    private readonly PreviewCoordinator _previews;
+    private readonly PreviewPresenter _presenter;
+    private readonly PreviewIntentController _intents;
     private ApplicationRow[] _rows = [];
     private bool _busy;
     private bool _readable;
     private bool _closed;
     private int _refreshVersion;
+    private int _detailsVersion;
+    private bool _closing, _allowClose;
 
-    internal MainWindow(IStudioStateStore store, string catalogRoot)
+    internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null)
     {
         InitializeComponent();
         _registry = new ApplicationRegistry(store);
-        _bindings = new BindingService(store, () => new BuiltInSceneCatalog().Scan(catalogRoot), ApplicationRegistry.GetTarget);
+        _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
+        _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))));
+        _intents = new(_previews, _workspace.FindPlayable);
+        _presenter = new(_previews, this, PreviewStatusText, StopPreviewButton);
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));
         Height = Math.Min(Height, Math.Max(MinHeight, SystemParameters.WorkArea.Height - 60));
         Loaded += async (_, _) => await RefreshAsync();
-        Closed += (_, _) => { _closed = true; _refreshVersion++; };
+        Closing += async (_, e) =>
+        {
+            if (_allowClose) return;
+            e.Cancel = true;
+            if (_busy) { StatusText.Text = "正在保存配置，请稍候再关闭。"; return; }
+            if (_closing) return;
+            _closing = true; _refreshVersion++; IsEnabled = false;
+            await _intents.DisposeAsync(); _allowClose = true; Close();
+        };
+        Closed += (_, _) => { _closed = true; _refreshVersion++; _detailsVersion++; _presenter.Dispose(); };
     }
 
     private ApplicationRow? Selected => ApplicationList.SelectedItem as ApplicationRow;
@@ -48,16 +70,19 @@ public partial class MainWindow : Window
             var loaded = await Task.Run(() =>
             {
                 RepositoryResult result = _registry.Load();
+                SceneLibrarySnapshot library = _workspace.Scan();
                 ApplicationRow[] rows = result.IsSuccess ? result.State!.Applications.Select(profile =>
                 {
                     LaunchTarget? target = ApplicationRegistry.GetTarget(profile);
                     string status = target is null ? "需要确认目标" : new LaunchTargetIdentityResolver().Resolve(target).Succeeded
                         ? profile.Target!.Kind == ApplicationTargetKind.Packaged ? "身份格式有效" : "入口可用" : "入口不可用";
-                    return new ApplicationRow(profile, _bindings.Resolve(profile.AppId), status);
+                    BindingResolution binding = _bindings.Resolve(profile.AppId);
+                    SceneLibraryItem? work = binding.Binding is null ? null : library.Items.FirstOrDefault(item => string.Equals(item.Catalog.Manifest?.SceneId, binding.Binding.SceneId, StringComparison.OrdinalIgnoreCase));
+                    return new ApplicationRow(profile, binding, status, work);
                 }).OrderBy(row => row.Name, StringComparer.CurrentCultureIgnoreCase).ToArray() : [];
                 return (result, rows);
             });
-            if (_closed || version != _refreshVersion) return;
+            if (_closed || _closing || version != _refreshVersion) return;
             _readable = loaded.result.IsSuccess;
             _rows = loaded.rows;
             Filter(selectId);
@@ -87,8 +112,9 @@ public partial class MainWindow : Window
         UpdateDetails();
     }
 
-    private void UpdateDetails()
+    private async void UpdateDetails()
     {
+        _intents?.CancelPending();
         ApplicationRow? row = Selected;
         NameBox.Text = row?.Name ?? string.Empty;
         TargetKindText.Text = UiText.Kind(row?.Profile.Target?.Kind);
@@ -103,8 +129,17 @@ public partial class MainWindow : Window
             BindingResolutionStatus.StorageError => UiText.Storage(row.Binding.RepositoryError),
             _ => "未绑定动效"
         };
+        BoundSceneNameText.Text = row?.Work?.DisplayName ?? row?.Binding.Binding?.SceneId ?? "未绑定作品";
+        if (row?.Binding.Binding is not null && row.Work?.IsPlayable != true && row.Binding.Status == BindingResolutionStatus.Disabled)
+            BindingText.Text += "\n作品暂不可用，绑定已保留。";
+        BoundCover.Source = null; BoundFallback.Visibility = Visibility.Visible;
+        int version = ++_detailsVersion;
         ToggleButton.Content = row?.Binding.Binding?.Enabled == true ? "停用动效" : "启用动效";
         UpdateEnabled();
+        if (row?.Work is not SceneLibraryItem work) return;
+        var cover = await Task.Run(() => SceneCoverLoader.Load(work));
+        if (_closed || _closing || version != _detailsVersion) return;
+        BoundCover.Source = cover; BoundFallback.Visibility = cover is null ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void UpdateEnabled()
@@ -112,6 +147,9 @@ public partial class MainWindow : Window
         AddButton.IsEnabled = _readable && !_busy;
         DetailsPanel.IsEnabled = _readable && !_busy && Selected is not null;
         ToggleButton.IsEnabled = Selected?.Binding.Binding is not null;
+        LibraryButton.IsEnabled = !_busy && !_closing;
+        PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
+        ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
     }
 
     private async Task MutateAsync(Func<ApplicationRegistryResult> operation, string? selectedId)
@@ -187,4 +225,24 @@ public partial class MainWindow : Window
     private void OnSearch(object sender, TextChangedEventArgs e) { if (ApplicationList is not null) Filter(); }
     private void OnSelection(object sender, SelectionChangedEventArgs e) { if (NameBox is not null) UpdateDetails(); }
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
+
+    private async Task OpenLibraryAsync(bool forSelected)
+    {
+        ApplicationRow? row = forSelected ? Selected : null;
+        _refreshVersion++; _intents.CancelPending();
+        var library = new SceneLibraryWindow(_store, _workspace, _previews, row?.Binding.Binding?.SceneId, row?.Profile.AppId, _intents) { Owner = this };
+        library.ShowDialog();
+        if (!_closed && !_closing) await RefreshAsync(row?.Profile.AppId);
+    }
+
+    private async void OnLibrary(object sender, RoutedEventArgs e) => await OpenLibraryAsync(false);
+    private async void OnReplace(object sender, RoutedEventArgs e) => await OpenLibraryAsync(true);
+    private async void OnStopPreview(object sender, RoutedEventArgs e) => await _intents.StopAsync();
+    private async void OnPreviewBound(object sender, RoutedEventArgs e)
+    {
+        if (Selected?.Binding.Binding?.SceneId is not string id) return;
+        PreviewResult result = await _intents.PlayAsync(id);
+        if (_closed || _closing || !_intents.IsCurrent(result)) return;
+        if (result.Outcome == PreviewOutcome.Unavailable) { PreviewStatusText.Text = "作品暂不可用，绑定已保留。请刷新后重试。"; PreviewBoundButton.IsEnabled = false; }
+    }
 }

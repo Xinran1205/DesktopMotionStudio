@@ -46,6 +46,51 @@ internal static class F09PlaybackProcessChecks
         }
         failures += F06Checks.RunRealTargetHostIntegration(hostPath, playback with { SceneId = "dragon-portal" });
         failures += CoordinatorAsync(hostPath, playback).GetAwaiter().GetResult();
+        failures += ActualFailures(hostPath, playback);
+        return failures;
+    }
+
+    private static int ActualFailures(string hostPath, ScenePlaybackDefinition playback)
+    {
+        int failures = 0;
+        var shortWork = playback with { DurationMilliseconds = 1000, Keyframes = System.Collections.Immutable.ImmutableArray.Create(playback.Keyframes[0], playback.Keyframes[^1] with { AtMilliseconds = 1000 }) };
+        foreach (bool hang in new[] { false, true })
+        {
+            IMotionHostSession session = new WindowsMotionHostProcessFactory(hostPath).Start(new(Guid.NewGuid(), shortWork.SceneId, shortWork.SceneVersion, SceneDisplayMode.Centered, 1500, MotionHostMode.Preview, shortWork));
+            Microsoft.Win32.SafeHandles.SafeWaitHandle? thread = null;
+            bool suspended = false;
+            Process? host = null;
+            try
+            {
+                if (session.Started.WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult() is not null) throw new InvalidOperationException("Failure fixture did not start");
+                host = Process.GetProcessById(session.HostProcessId!.Value); _ = host.SafeHandle;
+                nint window = FindHostWindow(host.Id);
+                uint threadId = GetWindowThreadProcessId(window, out uint owner);
+                if (window == 0 || owner != (uint)host.Id) throw new InvalidOperationException("Failure fixture window is not owned");
+                var elapsed = Stopwatch.StartNew();
+                if (hang)
+                {
+                    thread = OpenThread(0x0002 | 0x0800, false, threadId); // SUSPEND_RESUME | QUERY_LIMITED_INFORMATION
+                    if (thread.IsInvalid) throw new System.ComponentModel.Win32Exception(Marshal.GetLastPInvokeError());
+                    if (GetProcessIdOfThread(thread) != (uint)host.Id) throw new InvalidOperationException("Thread handle no longer belongs to the retained host identity");
+                    uint previous = SuspendThread(thread);
+                    if (previous == uint.MaxValue) throw new System.ComponentModel.Win32Exception(Marshal.GetLastPInvokeError());
+                    suspended = true;
+                    if (previous != 0) throw new InvalidOperationException("Fixture thread was already suspended");
+                }
+                else host.Kill(entireProcessTree: false);
+                MotionHostOutcome outcome = session.Completion.WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                bool passed = host.WaitForExit(1000) && (hang ? outcome == MotionHostOutcome.TimedOut && session.FailureReason == MotionHostError.TimedOut : outcome == MotionHostOutcome.Failed);
+                Console.WriteLine($"  real scene {(hang ? "UI-hang" : "crash")}: PID={host.Id}, HWND=0x{window:X}, result={outcome}, cleanup={elapsed.ElapsedMilliseconds}ms");
+                Console.WriteLine($"{(passed ? "PASS" : "FAIL")} F09 actual renderer {(hang ? "hung UI is killed by live parent deadline without Stop" : "crash returns structured failure and exits")}");
+                if (!passed) failures++;
+            }
+            finally
+            {
+                if (thread is not null) { if (suspended && host is { HasExited: false }) _ = ResumeThread(thread); thread.Dispose(); }
+                session.DisposeAsync().AsTask().GetAwaiter().GetResult(); host?.Dispose();
+            }
+        }
         return failures;
     }
 
@@ -111,4 +156,8 @@ internal static class F09PlaybackProcessChecks
     [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, nint parameter);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out uint processId);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern Microsoft.Win32.SafeHandles.SafeWaitHandle OpenThread(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint threadId);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern uint SuspendThread(Microsoft.Win32.SafeHandles.SafeWaitHandle thread);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(Microsoft.Win32.SafeHandles.SafeWaitHandle thread);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern uint GetProcessIdOfThread(Microsoft.Win32.SafeHandles.SafeWaitHandle thread);
 }

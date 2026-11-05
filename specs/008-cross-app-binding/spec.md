@@ -106,3 +106,5 @@ The owner distinguishes no binding, disabled, missing registration, invalid targ
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline. |
 | 0.2.0 | 2026-11-04 | Define binding lifecycle, atomic/no-op semantics, typed target boundary, availability states, and cross-app validation. |
 | 1.0.0 | 2026-11-04 | Implement and verify binding lifecycle/transactions; close two independent-review findings; 38 F07 checks and real two-target handoff passed. |
+
+F09 compatibility amendment (2026-11-05): BindingService accepts an optional scene eligibility predicate after its existing parameters. Default behavior retains this F07 contract. Studio uses current validated playback inside transactions for new binding/enable/resolve; existing identical binding no-op and disable/remove preserve their original semantics. No persisted schema changed.

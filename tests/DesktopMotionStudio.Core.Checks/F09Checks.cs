@@ -21,7 +21,7 @@ internal static class F09Checks
         try { Readers(ref failures); FilesAndLibrary(root, ref failures); Timeline(ref failures); PlaybackProtocol(ref failures); }
         catch (Exception ex) { Console.WriteLine($"FAIL F09 checks: {ex.GetType().Name}: {ex.Message}"); failures++; }
         finally { Directory.Delete(root, recursive: true); }
-        return failures;
+        return failures + F09BindingChecks.Run();
     }
 
     internal static int VerifyShippedCatalog(string root)

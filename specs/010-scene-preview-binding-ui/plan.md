@@ -50,3 +50,5 @@ First isolated evaluator/paint POC (Preview versus Launch-simulation, determinis
 ## Complexity Tracking
 
 No constitution exception. Sidecars avoid unnecessary state/base-scene migration. IPC v2 is necessary for immutable playback snapshots and natural completion. The vector runtime is bounded; future media/effects need independently versioned capabilities and validation.
+
+Implementation clarification: Studio shares PreviewIntentController across home/library to reserve intent before asynchronous catalog validation; Stop/selection/navigation/close invalidate pending scans before any renderer submission. Binding picker success requires post-commit reload verification, and its parent preserves current errors/conflicts. StageMotionHost copies matching build/publish artifacts through a separate MSBuild source item with qualified destination metadata. A200ms fade leaves scheduling/IPC headroom inside the unchanged300ms total handoff criterion.
