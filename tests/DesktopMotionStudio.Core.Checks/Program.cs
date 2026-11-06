@@ -39,6 +39,7 @@ if (args is ["--f10-receipt-worker", var receiptRoot]) return F10ReceiptChecks.W
 if (args is ["--f10-shortcut-checks"]) return F10ShortcutChecks.Run();
 if (args is ["--f10-lifecycle-checks"]) return F10LifecycleChecks.Run();
 if (args is ["--f11-settings-checks"]) return F11SettingsChecks.Run();
+if (args is ["--f11-diagnostic-checks"]) return F11DiagnosticChecks.Run();
 if (args.Length == 2 && args[0] == "--f09-catalog-check")
     return F09Checks.VerifyShippedCatalog(args[1]);
 
@@ -94,6 +95,7 @@ failures += F10ReceiptChecks.Run();
 failures += F10ShortcutChecks.Run();
 failures += F10LifecycleChecks.Run();
 failures += F11SettingsChecks.Run();
+failures += F11DiagnosticChecks.Run();
 failures += F09OwnershipChecks.Run();
 failures += F09PlaybackProcessChecks.Run();
 failures += RunWindowHostIntegration();

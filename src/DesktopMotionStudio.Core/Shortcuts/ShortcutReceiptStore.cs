@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Win32.SafeHandles;
+using DesktopMotionStudio.Core.IO;
 
 namespace DesktopMotionStudio.Core.Shortcuts;
 
@@ -42,7 +43,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         if (ManagedLaunchRequest.EncodeBindingId(bindingId) is null) return new(ShortcutReceiptStatus.Invalid);
         try
         {
-            using var scope = ShortcutNativeDirectory.Open(Path.Combine(directory, "records"));
+            using var scope = WindowsFileScope.Open(Path.Combine(directory, "records"));
             return ReadRecoverable(scope, Key(bindingId) + ".json", bindingId);
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
@@ -52,31 +53,31 @@ internal sealed class ShortcutReceiptStore(string directory)
     {
         transaction = null;
         if (ManagedLaunchRequest.EncodeBindingId(bindingId) is null) return ShortcutReceiptStatus.Invalid;
-        ShortcutNativeDirectory? locks = null;
-        ShortcutNativeDirectory? records = null;
+        WindowsFileScope? locks = null;
+        WindowsFileScope? records = null;
         SafeFileHandle? handle = null;
         try
         {
-            locks = ShortcutNativeDirectory.Open(Path.Combine(directory, "locks"), create: true);
+            locks = WindowsFileScope.Open(Path.Combine(directory, "locks"), create: true);
             string key = Key(bindingId);
             var elapsed = Stopwatch.StartNew();
             while (true)
             {
                 try
                 {
-                    handle = locks.OpenChild(key + ".lock", ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess,
-                        share: 0, disposition: ShortcutNativeDirectory.OpenIf);
+                    handle = locks.OpenChild(key + ".lock", WindowsFileScope.ReadAccess | WindowsFileScope.WriteAccess,
+                        share: 0, disposition: WindowsFileScope.OpenIf);
                     break;
                 }
-                catch (Win32Exception ex) when (ShortcutNativeDirectory.IsSharing(ex))
+                catch (Win32Exception ex) when (WindowsFileScope.IsSharing(ex))
                 {
                     TimeSpan remaining = LockWait - elapsed.Elapsed;
                     if (remaining <= TimeSpan.Zero) return ShortcutReceiptStatus.Busy;
                     Thread.Sleep(remaining < TimeSpan.FromMilliseconds(25) ? remaining : TimeSpan.FromMilliseconds(25));
                 }
             }
-            if (!ShortcutNativeDirectory.ReadInfo(handle).IsSingleRegularFile) return ShortcutReceiptStatus.Invalid;
-            records = ShortcutNativeDirectory.Open(Path.Combine(directory, "records"), create: true);
+            if (!WindowsFileScope.ReadInfo(handle).IsSingleRegularFile) return ShortcutReceiptStatus.Invalid;
+            records = WindowsFileScope.Open(Path.Combine(directory, "records"), create: true);
             transaction = new(records, locks, handle, key + ".json", bindingId);
             records = null;
             locks = null;
@@ -87,7 +88,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         finally { handle?.Dispose(); records?.Dispose(); locks?.Dispose(); }
     }
 
-    internal sealed class Transaction(ShortcutNativeDirectory scope, ShortcutNativeDirectory locks,
+    internal sealed class Transaction(WindowsFileScope scope, WindowsFileScope locks,
         SafeFileHandle gate, string name, string bindingId) : IDisposable
     {
         internal ShortcutReceiptRead Read()
@@ -109,8 +110,8 @@ internal sealed class ShortcutReceiptStore(string directory)
                 byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(receipt, Json);
                 if (bytes.Length > MaximumBytes) return ShortcutReceiptStatus.Invalid;
                 using SafeFileHandle stage = scope.OpenChild($"{Guid.NewGuid():N}.tmp",
-                    ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess | ShortcutNativeDirectory.DeleteAccess,
-                    disposition: ShortcutNativeDirectory.CreateNew);
+                    WindowsFileScope.ReadAccess | WindowsFileScope.WriteAccess | WindowsFileScope.DeleteAccess,
+                    disposition: WindowsFileScope.CreateNew);
                 using var stream = new FileStream(stage, FileAccess.ReadWrite);
                 bool published = false;
                 try
@@ -128,7 +129,7 @@ internal sealed class ShortcutReceiptStore(string directory)
                     {
                         if (previous is not null)
                         {
-                            ShortcutNativeDirectory.Delete(previous);
+                            WindowsFileScope.Delete(previous);
                             previous.Dispose();
                         }
                         scope.Publish(primary, Previous(name));
@@ -141,7 +142,7 @@ internal sealed class ShortcutReceiptStore(string directory)
                 finally
                 {
                     if (!published)
-                        try { ShortcutNativeDirectory.Delete(stage); }
+                        try { WindowsFileScope.Delete(stage); }
                         catch (Win32Exception) { }
                 }
             }
@@ -159,13 +160,13 @@ internal sealed class ShortcutReceiptStore(string directory)
                 if (backup.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return backup.Status;
                 if (previous is not null)
                 {
-                    ShortcutNativeDirectory.Delete(previous);
+                    WindowsFileScope.Delete(previous);
                     previous.Dispose();
                 }
-                if (current is not null) ShortcutNativeDirectory.Delete(current);
+                if (current is not null) WindowsFileScope.Delete(current);
                 return ShortcutReceiptStatus.Ok;
             }
-            catch (Win32Exception ex) when (ShortcutNativeDirectory.IsMissing(ex)) { return ShortcutReceiptStatus.Ok; }
+            catch (Win32Exception ex) when (WindowsFileScope.IsMissing(ex)) { return ShortcutReceiptStatus.Ok; }
             catch (Exception ex) when (IsStorageFailure(ex)) { return Map(ex); }
         }
 
@@ -177,7 +178,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         }
     }
 
-    private static ShortcutReceiptRead ReadRecoverable(ShortcutNativeDirectory scope, string name, string id)
+    private static ShortcutReceiptRead ReadRecoverable(WindowsFileScope scope, string name, string id)
     {
         ShortcutReceiptRead primary = Read(scope, name, id);
         if (primary.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return primary;
@@ -186,13 +187,13 @@ internal sealed class ShortcutReceiptStore(string directory)
         return primary.Status == ShortcutReceiptStatus.Ok ? primary : backup;
     }
 
-    private static SafeFileHandle? OpenVerified(ShortcutNativeDirectory scope, string name, string id,
+    private static SafeFileHandle? OpenVerified(WindowsFileScope scope, string name, string id,
         out ShortcutReceiptRead read)
     {
         SafeFileHandle? handle = null;
         try
         {
-            handle = scope.OpenChild(name, ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.DeleteAccess);
+            handle = scope.OpenChild(name, WindowsFileScope.ReadAccess | WindowsFileScope.DeleteAccess);
             read = Decode(handle, id);
             if (read.Status != ShortcutReceiptStatus.Ok) return null;
             SafeFileHandle verified = handle;
@@ -209,11 +210,11 @@ internal sealed class ShortcutReceiptStore(string directory)
 
     private static string Previous(string name) => Path.ChangeExtension(name, ".previous");
 
-    private static ShortcutReceiptRead Read(ShortcutNativeDirectory scope, string name, string id)
+    private static ShortcutReceiptRead Read(WindowsFileScope scope, string name, string id)
     {
         try
         {
-            using var handle = scope.OpenChild(name, ShortcutNativeDirectory.ReadAccess);
+            using var handle = scope.OpenChild(name, WindowsFileScope.ReadAccess);
             return Decode(handle, id);
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
@@ -221,7 +222,7 @@ internal sealed class ShortcutReceiptStore(string directory)
 
     private static ShortcutReceiptRead Decode(SafeFileHandle handle, string id)
     {
-        var info = ShortcutNativeDirectory.ReadInfo(handle);
+        var info = WindowsFileScope.ReadInfo(handle);
         if (!info.IsSingleRegularFile || info.Length is 0 or > MaximumBytes) return new(ShortcutReceiptStatus.Invalid);
         byte[] bytes = new byte[(int)info.Length];
         int read = 0;
@@ -250,8 +251,8 @@ internal sealed class ShortcutReceiptStore(string directory)
          string.Equals(receipt.Current.Path, receipt.Pending.Path, StringComparison.OrdinalIgnoreCase));
 
     private static bool Valid(ShortcutProof proof) =>
-        ShortcutNativeDirectory.IsCanonicalLocalPath(proof.Path) && proof.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) &&
-        ShortcutNativeDirectory.IsCanonicalLocalPath(proof.LauncherPath) && proof.LauncherPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+        WindowsFileScope.IsCanonicalLocalPath(proof.Path) && proof.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) &&
+        WindowsFileScope.IsCanonicalLocalPath(proof.LauncherPath) && proof.LauncherPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
         proof.FileIndex != 0 &&
         proof.Sha256 is { Length: 64 } && proof.Sha256.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F');
 
@@ -272,8 +273,8 @@ internal sealed class ShortcutReceiptStore(string directory)
 
     private static ShortcutReceiptStatus Map(Exception ex) => ex switch
     {
-        Win32Exception native when ShortcutNativeDirectory.IsMissing(native) => ShortcutReceiptStatus.Missing,
-        Win32Exception native when ShortcutNativeDirectory.IsSharing(native) => ShortcutReceiptStatus.Busy,
+        Win32Exception native when WindowsFileScope.IsMissing(native) => ShortcutReceiptStatus.Missing,
+        Win32Exception native when WindowsFileScope.IsSharing(native) => ShortcutReceiptStatus.Busy,
         InvalidDataException => ShortcutReceiptStatus.Unavailable,
         JsonException => ShortcutReceiptStatus.Invalid,
         _ => ShortcutReceiptStatus.IoError

@@ -4,10 +4,10 @@ using System.Text;
 using DesktopMotionStudio.Core.IO;
 using Microsoft.Win32.SafeHandles;
 
-namespace DesktopMotionStudio.Core.Shortcuts;
+namespace DesktopMotionStudio.Core.IO;
 
 // A bounded local NTFS directory scope. Pin each component before resolving the next.
-internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> pins) : IDisposable
+internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) : IDisposable
 {
     internal string Path { get; } = path;
 
@@ -20,7 +20,7 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
         return string.Equals(path, System.IO.Path.GetFullPath(path), StringComparison.Ordinal);
     }
 
-    internal static ShortcutNativeDirectory Open(string path, bool create = false)
+    internal static WindowsFileScope Open(string path, bool create = false)
     {
         if (!OperatingSystem.IsWindows() || RuntimeInformation.ProcessArchitecture != Architecture.X64 ||
             !IsCanonicalLocalPath(path) || path.Length == 3)

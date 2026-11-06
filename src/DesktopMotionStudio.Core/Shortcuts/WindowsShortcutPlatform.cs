@@ -3,22 +3,23 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
+using DesktopMotionStudio.Core.IO;
 using DesktopMotionStudio.Core.Launch;
 using Microsoft.Win32.SafeHandles;
-using FileInfo = DesktopMotionStudio.Core.Shortcuts.ShortcutNativeDirectory.FileInfo;
+using FileInfo = DesktopMotionStudio.Core.IO.WindowsFileScope.FileInfo;
 using static DesktopMotionStudio.Core.Launch.ShellLinkTargetReader;
-using static DesktopMotionStudio.Core.Shortcuts.ShortcutNativeDirectory;
+using static DesktopMotionStudio.Core.IO.WindowsFileScope;
 
 namespace DesktopMotionStudio.Core.Shortcuts;
 
 internal enum ShortcutFileState { Missing, Owned, Conflict, Busy, Unavailable }
 
-internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : IDisposable
+internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposable
 {
     private const int MaximumBytes = 64 * 1024;
 
     internal string Root => scope.Path;
-    internal static WindowsShortcutPlatform Open(string root) => new(ShortcutNativeDirectory.Open(root));
+    internal static WindowsShortcutPlatform Open(string root) => new(WindowsFileScope.Open(root));
 
     internal StagedShortcut Stage(string name, string launcher, string bindingId, string? icon)
     {
@@ -47,7 +48,7 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
         }
         catch
         {
-            try { ShortcutNativeDirectory.Delete(handle); }
+            try { WindowsFileScope.Delete(handle); }
             catch (Win32Exception) { }
             finally { stream?.Dispose(); handle.Dispose(); }
             throw;
@@ -86,7 +87,7 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
             ? scope.Child(name)
             : throw new InvalidDataException("The managed entry must be a shortcut.");
 
-    internal sealed class StagedShortcut(ShortcutNativeDirectory scope, string name, FileStream stream, ShortcutProof proof) : IDisposable
+    internal sealed class StagedShortcut(WindowsFileScope scope, string name, FileStream stream, ShortcutProof proof) : IDisposable
     {
         private bool _published;
         internal ShortcutProof Proof { get; } = proof;
@@ -105,7 +106,7 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
         public void Dispose()
         {
             if (!_published && stream.CanWrite)
-                try { ShortcutNativeDirectory.Delete(stream.SafeFileHandle); }
+                try { WindowsFileScope.Delete(stream.SafeFileHandle); }
                 catch (Win32Exception) { }
                 finally { stream.Dispose(); }
             else stream.Dispose();
@@ -124,7 +125,7 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
             FileInfo info = ReadInfo(handle);
             if (!MatchesIdentity(Proof, Proof.Path, info) || Digest(handle, info) != Proof.Sha256)
                 throw new InvalidDataException("Shortcut changed before removal.");
-            ShortcutNativeDirectory.Delete(handle);
+            WindowsFileScope.Delete(handle);
         }
 
         public void Dispose() => handle?.Dispose();

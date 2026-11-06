@@ -11,9 +11,9 @@
 
 ## Phase 2 — Bounded local diagnostics
 
-- [ ] T005 [US2] Test strict typed events, 128 records, 32 KiB per generation, 64 KiB committed, concurrent and interrupted handover, invalid/unknown storage and secret injection in tests/DesktopMotionStudio.Core.Checks/F11DiagnosticChecks.cs. (FR-004, FR-005, AC-05, AC-06, SC-002)
-- [ ] T006 [US2] Implement typed codec, recovery and rolling private store in src/DesktopMotionStudio.Core/Diagnostics/. Share no-reparse native IO with F10. (FR-004, FR-005, AC-05, AC-06)
-- [ ] T007 [US2] Wire terminal phase, result, bounded timing and fallback reporting into src/DesktopMotionStudio.Launcher/Program.cs. Demonstrate failed diagnostic writes cannot redispatch or block renderer cleanup. (FR-004, FR-005, AC-04, AC-06, SC-003)
+- [x] T005 [US2] Test strict typed events, 128 records, 32 KiB per generation, 64 KiB committed, concurrent and interrupted handover, invalid/unknown storage and secret injection in tests/DesktopMotionStudio.Core.Checks/F11DiagnosticChecks.cs. (FR-004, FR-005, AC-05, AC-06, SC-002)
+- [x] T006 [US2] Implement typed codec, recovery and rolling private store in src/DesktopMotionStudio.Core/Diagnostics/. Share no-reparse native IO with F10. (FR-004, FR-005, AC-05, AC-06)
+- [x] T007 [US2] Wire terminal phase, result, bounded timing and fallback reporting into src/DesktopMotionStudio.Launcher/Program.cs. Demonstrate failed diagnostic writes cannot redispatch or block renderer cleanup. (FR-004, FR-005, AC-04, AC-06, SC-003)
 
 ## Phase 3 — Diagnostics UI and acceptance
 

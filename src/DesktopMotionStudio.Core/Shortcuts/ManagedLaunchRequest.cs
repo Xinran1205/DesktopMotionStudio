@@ -9,6 +9,7 @@ using DesktopMotionStudio.Core.State;
 namespace DesktopMotionStudio.Core.Shortcuts;
 
 public enum ManagedLaunchStatus { Ready, InvalidBindingId, StorageError, BindingMissing, TargetUnavailable, RecursiveTarget }
+public enum ManagedPlaybackStatus { Unavailable, Disabled, Ready }
 
 public sealed record ManagedLaunchPlan(
     ManagedLaunchStatus Status,
@@ -17,7 +18,8 @@ public sealed record ManagedLaunchPlan(
     SceneManifest? Scene = null,
     ScenePlaybackDefinition? Playback = null,
     RepositoryError StorageError = RepositoryError.None,
-    string? DisplayName = null);
+    string? DisplayName = null,
+    ManagedPlaybackStatus PlaybackStatus = ManagedPlaybackStatus.Unavailable);
 
 public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalogRoot)
 {
@@ -80,7 +82,7 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
         }
 
         var native = new ManagedLaunchPlan(ManagedLaunchStatus.Ready, app.AppId, target, DisplayName: app.DisplayName);
-        if (!binding.Enabled) return native;
+        if (!binding.Enabled) return native with { PlaybackStatus = ManagedPlaybackStatus.Disabled };
         SceneCatalogItem? item = new BuiltInSceneCatalog().Scan(catalogRoot).Items.FirstOrDefault(candidate =>
             candidate.IsAvailable && string.Equals(candidate.Manifest?.SceneId, binding.SceneId, StringComparison.OrdinalIgnoreCase));
         if (item?.Manifest is not SceneManifest manifest) return native;
@@ -89,7 +91,7 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
         if (read.Error != SceneAssetError.None) return native;
         SceneDataReadResult<ScenePlaybackDefinition> playback = ScenePlaybackReader.Read(read.Bytes!, manifest);
         return playback is { Error: SceneDataError.None, Value: not null }
-            ? native with { Scene = manifest, Playback = playback.Value }
+            ? native with { Scene = manifest, Playback = playback.Value, PlaybackStatus = ManagedPlaybackStatus.Ready }
             : native;
     }
 

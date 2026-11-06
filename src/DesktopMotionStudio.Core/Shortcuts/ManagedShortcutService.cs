@@ -51,7 +51,7 @@ public sealed class ManagedShortcutService(
             }
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode is 80 or 183) { return new(ShortcutStatus.Conflict); }
-        catch (Win32Exception ex) when (ShortcutNativeDirectory.IsSharing(ex)) { return new(ShortcutStatus.Busy); }
+        catch (Win32Exception ex) when (WindowsFileScope.IsSharing(ex)) { return new(ShortcutStatus.Busy); }
         catch (Exception ex) when (ex is IOException or Win32Exception or COMException or UnauthorizedAccessException or InvalidDataException)
         { return new(ShortcutStatus.Unavailable); }
     }

@@ -2,7 +2,7 @@
 
 ## 当前断点 — F11 已启动
 
-当前分支为 `codex/f11-settings-diagnostics`，以 F10 完成提交 `d41f000` 为基础。F11 已完成规格和 T001–T004。偏好事务与主题界面已实现。407 Core、60 Studio 和 F08/F09/F10 实际发布 UI 16/15/12 项通过。下一步是 T005 的本地诊断记录测试。开发任务见 [F11 清单](../specs/012-settings-diagnostics/tasks.md)。
+当前分支为 `codex/f11-settings-diagnostics`，以 F10 完成提交 `d41f000` 为基础。F11 已完成规格和 T001–T007。主题偏好、有限日志存储及 Launcher 诊断已实现。423 Core、60 Studio、20 项诊断启动实测通过。下一步是 T008–T009 的诊断与恢复界面。开发任务见 [F11 清单](../specs/012-settings-diagnostics/tasks.md)。
 
 ## F10 已完成
 
