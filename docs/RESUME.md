@@ -1,8 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F11 已启动
+## 当前断点 — F11 已完成
 
-当前分支为 `codex/f11-settings-diagnostics`，以 F10 完成提交 `d41f000` 为基础。F11 已完成规格和 T001–T007。主题偏好、有限日志存储及 Launcher 诊断已实现。423 Core、60 Studio、20 项诊断启动实测通过。下一步是 T008–T009 的诊断与恢复界面。开发任务见 [F11 清单](../specs/012-settings-diagnostics/tasks.md)。
+F11 的 11 项任务已完成并通过独立审查和收敛。425 项 Core、67 项 Studio、25 项发布版键盘与 Windows Shell 验收通过。唯一跳过的是未配置 AUMID 的可选打包应用用例。Windows 配色已恢复到测试前状态。验证详情见 [F11 证据](../specs/012-settings-diagnostics/evidence.md)。
+
+开发发布目录为 `artifacts/studio-f11`。21 个文件和 11 份最终日志已核对 SHA256，清单在 `artifacts/checkpoints/f11-20261106`。从 F12 独立规格开始，验证普通用户安装、稳定 Launcher 路径、失败回滚与 F10 所有权清理。
 
 ## F10 已完成
 

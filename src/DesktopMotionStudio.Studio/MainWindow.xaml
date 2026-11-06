@@ -11,6 +11,7 @@
                     <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="14,12"><TextBlock Text="我的应用" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" /></Border>
                     <Button x:Name="LibraryButton" Content="动效作品库(_L)" AutomationProperties.Name="打开动效作品库" Margin="0,12,0,0" Click="OnLibrary"/>
                     <Button x:Name="SettingsButton" Content="设置(_G)" AutomationProperties.Name="打开设置" Margin="0,8,0,0" Click="OnSettings"/>
+                    <Button x:Name="DiagnosticsButton" Content="本地诊断(_I)" AutomationProperties.Name="打开本地诊断" Margin="0,8,0,0" Click="OnDiagnostics"/>
                 </StackPanel>
                 <TextBlock Text="所有配置保存在此设备" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" VerticalAlignment="Bottom" TextWrapping="Wrap" />
             </DockPanel>

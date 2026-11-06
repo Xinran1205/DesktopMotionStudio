@@ -8,6 +8,7 @@ using DesktopMotionStudio.Core.State;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Preview;
 using DesktopMotionStudio.Core.Shortcuts;
+using DesktopMotionStudio.Core.Diagnostics;
 using System.IO;
 
 namespace DesktopMotionStudio.Studio;
@@ -29,6 +30,7 @@ public partial class MainWindow : Window
     private readonly PreviewCoordinator _previews;
     private readonly PreviewPresenter _presenter;
     private readonly PreviewIntentController _intents;
+    private readonly DiagnosticLogStore? _diagnostics;
     private ApplicationRow[] _rows = [];
     private bool _busy;
     private bool _readable;
@@ -38,11 +40,13 @@ public partial class MainWindow : Window
     private bool _closing, _allowClose;
 
     internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
-        ManagedShortcutService? shortcuts = null)
+        ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null)
     {
         InitializeComponent();
         _shortcuts = shortcuts;
+        _diagnostics = diagnostics;
         ShortcutPanel.Visibility = shortcuts is null ? Visibility.Collapsed : Visibility.Visible;
+        DiagnosticsButton.Visibility = diagnostics is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
         _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))));
@@ -154,6 +158,7 @@ public partial class MainWindow : Window
         ToggleButton.IsEnabled = Selected?.Binding.Binding is not null;
         LibraryButton.IsEnabled = !_busy && !_closing;
         SettingsButton.IsEnabled = !_busy && !_closing;
+        DiagnosticsButton.IsEnabled = !_busy && !_closing && _diagnostics is not null;
         PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
         ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
         UpdateShortcutButtons();
@@ -250,6 +255,16 @@ public partial class MainWindow : Window
         if (_busy || _closing) return;
         var window = new SettingsWindow(new StudioSettingsService(_store)) { Owner = this };
         if (window.ShowDialog() == true) StatusText.Text = "设置已保存。";
+    }
+    private async void OnDiagnostics(object sender, RoutedEventArgs e)
+    {
+        if (_busy || _closing || _diagnostics is null) return;
+        ApplicationRow? selected = Selected;
+        var window = new DiagnosticsWindow(_store, _workspace.Root, _diagnostics, _shortcuts,
+            selected?.Binding.Binding?.BindingId)
+        { Owner = this };
+        window.ShowDialog();
+        if (window.Repaired && !_closed && !_closing) await RefreshAsync(selected?.Profile.AppId);
     }
     private async void OnReplace(object sender, RoutedEventArgs e) => await OpenLibraryAsync(true);
     private async void OnStopPreview(object sender, RoutedEventArgs e) => await _intents.StopAsync();

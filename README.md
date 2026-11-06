@@ -8,7 +8,7 @@ The original [PRD](Desktop_Motion_Studio_PRD_V1.0.md) and [technical design](Des
 
 Spec Kit 1.2.3 is initialized with Codex skills in `.agents/skills/` and PowerShell scripts in `.specify/scripts/powershell/`. On a machine with the CLI installed, `specify version` checks the installation. See the [official installation guide](https://github.com/github/spec-kit/blob/main/docs/installation.md) for setting up another machine.
 
-F00–F10 are verified. The Studio development build provides **My applications**: add local EXE/LNK or discovered packaged entries, search saved applications, rename/repair/remove and toggle existing bindings. It preserves legacy state through an explicit, backed-up migration. The scene library provides safe covers, target-free preview, saved-app binding and replacement. Managed desktop entries run independently through the bundled Launcher. Settings, installer and licensed scene delivery are later features.
+F00–F11 are verified. The Studio development build provides **My applications** for local EXE/LNK and discovered packaged entries, legacy state migration with a backup, scene previews and binding. Managed desktop entries run independently through the bundled Launcher. Settings and local diagnostics are available. Installer and licensed scene delivery are separate features.
 
 ```powershell
 dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
@@ -42,3 +42,11 @@ See [F09 validation guide](specs/010-scene-preview-binding-ui/quickstart.md), [e
 Select a saved application with an enabled and available work. In **受管理桌面入口**, use Alt+C to create its desktop entry, Alt+E to repair a missing or stale entry, and Alt+M to remove it. The entry works after Studio closes and follows the current binding. Disabling the work leaves the entry available for native launch. Desktop files that are edited, replaced, or in conflict are preserved and Studio shows their status. This feature requires a supported local NTFS desktop. The development bundle's location must stay available for its entries to launch.
 
 See [F10 validation and isolated fixture commands](specs/011-managed-shortcuts/quickstart.md) and [verification evidence](specs/011-managed-shortcuts/evidence.md).
+
+## Settings and local diagnostics
+
+Open **设置** with Alt+G to choose a system, light or dark theme and save the mute preference. Windows high contrast takes priority. The current development work has no audio track.
+
+Open **本地诊断** with Alt+I to check versions, renderer availability, recent launch outcomes and the selected desktop entry. Copying a summary is explicit. Its typed records stay local and omit user paths, identifiers and arguments. When the selected entry can be repaired, Alt+R calls the managed-entry recovery flow.
+
+See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and [Windows evidence](specs/012-settings-diagnostics/evidence.md).

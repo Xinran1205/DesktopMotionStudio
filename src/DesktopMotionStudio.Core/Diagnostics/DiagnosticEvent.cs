@@ -13,7 +13,7 @@ public enum DiagnosticResultCode
     IdentityChanged, IdentityUnavailable, LaunchFailed, Busy, Canceled, HandedOff, Skipped, Exited,
     RendererFailed, NotStarted, Completed, UnexpectedFailure
 }
-public enum DiagnosticFallback { None, AnimationDisabled, PlaybackUnavailable, RendererUnavailable, RendererFailed }
+public enum DiagnosticFallback { None, AnimationDisabled, PlaybackUnavailable, RendererUnavailable, RendererFailed, RendererCleanupFailed }
 
 public readonly record struct DiagnosticVersion(
     [property: JsonRequired] ushort Major,

@@ -1,23 +1,55 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace DesktopMotionStudio.Studio;
 
 internal static class StudioTheme
 {
-    private const string Prefix = "pack://application:,,,/PresentationFramework.Fluent;component/Themes/Fluent";
+    private static readonly ConditionalWeakTable<Application, Palette> Palettes = new();
 
-    internal static void Apply(Application application, string choice)
+    internal static void Apply(Application application, string choice) =>
+        Palettes.GetValue(application, app => new Palette(app)).SetChoice(choice);
+
+    private sealed class Palette
     {
-        string suffix = choice switch { "light" => ".Light", "dark" => ".Dark", _ => "" };
-        string source = Prefix + suffix + ".xaml";
-        var merged = application.Resources.MergedDictionaries;
-        for (int i = 0; i < merged.Count; i++)
+        private readonly Application _app;
+        private string _choice = "system";
+
+        internal Palette(Application app)
         {
-            if (merged[i].Source?.OriginalString.StartsWith(Prefix, StringComparison.Ordinal) != true) continue;
-            if (merged[i].Source.OriginalString != source)
-                merged[i] = new ResourceDictionary { Source = new Uri(source) };
-            return;
+            _app = app;
+            SystemParameters.StaticPropertyChanged += OnSystemPropertyChanged;
+            app.Exit += (_, _) => SystemParameters.StaticPropertyChanged -= OnSystemPropertyChanged;
         }
-        merged.Insert(0, new ResourceDictionary { Source = new Uri(source) });
+
+        internal void SetChoice(string choice)
+        {
+            _choice = choice;
+            SetPalette(refresh: false);
+        }
+
+        private void OnSystemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(SystemParameters.HighContrast) || _app.Dispatcher.HasShutdownStarted) return;
+            // Run after WPF has applied its OS palette transition. Restore the explicit
+            // Studio choice on exit from contrast mode even if WPF selected System.
+            _app.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () => SetPalette(refresh: true));
+        }
+
+        private void SetPalette(bool refresh)
+        {
+#pragma warning disable WPF0001 // ThemeMode is isolated here and verified against the pinned desktop runtime.
+            ThemeMode mode = _choice switch
+            {
+                "light" => ThemeMode.Light,
+                "dark" => ThemeMode.Dark,
+                _ => ThemeMode.System
+            };
+            if (refresh && _app.ThemeMode == mode) _app.ThemeMode = ThemeMode.None;
+            _app.ThemeMode = mode;
+#pragma warning restore WPF0001
+        }
     }
 }

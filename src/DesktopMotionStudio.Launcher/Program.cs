@@ -19,12 +19,16 @@ internal static class Program
         Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null,
         Action<DiagnosticEvent[]>? diagnostics = null)
     {
-        if (ManagedLaunchRequest.ParseArguments(args) is not string bindingId) return 2;
-
+        if (args.Length == 0 || args[0] != "--binding") return 2;
         var elapsed = Stopwatch.StartNew();
         Guid request = Guid.NewGuid();
         DiagnosticAdapter adapter = DiagnosticAdapter.Unknown;
         DiagnosticStage stage = DiagnosticStage.Request;
+        if (ManagedLaunchRequest.ParseArguments(args) is not string bindingId)
+        {
+            Record(diagnostics, request, elapsed, adapter, (stage, DiagnosticResultCode.InvalidRequest, DiagnosticFallback.None));
+            return 2;
+        }
         try
         {
             string bundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
@@ -111,18 +115,22 @@ internal static class Program
         _ => DiagnosticResultCode.UnexpectedFailure
     };
 
-    private static (DiagnosticResultCode Result, DiagnosticFallback Fallback) AnimationResult(
+    internal static (DiagnosticResultCode Result, DiagnosticFallback Fallback) AnimationResult(
         ManagedLaunchPlan plan, MotionHostLifecycleResult? animated)
     {
         if (animated is null)
             return (DiagnosticResultCode.NotStarted, plan.PlaybackStatus == ManagedPlaybackStatus.Disabled
                 ? DiagnosticFallback.AnimationDisabled : DiagnosticFallback.PlaybackUnavailable);
+        if (animated.HostError == MotionHostError.TimedOut)
+            return (DiagnosticResultCode.TimedOut, DiagnosticFallback.RendererFailed);
+        DiagnosticFallback cleanup = animated.HostError is not (null or MotionHostError.None)
+            ? DiagnosticFallback.RendererCleanupFailed : DiagnosticFallback.None;
         return animated.HostOutcome switch
         {
-            MotionHostOutcome.HandedOff => (DiagnosticResultCode.HandedOff, DiagnosticFallback.None),
-            MotionHostOutcome.Skipped => (DiagnosticResultCode.Skipped, DiagnosticFallback.None),
-            MotionHostOutcome.Exited => (DiagnosticResultCode.Exited, DiagnosticFallback.None),
-            MotionHostOutcome.Completed => (DiagnosticResultCode.Completed, DiagnosticFallback.None),
+            MotionHostOutcome.HandedOff => (DiagnosticResultCode.HandedOff, cleanup),
+            MotionHostOutcome.Skipped => (DiagnosticResultCode.Skipped, cleanup),
+            MotionHostOutcome.Exited => (DiagnosticResultCode.Exited, cleanup),
+            MotionHostOutcome.Completed => (DiagnosticResultCode.Completed, cleanup),
             MotionHostOutcome.NotStarted => (DiagnosticResultCode.NotStarted, DiagnosticFallback.None),
             MotionHostOutcome.TimedOut => (DiagnosticResultCode.TimedOut, DiagnosticFallback.RendererFailed),
             _ => (DiagnosticResultCode.RendererFailed, animated.HostError == MotionHostError.StartFailed

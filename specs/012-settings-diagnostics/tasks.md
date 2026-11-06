@@ -17,10 +17,10 @@
 
 ## Phase 3 — Diagnostics UI and acceptance
 
-- [ ] T008 [US2] Implement diagnostic view, version and capability display, explicit report copy and directory open in src/DesktopMotionStudio.Studio/DiagnosticsWindow.xaml and code-behind. (FR-006, AC-04, AC-05, AC-08)
-- [ ] T009 [US3] Wire selected application repair using F10 service and checked eligibility in src/DesktopMotionStudio.Studio/DiagnosticsWindow.xaml.cs. Verify conflict, unavailable and stale-selection paths. (FR-007, AC-07, AC-08)
-- [ ] T010 Record published actual Windows keyboard/theme and launcher/diagnostic failure acceptance and regression in specs/012-settings-diagnostics/evidence.md. (SC-001, SC-002, SC-003)
-- [ ] T011 Run independent review and convergence and record results in specs/012-settings-diagnostics/review.md. Update FEATURES.md and README.md.
+- [x] T008 [US2] Implement diagnostic view, version and capability display, explicit report copy and directory open in src/DesktopMotionStudio.Studio/DiagnosticsWindow.xaml and code-behind. (FR-006, AC-04, AC-05, AC-08)
+- [x] T009 [US3] Wire selected application repair using F10 service and checked eligibility in src/DesktopMotionStudio.Studio/DiagnosticsWindow.xaml.cs. Verify conflict, unavailable and stale-selection paths. (FR-007, AC-07, AC-08)
+- [x] T010 Record published actual Windows keyboard/theme and launcher/diagnostic failure acceptance and regression in specs/012-settings-diagnostics/evidence.md. (SC-001, SC-002, SC-003)
+- [x] T011 Run independent review and convergence and record results in specs/012-settings-diagnostics/review.md. Update FEATURES.md and README.md.
 
 ## Dependencies
 

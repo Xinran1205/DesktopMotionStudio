@@ -45,7 +45,9 @@ internal static class F11DiagnosticChecks
             check("busy writer drops immediately without changing records",
                 store.Append(Sample()) == DiagnosticStatus.Busy && time.Elapsed < TimeSpan.FromSeconds(1) &&
                 File.ReadAllBytes(primary).SequenceEqual(baseline));
+            check("read reports busy instead of reading across a commit", store.Read().Status == DiagnosticStatus.Busy);
         }
+        check("read returns the same history after releasing the lock", store.Read().Events.SequenceEqual([first, second]));
 
         var accepted = new DiagnosticEvent[144];
         for (int i = 0; i < accepted.Length; i++)

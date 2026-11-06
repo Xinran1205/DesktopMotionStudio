@@ -2,13 +2,13 @@
 
 ## R1 — Theme
 
-**Decision** Use the WPF Fluent resource dictionaries provided by the pinned Windows Desktop runtime. Select Fluent.xaml for system, Fluent.Light.xaml for light and Fluent.Dark.xaml for dark. Use dynamic semantic resources in all Studio views and system contrast colors where required. Probe the installed WPF runtime and resource changes before modifying windows.
+**Decision** Use WPF Fluent from the pinned Windows Desktop runtime. Keep dynamic semantic resources across Studio views. Centralize WPF's experimental application `ThemeMode` access in `StudioTheme`, with a local WPF0001 suppression. Reapply the saved mode on the UI dispatcher after Windows high-contrast transitions.
 
-**Rationale** The existing runtime includes PresentationFramework.Fluent. WPF follows app mode and contrast changes in the supported dictionary route. It avoids an experimental ThemeMode property, registry dependence and an added WinRT projection.
+**Rationale** The dictionary probe established semantic resource coverage. Actual Windows transitions exposed a missing palette after manually replacing the application System dictionary on contrast exit. The pinned WPF ThemeMode implementation supplies the System color dictionary. The production-linked probe then verified both System and Dark palettes before, during and after actual Windows high contrast. The API remains isolated and theme transition checks must be rerun on desktop runtime updates.
 
-**Alternatives considered** Experimental ThemeMode, custom Windows registry polling and UISettings WinRT interop.
+**Alternatives considered** Direct Fluent dictionary replacement, Windows registry polling and UISettings WinRT interop.
 
-**Sources** [WPF Fluent usage](https://github.com/dotnet/wpf/blob/main/Documentation/docs/using-fluent.md), [Microsoft WPF Fluent documentation](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/whats-new/net90), [Windows high contrast](https://learn.microsoft.com/windows/win32/winauto/high-contrast-parameter).
+**Sources** [WPF Fluent usage](https://github.com/dotnet/wpf/blob/main/Documentation/docs/using-fluent.md), [pinned WPF ThemeManager](https://github.com/dotnet/wpf/blob/v10.0.14/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/ThemeManager.cs), [Windows high contrast](https://learn.microsoft.com/windows/win32/winauto/high-contrast-parameter).
 
 ## R2 — Preferences
 

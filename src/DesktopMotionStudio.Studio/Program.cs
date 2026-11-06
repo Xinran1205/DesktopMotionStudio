@@ -3,6 +3,7 @@ using System.Windows;
 using DesktopMotionStudio.Core.State;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.Launch;
+using DesktopMotionStudio.Core.Diagnostics;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -42,7 +43,9 @@ internal static class Program
         {
             Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
         });
-        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts));
+        var diagnostics = new DiagnosticLogStore(stateFile is null ? DiagnosticLogStore.CurrentUserDirectory() :
+            Path.Combine(Path.GetDirectoryName(profile)!, "logs"));
+        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics));
     }
 
     private static bool IsFixtureDesktop(string stateFile, string desktop)

@@ -2,7 +2,7 @@
 
 **Feature Branch** `codex/f11-settings-diagnostics`
 
-**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** In implementation
+**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** Complete
 
 **Input** PRD V1.0 设置与恢复，TDD V1.0 §12，F02/F06/F10 已验证合同。
 
@@ -91,3 +91,4 @@
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent baseline. |
 | 0.2.0 | 2026-11-06 | Specify preferences, safe diagnostics and recovery acceptance. |
+| 1.0.0 | 2026-11-06 | Verify preferences, local diagnostics and selected shortcut recovery on Windows. |

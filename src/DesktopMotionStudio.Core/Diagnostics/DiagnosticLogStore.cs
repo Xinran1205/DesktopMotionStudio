@@ -31,6 +31,18 @@ public sealed class DiagnosticLogStore(string directory)
     {
         try
         {
+            using var locks = WindowsFileScope.Open(Path.Combine(directory, "locks"));
+            using var gate = locks.OpenChild("events.lock", WindowsFileScope.ReadAccess, share: 0);
+            return WindowsFileScope.ReadInfo(gate).IsSingleRegularFile ? ReadGenerations() : new(DiagnosticStatus.Invalid, []);
+        }
+        catch (Win32Exception ex) when (WindowsFileScope.IsMissing(ex)) { return ReadGenerations(); }
+        catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex), []); }
+    }
+
+    private DiagnosticSnapshot ReadGenerations()
+    {
+        try
+        {
             using var scope = WindowsFileScope.Open(Path.Combine(directory, "records"));
             using Entry current = Open(scope, Primary);
             using Entry previous = Open(scope, Previous);

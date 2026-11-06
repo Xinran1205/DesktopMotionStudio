@@ -1,6 +1,6 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.23 · **Date:** 2026-11-06
+**Status:** Incremental implementation · **Version:** 1.0.24 · **Date:** 2026-11-06
 
 The repository began with requirements documents only. F00–F09 are complete with automated, process, and interactive Windows acceptance evidence. Dependencies below are sequencing gates, not claims of implementation.
 
@@ -17,7 +17,7 @@ The repository began with requirements documents only. F00–F09 are complete wi
 | 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04, F07 | Complete; real UI at 100/125/150% |
 | 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F06, F07, F08 | Complete; library/preview/binding/home, real process/publish and actual100/125/150% + OS motion acceptance verified |
 | 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create, repair and remove verified owned shortcuts | F02, F04, F05, F06, F07, F08, F09 | Complete; durable receipts, actual Shell activation and fallback verified |
-| 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F08, F09, F10 | In implementation; settings Core and theme proof verified |
+| 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F08, F09, F10 | Complete · [Windows evidence](specs/012-settings-diagnostics/evidence.md) |
 | 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Spec baseline |
 | 13 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 | Spec baseline |
 | 14 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 | Spec baseline |
@@ -55,3 +55,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.21 | 2026-11-06 | Resume F10, complete specification analysis and pass 22 isolated Windows ownership and Shell Link checks. |
 | 1.0.22 | 2026-11-06 | Complete F10 with 395 Core checks, 57 Studio checks and 12 actual published UI and Shell checks. |
 | 1.0.23 | 2026-11-06 | Start F11 with independent spec, 12 preference Core checks and Fluent theme resource proof. |
+| 1.0.24 | 2026-11-06 | Complete F11 with published keyboard and Shell checks, real Windows contrast recovery and independent convergence. |

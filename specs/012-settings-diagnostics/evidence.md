@@ -1,25 +1,30 @@
 # F11 Verification Evidence
 
-## Preferences Core, 2026-11-06
+**Date** 2026-11-06 · **Host** Windows 11 x64 build 26200, local NTFS, actual DPI120 (125%) · **SDK** 10.0.403, Desktop runtime 10.0.14
 
-The new preference checks first failed at build because the contract was absent. After implementation, Core Release built with zero warnings and errors and `--f11-settings-checks` reported 12 PASS. Cases include defaults without writes, explicit dark/mute and light/unmute changes, exact no-op and conflict preservation, unchanged application and binding records, legacy migration with the original backup, future/malformed state and structured Busy.
+| Release suite | PASS | FAIL | SKIP |
+|---|---:|---:|---:|
+| Core with real WindowHost target and published MotionHost | 425 | 0 | 1 |
+| Studio WPF and deterministic UI | 67 | 0 | 0 |
+| F11 published Studio, actual keyboard and Windows Shell | 25 | 0 | 0 |
+| F08 published UI regression | 16 | 0 | 0 |
+| F09 published UI regression | 15 | 0 | 0 |
+| Launcher diagnostic boundary mapping | 3 | 0 | 0 |
 
-## Fluent platform proof
+The optional packaged-instance case was skipped because DMS_F05_TEST_AUMID was unset. Release builds and analyzers passed with zero warnings and errors. Affected C# project whitespace and Git whitespace checks passed.
 
-Run `dotnet run --project specs/012-settings-diagnostics/probes/theme -c Release`. On .NET Windows Desktop 10.0.14, the same WPF TextBlock switched foreground from #E4000000 (Light) to #FFFFFFFF (Dark), then #E4000000 (System on this desktop) and #FF000000 (explicit contrast palette). All four dictionaries exposed the required semantic brush and control styles. This is a live resource lookup and switch proof. Actual OS theme toggles are tracked in T010.
+## Preferences and accessibility
 
-## T004 — Studio preferences and palette
+The real published Studio saved dark and mute by keyboard and retained both on restart. Cancel preserved exact profile and backup bytes. WPF tests exercised semantic palette changes and preference conflict feedback. Core checks covered schema1 backup, schema2 no-op, malformed or future files, and contention.
 
-The Settings dialog applies the saved theme to existing windows, persists audio preference and preserves bytes on cancel. Three WPF checks passed for dark/mute and live resource change, exact cancel behavior, and system/unmute reopening. Existing Studio views use Fluent semantic resources.
+The initial platform probe followed an actual Windows Light → Dark → Light change and exposed a lost explicit palette on contrast exit. The final probe linked production StudioTheme in two independent processes. The System probe reported text/background #E4000000/#FFF3F3F3 → #FF3D3D3D/#FFFFFAEF → #E4000000/#FFF3F3F3. Explicit Dark reported #FFFFFFFF/#FF202020 → the same Windows contrast palette → #FFFFFFFF/#FF202020. Windows was restored to its original Light mode with no contrast theme.
 
-The first actual F08 run could not open Add with Alt+A. The pinned WPF AccentButtonStyle does not recognize string access keys by default. Studio supplies an AccessText content template for accent buttons, preserving their content and Fluent styling. The unchanged real Windows test then passed. [Pinned WPF template source](https://raw.githubusercontent.com/dotnet/wpf/v10.0.14/src/Microsoft.DotNet.Wpf/src/Themes/PresentationFramework.Fluent/Styles/Button.xaml)
+## Diagnostics and recovery
 
-Final settings increment ran 407 Core PASS, one documented optional packaged-instance SKIP, 60 Studio PASS, and published actual F08/F09/F10 UI 16/15/12 PASS. Zero failures. Release publish and affected builds passed. Final system preference toggles and diagnostics remain T010.
+Real Shell activation ran one target and an owned renderer where applicable. A missing host, disabled animation, missing binding, held diagnostic gate, unknown log schema and throwing log sink exercised distinct results. Each completed activation checked that its isolated renderer had exited. Core exercised the 128-entry and 64 KiB committed bounds, interrupted handover, contention and blocked reparse traversal.
 
-## T005–T007 — Bounded diagnostics and actual launch integration
+Published Studio opened diagnostics through Alt+I, distinguished renderer fallback and missing binding, and used Alt+R to repair the selected missing entry while preserving the profile and foreign link. WPF tests covered conflict, removed selection, copy, clipboard error and guidance. The copy test captured the same formatter's output through an injected clipboard callback. Fixture strings were absent from raw records and the copied summary.
 
-Diagnostic checks first failed at build before the contract existed. The implemented store passed 16 targeted checks for atomic correlated events, strict fields, corruption/future bytes, count and byte rollover, commit order under clock skew, immediate Busy, previous-generation recovery, fixed-stage behavior and reparse rejection. Shared WindowsFileScope preserves F10's native guards.
+Shell acceptance compiles the production Launcher entry source with an isolated profile provider and trace hook. The shipping apphost separately rejects an unexpected switch with exit 2. The keyboard harness initially encountered Windows foreground restrictions and passed after explicit activation of identified fixture windows. The actual user profile, desktop entries and clipboard were outside test scope.
 
-Published `--f11-launch-ui` reported 20 PASS. Real Shell handoff produced correlated WindowReady/HandedOff events. A locked log retained its bytes during successful replacement-scene handoff. Disabled motion recorded AnimationDisabled. Missing renderer recorded RendererUnavailable with one target. A future log and an injected throwing sink preserved prior bytes and successful handoff. A missing binding returned exit 3 without target dispatch and recorded a distinct Request event. Neither raw records nor the report contained fixture path, binding, scene or app data. This uses the same production-source isolated Launcher fixture as F10.
-
-Full Core 423 PASS, 0 FAIL and the prior optional packaged-instance SKIP. Studio 60 PASS. Fresh win-x64 Release publish and test builds passed with zero warnings or errors.
+The framework-dependent publish is retained at artifacts/studio-f11 with hashes and logs in artifacts/checkpoints/f11-20261106. F12 owns install, upgrade and uninstall acceptance.

@@ -87,7 +87,7 @@ public partial class MainWindow
         if (ShortcutRemoveButton.IsEnabled) await RunShortcutActionAsync((service, id) => service.Remove(id));
     }
 
-    private static string ShortcutText(ShortcutStatus status) => status switch
+    internal static string ShortcutText(ShortcutStatus status) => status switch
     {
         ShortcutStatus.NotCreated => "未创建桌面入口。",
         ShortcutStatus.Healthy => "桌面入口有效。",

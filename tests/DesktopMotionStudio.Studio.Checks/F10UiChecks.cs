@@ -9,7 +9,7 @@ using static StudioUiChecks;
 
 internal static class F10UiChecks
 {
-    internal static int Run(bool diagnostics = false)
+    internal static int Run(bool diagnostics = false, bool settingsAndRecovery = false)
     {
         string studio = RequiredPath("DMS_F08_STUDIO_PATH");
         string launcher = RequiredPath("DMS_F10_FIXTURE_LAUNCHER_PATH");
@@ -68,6 +68,31 @@ internal static class F10UiChecks
             {
                 Console.WriteLine("  Waiting for activation of the owned F10 Studio window.");
                 Require(Program.WaitFor(() => GetForegroundWindow() == hwnd, TimeSpan.FromSeconds(45)), "Owned Studio window not activated.");
+            }
+            if (settingsAndRecovery)
+            {
+                Keys(hwnd, 0x12, 0x47); // Alt+G
+                nint settingsHandle = Window(studioProcess, "设置");
+                var settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Settings did not load.");
+                Find(settings, "主题").SetFocus();
+                Keys(settingsHandle, 0x23); // End selects dark.
+                Find(settings, "全局静音").SetFocus();
+                Keys(settingsHandle, 0x20);
+                Keys(settingsHandle, 0x12, 0x53);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings did not close after save.");
+                Check("F11 actual keyboard saves dark and mute", store.Load().State?.Settings == new StudioSettings("dark", true));
+                initialBytes = File.ReadAllBytes(state);
+                initialBackup = File.ReadAllBytes(state + ".bak");
+                Keys(hwnd, 0x12, 0x47);
+                settingsHandle = Window(studioProcess, "设置");
+                settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Reopened settings did not load.");
+                Find(settings, "主题").SetFocus();
+                Keys(settingsHandle, 0x24); // Home selects system, then cancel.
+                Keys(settingsHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings cancel did not close.");
+                Check("F11 actual cancel preserves exact preference bytes", SameState(state, initialBytes, initialBackup));
             }
             Check("reading home makes no shortcut", Directory.GetFiles(desktop, "*.lnk").SequenceEqual([unrelated]));
             Keys(hwnd, 0x12, 0x43); // Alt+C
@@ -165,6 +190,36 @@ internal static class F10UiChecks
             hwnd = Window(studioProcess, "Desktop Motion Studio");
             home = AutomationElement.FromHandle(hwnd);
             Require(Program.WaitFor(() => Enabled(home, "移除桌面入口")), "Owned entry was not verified on reopen.");
+            if (settingsAndRecovery)
+            {
+                Keys(hwnd, 0x12, 0x47);
+                nint settingsHandle = Window(studioProcess, "设置");
+                var settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Reopened preferences did not load.");
+                var toggle = (TogglePattern)Find(settings, "全局静音").GetCurrentPattern(TogglePattern.Pattern);
+                var theme = (SelectionPattern)Find(settings, "主题").GetCurrentPattern(SelectionPattern.Pattern);
+                Check("F11 restarted Studio restores saved dark and mute controls",
+                    toggle.Current.ToggleState == ToggleState.On && theme.Current.GetSelection().Single().Current.Name == "深色");
+                Keys(settingsHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings did not close.");
+                File.Delete(link);
+                Keys(hwnd, 0x12, 0x49); // Alt+I
+                nint diagnosticHandle = Window(studioProcess, "本地诊断");
+                var view = AutomationElement.FromHandle(diagnosticHandle);
+                Require(Program.WaitFor(() => Enabled(view, "诊断修复入口")), "Diagnostic recovery did not become available.");
+                var recent = (ValuePattern)Find(view, "最近诊断记录").GetCurrentPattern(ValuePattern.Pattern);
+                Check("F11 actual diagnostics distinguishes renderer fallback and missing binding",
+                    recent.Current.Value.Contains("渲染器不可用", StringComparison.Ordinal) &&
+                    recent.Current.Value.Contains("找不到绑定", StringComparison.Ordinal));
+                Keys(diagnosticHandle, 0x12, 0x52);
+                Require(Program.WaitFor(() => File.Exists(link) && NamedStatus(view, "DiagnosticEntry").Contains("有效", StringComparison.Ordinal)),
+                    "Diagnostic repair did not restore the owned link.");
+                Keys(diagnosticHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "本地诊断") == 0 &&
+                    Enabled(home, "移除桌面入口")), "Diagnostic repair did not refresh home.");
+                Check("F11 actual diagnostic repair keeps profile and foreign link intact",
+                    SameState(state, beforeRemove, beforeRemoveBackup) && File.ReadAllText(unrelated) == "foreign original");
+            }
             Keys(hwnd, 0x12, 0x4D); // Alt+M
             Require(Program.WaitFor(() => Enabled(home, "创建桌面入口") && !File.Exists(link)), "Remove did not clear the owned link.");
             Check("keyboard remove preserves binding, backup and foreign entry",
@@ -214,6 +269,8 @@ internal static class F10UiChecks
             Console.WriteLine($"  Launcher PID={launcher.Id}, target PID={result.TargetPid}, HWND=0x{result.Window:X}, scene={result.Scene}, target={result.Instance}, host={result.Host}/{result.HostError}");
             Require(result.TargetPid is int pid && IsTarget(pid, target) && OwnedTargets(target) == 1,
                 "Expected exactly one verified target process.");
+            string host = Path.Combine(Path.GetDirectoryName(state)!, "Bundle", "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+            Require(Program.WaitFor(() => OwnedTargets(host) == 0, TimeSpan.FromSeconds(2)), "Owned renderer did not exit.");
             Require(SameState(state, bytes, backup), "Launcher changed state or backup.");
             return result;
         }
@@ -255,8 +312,9 @@ internal static class F10UiChecks
         File.ReadAllBytes(state).SequenceEqual(bytes) && File.ReadAllBytes(state + ".bak").SequenceEqual(backup);
 
     private static bool Enabled(AutomationElement root, string name) => Find(root, name).Current.IsEnabled;
-    private static string ShortcutStatus(AutomationElement root) =>
-        root.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "ShortcutHealth"))?.Current.Name ?? "";
+    private static string ShortcutStatus(AutomationElement root) => NamedStatus(root, "ShortcutHealth");
+    private static string NamedStatus(AutomationElement root, string id) =>
+        root.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, id))?.Current.Name ?? "";
     private static void Invoke(AutomationElement root, string name) =>
         ((InvokePattern)Find(root, name).GetCurrentPattern(InvokePattern.Pattern)).Invoke();
 
