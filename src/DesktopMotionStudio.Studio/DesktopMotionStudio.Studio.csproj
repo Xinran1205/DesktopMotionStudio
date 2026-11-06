@@ -17,7 +17,7 @@
     <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-  <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true' And '$(StageBundledTools)' != 'false'">
     <MSBuild Projects="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
       <Output TaskParameter="TargetOutputs" ItemName="_MotionHostTarget" />
     </MSBuild>
@@ -31,7 +31,7 @@
       </Content>
     </ItemGroup>
   </Target>
-  <Target Name="StageLauncher" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="StageLauncher" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true' And '$(StageBundledTools)' != 'false'">
     <MSBuild Projects="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
       <Output TaskParameter="TargetOutputs" ItemName="_LauncherTarget" />
     </MSBuild>

@@ -1,0 +1,35 @@
+# Implementation Plan — F12 Per-user Installation
+
+**Branch** codex/f12-installer-upgrade · **Date** 2026-11-06 · **Spec** [spec.md](spec.md)
+
+## Technical Context
+
+Pinned .NET SDK 10.0.403, existing WPF/WinForms apps and Windows 11 x64. Independently publish self-contained win-x64 components. Use a self-contained setup executable and immutable version directories behind a stable entry point. Use a single version-selector commit and a small recovery journal for cross-resource registration. F10 supplies retained-handle file verification. Installation remains distinct from profile storage and scene licensing.
+
+## Constitution Check
+
+| Principle | Implementation |
+|---|---|
+| Target app wins | Preserve the installed Launcher entry path and native fallback. Installation never terminates target apps. |
+| Local and least privilege | Per-user fixed program root, offline payload, no system service or updater. |
+| Ownership | Validate the installation namespace and owned file list. Delete desktop entries only through F10 verified handles. No wildcard removal. |
+| Boundaries | Setup owns payload staging, selector and registration. A stable shim starts the selected installed generation. A small uninstall helper invokes Core ownership cleanup. |
+| Compatibility | One supported installed product family, ordered versions, unchanged profile2/IPC2. Reject unsupported selector schemas and file/process conflicts. |
+| Small increments and quality | Verify bundled runtimes and the selector's interruption cases before product install, cleanup and clean-account acceptance. |
+| Dependencies and Git | Build from the pinned SDK and BCL. Commit each verified increment. |
+
+## Phase 0 — Research and gate
+
+See [research.md](research.md) and [evidence.md](evidence.md). The isolated MSI proof restored old file bytes but failed to restore the old Windows Installer registration in a non-elevated rollback. Use a side-by-side stage and one active-selector commit instead. Verify real process interruption around that commit before integrating the Windows registration and desktop entry.
+
+## Phase 1 — Packaging and installation
+
+Author the Windows package build under `installer/`. Publish Studio, Launcher and MotionHost separately and assemble the existing component layout. Emit hashes and runtime provenance. Keep immutable generation directories within the fixed program root. Stable Studio and Launcher shims read one supported active selector and forward to the selected generation, preserving the validated binding token. Keep one current-user Installed Apps record and a fixed Start menu entry. Preflight known file slots, reparse boundaries and in-use program files. Journal installation/registration mutations and verify late failure recovery and occupied/conflicting paths on actual Windows.
+
+## Phase 2 — Uninstall cleanup
+
+Discover candidates in F10's private receipt store. Reopen and revalidate the exact current-desktop file and this install's Launcher identity. The ordinary uninstall helper runs from an owned copy outside the installation tree and deletes desktop entries only after program removal commits. Preserve unresolved evidence and retain bounded cleanup status. Program removal and user cleanup have distinct outcomes. See the [interface contract](contracts/installation.md).
+
+## Phase 3 — Convergence
+
+Run build, static checks, regression, package layout and native lifecycle checks. Run real install, Shell launch, fault/rollback, upgrade, uninstall and reinstall in a disposable Windows 11 x64 VM with a standard account, no preinstalled product runtime and detached networking. Record this host's isolated non-elevated evidence separately. Close independent review and verify every FR, AC and SC.

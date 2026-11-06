@@ -1,0 +1,8 @@
+# F12 Installation Contract
+
+- **Build inputs** Pinned SDK, win-x64 component sources, product version and clean output directory. **Outputs** One offline setup executable, SHA256, payload inventory and dependency provenance.
+- **Scope** The current user's fixed program directory. No override in the shipping UI. Product files, launch registration and uninstall registration are owned by the installer. Existing app state and diagnostics remain in the F02/F11 location.
+- **Upgrade** Higher versions of the same product stage a verified generation before committing the active selector. A failed pre-commit update leaves the prior generation selected. A recovery journal reconciles interrupted registration operations. Block downgrade and surface busy or unsafe states.
+- **Conflicts** Preflight validates current installed identity, path ancestry and known file slots. Missing or foreign identity, unexpected content at owned paths, reparse points or sharing violations fail with retry/repair information. Explicitly validate this boundary in native tests.
+- **Uninstall cleanup** Ordinary remove only, with current-user identity and exact installed Launcher path derived from the known folder. Internal upgrade removal skips cleanup. Revalidate candidate evidence immediately before deletion. Preserve all unresolved records. Report a separate bounded outcome.
+- **Acceptance isolation** Generated proofs use unique identities and write only their own fixture directories and registrations. Production tests run in a disposable account with isolated target and Desktop.

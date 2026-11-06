@@ -1,8 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F12 规格已建立
+## 当前断点 — F12 打包与切换探针已验证
 
-当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 规格](../specs/013-installer-upgrade/spec.md)包含 3 个场景、9 项验收标准和 3 个成功指标。下一阶段用最小探针验证自包含打包、普通用户安装、升级回滚和清理时机，然后制定正式 Plan 与 Tasks。
+当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 清单](../specs/013-installer-upgrade/tasks.md)的 T001–T004 已完成。MSI 探针恢复了旧文件，但旧版注册恢复失败。采用独立版本目录与活动选择器。870 个文件的自包含负载已通过逐项 SHA256、三组件实际启动和双构建一致性验证。选择器探针 9 项通过。详情见 [F12 证据](../specs/013-installer-upgrade/evidence.md)。
+
+下一步 T005 将探针的切换合同接入 Setup、固定 Launcher 路径和当前用户注册。Studio 从安装布局派生固定 Launcher 路径，开发版仍按随包布局解析。正式验收还需独立 Windows 11 标准账户环境。
 
 ## F11 已完成
 

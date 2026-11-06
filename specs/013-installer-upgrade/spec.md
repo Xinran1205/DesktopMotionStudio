@@ -2,7 +2,7 @@
 
 **Feature Branch** `codex/f12-installer-upgrade`
 
-**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** Specified
+**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** In implementation
 
 **Input** PRD V1.0 发行与恢复，TDD V1.0 §9，F02 配置、F10 入口所有权和 F11 诊断合同。
 
