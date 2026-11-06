@@ -34,7 +34,7 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
             icon = launcher;
         byte[] bytes = BuildLink(launcher, "--binding " + token, icon!);
 
-        SafeFileHandle handle = scope.OpenChild($"{Guid.NewGuid():N}.tmp", ReadAccess | WriteAccess | DeleteAccess, disposition: 1);
+        SafeFileHandle handle = scope.OpenChild($"{Guid.NewGuid():N}.tmp", ReadAccess | WriteAccess | DeleteAccess, disposition: CreateNew);
         FileStream? stream = null;
         try
         {
@@ -98,7 +98,8 @@ internal sealed class WindowsShortcutPlatform(ShortcutNativeDirectory scope) : I
             FileInfo info = ReadInfo(handle);
             if (!MatchesIdentity(Proof, Proof.Path, info) || Digest(handle, info) != Proof.Sha256)
                 throw new InvalidDataException("Shortcut stage changed before publication.");
-            scope.Publish(handle, name, replace: false, ref _published);
+            scope.Publish(handle, name);
+            _published = true;
         }
 
         public void Dispose()

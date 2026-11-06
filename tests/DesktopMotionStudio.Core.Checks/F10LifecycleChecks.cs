@@ -124,6 +124,17 @@ internal static class F10LifecycleChecks
 
         check("all operations preserve profile and backup bytes", File.ReadAllBytes(profile).SequenceEqual(expected) &&
             File.ReadAllBytes(profile + ".bak").SequenceEqual(backup));
+
+        int beforePublish = 0;
+        var changingBinding = new ManagedShortcutService(profileStore, catalog, storage, newer, () =>
+        {
+            if (++beforePublish == 2 && !profileStore.Update(current =>
+                    current with { Bindings = [binding with { Enabled = false }] }).IsSuccess)
+                throw new IOException("Could not disable binding fixture.");
+            return other;
+        });
+        check("binding disabled after stage cannot publish an entry", changingBinding.Create(Id).Status == ShortcutStatus.Ineligible &&
+            !Directory.GetFiles(other).Any() && receipts.Read(Id).Status == ShortcutReceiptStatus.Missing);
     }
 
     private static void SavePending(ShortcutReceiptStore store, ShortcutProof proof)

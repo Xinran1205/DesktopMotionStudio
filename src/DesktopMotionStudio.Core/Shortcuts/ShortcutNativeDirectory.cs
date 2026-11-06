@@ -34,17 +34,13 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
         var pins = new List<SafeFileHandle>();
         try
         {
-            string current = root;
-            pins.Add(Pin(current));
+            pins.Add(PinRoot(root));
             foreach (string component in path[3..].Split('\\'))
             {
-                current = System.IO.Path.Combine(current, component);
-                try { pins.Add(Pin(current)); }
-                catch (Win32Exception ex) when (create && ex.NativeErrorCode == 2)
-                {
-                    Directory.CreateDirectory(current);
-                    pins.Add(Pin(current));
-                }
+                SafeFileHandle handle = OpenRelative(pins[^1], component, 0x00100081, 3,
+                    create ? OpenIf : OpenExisting, directory: true);
+                pins.Add(handle);
+                VerifyDirectory(handle);
             }
             return new(path, pins);
         }
@@ -63,34 +59,19 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
         return System.IO.Path.Combine(Path, name);
     }
 
-    internal SafeFileHandle OpenChild(string name, uint access, uint share = 1, uint disposition = 3) =>
-        OpenFile(Child(name), access, share, disposition, 0x00200000 | 0x02000000);
-
-    internal void Publish(SafeFileHandle staged, string name, bool replace, ref bool published)
+    internal SafeFileHandle OpenChild(string name, uint access, uint share = 1, uint disposition = OpenExisting)
     {
-        string destination = Child(name);
+        _ = Child(name);
+        return OpenRelative(pins[^1], name, access, share, disposition, directory: false);
+    }
+
+    internal void Publish(SafeFileHandle staged, string name)
+    {
+        _ = Child(name);
         var stagedInfo = ReadInfo(staged);
         if (!stagedInfo.IsSingleRegularFile) throw new InvalidDataException("Staged file is no longer a single regular file.");
-
-        // The stage keeps the directory nonempty while its write-sharing pin is in force.
-        int last = pins.Count - 1;
-        var original = ReadInfo(pins[last]);
-        using SafeFileHandle publishPin = Pin(Path, allowWrite: true);
-        if (!original.SameObject(ReadInfo(publishPin)))
-            throw new InvalidDataException("The shortcut directory identity changed.");
-        pins[last].Dispose();
-        try
-        {
-            Rename(staged, destination, replace);
-            published = true;
-        }
-        finally
-        {
-            // Restoration can fail after the rename committed. The caller still owns a
-            // published file in that case and must not clean it up as a temporary stage.
-            try { pins[last] = Pin(Path); }
-            catch { Dispose(); throw; }
-        }
+        // A bare filename and null RootDirectory keep the retained file in its actual parent.
+        Rename(staged, name);
     }
 
     internal static FileInfo ReadInfo(SafeFileHandle handle) =>
@@ -112,42 +93,72 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
         handles.Clear();
     }
 
-    private static SafeFileHandle Pin(string path, bool allowWrite = false)
+    private static SafeFileHandle PinRoot(string path)
     {
-        SafeFileHandle handle = OpenFile(path, 1, allowWrite ? 3u : 1u, 3, 0x00200000 | 0x02000000);
+        SafeFileHandle handle = CreateFileW(path, 0x81, 3, 0, 3, 0x00200000 | 0x02000000, 0);
         try
         {
-            if ((ReadInfo(handle).Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory)
-                throw new InvalidDataException("Shortcut path includes a reparse point or non-directory.");
+            if (handle.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error());
+            VerifyDirectory(handle);
             return handle;
         }
         catch { handle.Dispose(); throw; }
     }
 
-    private static SafeFileHandle OpenFile(string path, uint access, uint share, uint disposition, uint flags)
+    private static void VerifyDirectory(SafeFileHandle handle)
     {
-        SafeFileHandle handle = CreateFileW(path, access, share, 0, disposition, flags, 0);
-        if (!handle.IsInvalid) return handle;
-        int error = Marshal.GetLastWin32Error();
-        handle.Dispose();
-        throw new Win32Exception(error);
+        if ((ReadInfo(handle).Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory)
+            throw new InvalidDataException("Shortcut path includes a reparse point or non-directory.");
     }
 
-    private static void Rename(SafeFileHandle file, string destination, bool replace)
+    private static SafeFileHandle OpenRelative(SafeFileHandle parent, string name, uint access, uint share, uint disposition, bool directory)
     {
-        // FILE_RENAME_INFO layout on Windows x64. RootDirectory is null for an absolute name.
+        int length = checked(name.Length * sizeof(char));
+        nint chars = Marshal.StringToHGlobalUni(name);
+        nint unicode = 0;
+        bool retained = false;
+        try
+        {
+            unicode = Marshal.AllocHGlobal(Marshal.SizeOf<UnicodeString>());
+            Marshal.StructureToPtr(new UnicodeString((ushort)length, (ushort)(length + 2), chars), unicode, false);
+            parent.DangerousAddRef(ref retained);
+            var attributes = new ObjectAttributes
+            {
+                Length = (uint)Marshal.SizeOf<ObjectAttributes>(),
+                RootDirectory = parent.DangerousGetHandle(),
+                ObjectName = unicode,
+                Attributes = 0x1040 // OBJ_DONT_REPARSE | OBJ_CASE_INSENSITIVE
+            };
+            uint options = 0x00200020 | (directory ? 1u : disposition == OpenExisting ? 0u : 0x40u);
+            int status = NtCreateFile(out var file, access | 0x00100000, in attributes, out _, 0, 0x80,
+                share, disposition, options, 0, 0);
+            if (status >= 0 && !file.IsInvalid) return file;
+            file.Dispose();
+            throw new Win32Exception(RtlNtStatusToDosError(status));
+        }
+        finally
+        {
+            if (retained) parent.DangerousRelease();
+            Marshal.FreeHGlobal(unicode);
+            Marshal.FreeHGlobal(chars);
+        }
+    }
+
+    private static void Rename(SafeFileHandle file, string destination)
+    {
+        // FILE_RENAME_INFORMATION layout on Windows x64, with replacement disabled.
         byte[] name = Encoding.Unicode.GetBytes(destination + "\0");
         const int nameOffset = 20;
         int size = nameOffset + name.Length;
         nint info = Marshal.AllocHGlobal(size);
         try
         {
-            Marshal.WriteInt64(info, replace ? 1L : 0L);
+            Marshal.WriteInt64(info, 0);
             Marshal.WriteIntPtr(info, 8, 0);
             Marshal.WriteInt32(info, 16, name.Length - 2);
             Marshal.Copy(name, 0, info + nameOffset, name.Length);
-            if (!SetFileInformationByHandle(file, 3, info, (uint)size))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+            int status = NtSetInformationFile(file, out _, info, (uint)size, 10);
+            if (status < 0) throw new Win32Exception(RtlNtStatusToDosError(status));
         }
         finally { Marshal.FreeHGlobal(info); }
     }
@@ -160,14 +171,27 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
         internal uint VolumeSerial, SizeHigh, SizeLow, Links, IndexHigh, IndexLow;
 
         internal readonly ulong FileIndex => ((ulong)IndexHigh << 32) | IndexLow;
-        internal readonly long CreationTime => ((long)Creation.dwHighDateTime << 32) | (uint)Creation.dwLowDateTime;
         internal readonly ulong Length => ((ulong)SizeHigh << 32) | SizeLow;
         internal readonly bool IsSingleRegularFile =>
             Links == 1 && (Attributes & (FileAttributes.ReparsePoint | FileAttributes.Directory | FileAttributes.Device)) == 0;
-        internal readonly bool SameObject(FileInfo other) =>
-            VolumeSerial == other.VolumeSerial && FileIndex == other.FileIndex && CreationTime == other.CreationTime;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly record struct UnicodeString(ushort Length, ushort MaximumLength, nint Buffer);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ObjectAttributes
+    {
+        internal uint Length;
+        internal nint RootDirectory, ObjectName;
+        internal uint Attributes;
+        internal nint SecurityDescriptor, SecurityQualityOfService;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct IoStatusBlock { internal nint Status; internal nuint Information; }
+
+    internal const uint OpenExisting = 1, CreateNew = 2, OpenIf = 3;
     internal const uint ReadAccess = 0x80000000;
     internal const uint WriteAccess = 0x40000000;
     internal const uint DeleteAccess = 0x00010000;
@@ -179,9 +203,16 @@ internal sealed class ShortcutNativeDirectory(string path, List<SafeFileHandle> 
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetFileInformationByHandle(SafeFileHandle file, out FileInfo info);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetFileInformationByHandle(SafeFileHandle file, int informationClass, nint info, uint size);
+    [DllImport("ntdll.dll", ExactSpelling = true)]
+    private static extern int NtCreateFile(out SafeFileHandle file, uint access, in ObjectAttributes attributes,
+        out IoStatusBlock ioStatus, nint allocationSize, uint fileAttributes, uint share, uint disposition,
+        uint options, nint extendedAttributes, uint extendedLength);
+
+    [DllImport("ntdll.dll", ExactSpelling = true)]
+    private static extern int NtSetInformationFile(SafeFileHandle file, out IoStatusBlock ioStatus, nint info, uint size, int informationClass);
+
+    [DllImport("ntdll.dll", ExactSpelling = true)]
+    private static extern int RtlNtStatusToDosError(int status);
 
     [DllImport("kernel32.dll", EntryPoint = "SetFileInformationByHandle", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

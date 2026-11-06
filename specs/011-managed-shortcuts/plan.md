@@ -37,7 +37,7 @@ C# and the repository's pinned .NET 10 SDK, WPF Studio, Windows 11 x64, Windows 
 
 ## Phase 0 — Research and risk gate
 
-Validate same-volume no-overwrite publication, preserved file identity, retention of a checked handle through delete, exact-byte checks, hard-link rejection and parent path anchoring. Use fresh isolated directories. Verify Shell Link round-trip and arguments. Document results in [research.md](research.md) and [evidence.md](evidence.md). Fallback for a filesystem that cannot provide these properties is Unavailable.
+Validate same-volume no-overwrite publication, preserved file identity, retention of a checked handle through delete, exact-byte checks, hard-link rejection and parent path anchoring. Use handle-relative NT opens with no reparse traversal and same-directory handle rename. Use fresh isolated directories. Verify Shell Link round-trip and arguments. Document results in [research.md](research.md) and [evidence.md](evidence.md). Fallback for a filesystem that cannot provide these properties is Unavailable.
 
 ## Phase 1 — Data and contracts
 
@@ -45,4 +45,4 @@ See [data model](data-model.md), [interface contract](contracts/managed-shortcut
 
 ## Phase 2 — Implementation and acceptance
 
-Use a receipt-first publication protocol. Keep current and pending proof during repair. Every deletion is through the retained validated handle. Never replace a desktop file using an unconditional path write. Bind actions to an explicit selected ID, handle stale reloads, and expose errors in Studio. Publish the independent Launcher alongside the existing MotionHost payload and verify actual .lnk activation after Studio closes. Complete regression, independent review and convergence before marking F10 complete.
+Use a receipt-first publication protocol. Keep current and pending proof during repair. Preserve a validated previous receipt when changing the primary name, with no-replace renames for both generations. Every deletion is through the retained validated handle. Serialize final binding validation and publication with profile writes using an unchanged-state transaction. Bind actions to an explicit selected ID, handle stale reloads, and expose errors in Studio. Publish the independent Launcher alongside the existing MotionHost payload and verify actual .lnk activation after Studio closes. Use a separate fixture executable with the same Launcher source and an isolated store for Shell activation tests. Complete regression, independent review and convergence before marking F10 complete.

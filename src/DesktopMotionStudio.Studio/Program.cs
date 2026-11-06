@@ -1,6 +1,8 @@
 using System.IO;
 using System.Windows;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Shortcuts;
+using DesktopMotionStudio.Core.Launch;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -11,6 +13,7 @@ internal static class Program
     {
         if (args is ["--discovery-worker"]) return DiscoveryWorker.Run();
         string? stateFile = null;
+        string? desktopRoot = null;
         string catalogRoot = Path.Combine(AppContext.BaseDirectory, "Scenes");
         var seen = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < args.Length; i += 2)
@@ -20,15 +23,45 @@ internal static class Program
             {
                 case "--state-file": stateFile = Path.GetFullPath(args[i + 1]); break;
                 case "--catalog-root": catalogRoot = Path.GetFullPath(args[i + 1]); break;
+                case "--desktop-root": desktopRoot = Path.GetFullPath(args[i + 1]); break;
                 default: return 2;
             }
         }
+        if (desktopRoot is not null && (stateFile is null || !IsFixtureDesktop(stateFile, desktopRoot))) return 2;
+        string profile = stateFile ?? StudioStateRepository.CurrentUserPath();
+        var store = new StudioStateRepository(profile);
+        ManagedShortcutService? shortcuts = stateFile is not null && desktopRoot is null ? null : new(
+            store, catalogRoot, Path.Combine(Path.GetDirectoryName(profile)!, "managed-shortcuts"),
+            Path.Combine(AppContext.BaseDirectory, "Launcher", "DesktopMotionStudio.Launcher.exe"),
+            () => desktopRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify));
+
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
         app.Resources.MergedDictionaries.Add(new ResourceDictionary
         {
             Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
         });
-        var store = stateFile is null ? StudioStateRepository.ForCurrentUser() : new StudioStateRepository(stateFile);
-        return app.Run(new MainWindow(store, catalogRoot));
+        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts));
+    }
+
+    private static bool IsFixtureDesktop(string stateFile, string desktop)
+    {
+        string? directory = Path.GetDirectoryName(stateFile);
+        string temp = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetTempPath()));
+        if (directory is null || !Path.GetFileName(directory).StartsWith("dms-f10-", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetDirectoryName(directory), temp, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(stateFile, StudioStateRepository.CurrentUserPath(), StringComparison.OrdinalIgnoreCase) ||
+            !LaunchTargetIdentityResolver.IsLocalPath(stateFile) || !LaunchTargetIdentityResolver.IsLocalPath(desktop))
+            return false;
+        string realDesktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify);
+        if (!string.IsNullOrEmpty(realDesktop) &&
+            (string.Equals(desktop, realDesktop, StringComparison.OrdinalIgnoreCase) || IsDescendant(realDesktop, desktop))) return false;
+        return IsDescendant(directory, desktop);
+    }
+
+    private static bool IsDescendant(string parent, string path)
+    {
+        string relative = Path.GetRelativePath(parent, path);
+        return relative is not ("." or "..") && !Path.IsPathRooted(relative) &&
+            !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
     }
 }

@@ -24,6 +24,9 @@ internal static class F10ReceiptChecks
         Check("write current and pending proof", Write(store, receipt) == ShortcutReceiptStatus.Ok);
         Check("fresh store recovers both proofs", new ShortcutReceiptStore(storage).Read(Binding).Receipt == receipt);
         Check("legacy casing shares the receipt key", store.Read(Binding.ToUpperInvariant()).Receipt == receipt);
+        Check("distinct opaque IDs stay distinct under profile casing rules",
+            !string.Equals("ſ", "S", StringComparison.OrdinalIgnoreCase) &&
+            ShortcutReceiptStore.Key("ſ") != ShortcutReceiptStore.Key("S"));
 
         string records = Path.Combine(storage, "records");
         string path = Directory.GetFiles(records, "*.json").Single();
@@ -59,6 +62,17 @@ internal static class F10ReceiptChecks
         }
         Check("valid atomic promotion", Write(store, receipt with { Current = pending, Pending = null }) == ShortcutReceiptStatus.Ok &&
             store.Read(Binding).Receipt is { Current: { FileIndex: 20 }, Pending: null });
+        string previousPath = Path.ChangeExtension(path, ".previous");
+        File.Move(path, previousPath, overwrite: true);
+        byte[] recoverable = File.ReadAllBytes(previousPath);
+        Check("previous verified generation survives missing primary during rename",
+            store.Read(Binding).Receipt is { Current.FileIndex: 20 });
+        File.WriteAllText(path, "{\"schemaVersion\":2}");
+        Check("future record appearing in rename gap preserves both generations",
+            store.Read(Binding).Status == ShortcutReceiptStatus.Unsupported &&
+            Write(store, receipt) == ShortcutReceiptStatus.Unsupported &&
+            File.ReadAllText(path) == "{\"schemaVersion\":2}" && File.ReadAllBytes(previousPath).SequenceEqual(recoverable));
+        File.Delete(path);
 
         string profile = Path.Combine(fixture.Root, "studio-state.json");
         File.WriteAllText(profile, "profile fixture");
@@ -121,7 +135,9 @@ internal static class F10ReceiptChecks
     {
         var start = new ProcessStartInfo(Environment.ProcessPath!)
         {
-            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true
         };
         if (Path.GetFileNameWithoutExtension(start.FileName).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
             start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);

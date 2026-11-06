@@ -57,6 +57,17 @@
                             <TextBlock x:Name="BindingText" Style="{StaticResource Caption}" Margin="0,8,0,10" />
                             <WrapPanel Margin="0,0,0,12"><Button x:Name="PreviewBoundButton" Content="预览(_P)" AutomationProperties.Name="预览当前绑定作品" Click="OnPreviewBound"/><Button x:Name="ReplaceButton" Content="选择 / 替换(_B)" AutomationProperties.Name="替换绑定作品" Click="OnReplace"/></WrapPanel>
                             <Button x:Name="ToggleButton" Content="停用动效" AutomationProperties.Name="切换动效启用状态" Margin="0,0,0,20" Click="OnToggle" IsEnabled="False" />
+                            <StackPanel x:Name="ShortcutPanel" Margin="0,0,0,20">
+                                <Separator Margin="0,0,0,12" />
+                                <TextBlock Text="受管理桌面入口" FontWeight="SemiBold" />
+                                <TextBlock x:Name="ShortcutHealthText" AutomationProperties.AutomationId="ShortcutHealth" Style="{StaticResource Caption}" Margin="0,6,0,8" />
+                                <WrapPanel>
+                                    <Button x:Name="ShortcutCreateButton" Content="创建入口(_C)" AutomationProperties.Name="创建桌面入口" Click="OnCreateShortcut" IsEnabled="False" />
+                                    <Button x:Name="ShortcutRepairButton" Content="修复入口(_E)" AutomationProperties.Name="修复桌面入口" Click="OnRepairShortcut" IsEnabled="False" />
+                                    <Button x:Name="ShortcutRemoveButton" Content="移除入口(_M)" AutomationProperties.Name="移除桌面入口" Click="OnRemoveShortcut" IsEnabled="False" />
+                                </WrapPanel>
+                                <TextBlock x:Name="ShortcutActionText" AutomationProperties.AutomationId="ShortcutAction" Style="{StaticResource Caption}" Margin="0,6,0,0" />
+                            </StackPanel>
                             <Button x:Name="RemoveButton" Content="移除应用配置(_D)" AutomationProperties.Name="移除应用配置" Foreground="#AC3248" BorderBrush="#E9CBD0" Margin="0" Click="OnRemove" />
                         </StackPanel>
                     </ScrollViewer>

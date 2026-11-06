@@ -73,6 +73,7 @@ public sealed class ManagedShortcutService(
         else
         {
             plan = _requests.Resolve(bindingId);
+            if (plan.Status == ManagedLaunchStatus.StorageError) return new(Map(plan.StorageError));
             if (plan.DisplayName is null)
                 return new(operation == Operation.Inspect ? ShortcutStatus.NotCreated : ShortcutStatus.Ineligible);
             name = PreferredName(scope.Root, plan.DisplayName, bindingId);
@@ -117,22 +118,44 @@ public sealed class ManagedShortcutService(
             return new(health, path);
 
         plan ??= _requests.Resolve(bindingId);
+        if (plan.Status == ManagedLaunchStatus.StorageError) return new(Map(plan.StorageError), path);
         if (plan.Status != ManagedLaunchStatus.Ready || plan.Playback is null) return new(ShortcutStatus.Ineligible, path);
         ShortcutProof stagedProof;
         using (var stage = scope.Stage(name, launcherPath, bindingId, (plan.Target as ExecutableTarget)?.Path))
         {
             if (!IsCurrent(scope)) return new(ShortcutStatus.OutOfScope, path);
             stagedProof = stage.Proof;
-            // Keep the previous known object until the new one is durable. Out-of-scope paths are never opened.
-            ShortcutReceiptStatus saved = transaction!.Save(new(1, bindingId, observed.Proof ?? current, stagedProof));
-            if (saved != ShortcutReceiptStatus.Ok) return new(Map(saved), path);
-            if (!IsCurrent(scope)) return new(ShortcutStatus.OutOfScope, path);
-            if (observed.State == ShortcutFileState.Owned)
+            // The identity transition keeps profile bytes intact while serializing the
+            // final eligibility check and publication with binding/application edits.
+            ShortcutStatus commit = ShortcutStatus.Ineligible;
+            RepositoryResult locked = state.Update(snapshot =>
             {
-                observed.Delete();
-                observed.Dispose();
-            }
-            stage.Publish();
+                ManagedLaunchPlan latest = _requests.Resolve(bindingId, snapshot);
+                if (latest.Status != ManagedLaunchStatus.Ready || latest.Playback is null ||
+                    !string.Equals(latest.AppId, plan.AppId, StringComparison.OrdinalIgnoreCase))
+                    return snapshot;
+                ShortcutReceiptStatus saved = transaction!.Save(new(1, bindingId, observed.Proof ?? current, stagedProof));
+                if (saved != ShortcutReceiptStatus.Ok)
+                {
+                    commit = Map(saved);
+                    return snapshot;
+                }
+                if (!IsCurrent(scope))
+                {
+                    commit = ShortcutStatus.OutOfScope;
+                    return snapshot;
+                }
+                if (observed.State == ShortcutFileState.Owned)
+                {
+                    observed.Delete();
+                    observed.Dispose();
+                }
+                stage.Publish();
+                commit = ShortcutStatus.Created;
+                return snapshot;
+            });
+            if (!locked.IsSuccess) return new(Map(locked.Error), path);
+            if (commit != ShortcutStatus.Created) return new(commit, path);
         }
 
         using var confirmed = scope.Inspect(name, stagedProof);
@@ -169,6 +192,9 @@ public sealed class ManagedShortcutService(
         ShortcutReceiptStatus.Unavailable => ShortcutStatus.Unavailable,
         _ => ShortcutStatus.StorageError
     };
+
+    private static ShortcutStatus Map(RepositoryError error) =>
+        error == RepositoryError.Busy ? ShortcutStatus.Busy : ShortcutStatus.StorageError;
 
     private enum Operation { Inspect, Create, Repair, Remove }
 }

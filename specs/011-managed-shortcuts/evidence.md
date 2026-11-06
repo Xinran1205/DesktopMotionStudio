@@ -44,3 +44,26 @@ Real NTFS and Shell Link integration reported 15 shell and 16 lifecycle PASS. Th
 Initial lifecycle tests reproduced four failures. A stage creation time of 134384133594994123 changed to 134384133593853923 on same-name publication. NTFS tunneling invalidated creation time as stable ownership evidence. Keep NTFS volume/file identity, full SHA256 and a unique generation marker in the link bytes. Tests also showed a waiting transaction's record-directory pin could block the active writer. Separate locks/ and records/, open records/ after the per-binding lock, and acquire that lock before pinning the desktop. The unchanged functional assertions then passed. The schema1 shape was refined during development, before any product UI wrote receipts.
 
 Full Core regression with actual host and target fixtures reported 389 PASS, 0 FAIL and the existing optional packaged-instance SKIP. Studio win-x64 Release built with zero warnings or errors. Raw regression log dms-f10-ownership-core.log is under TEMP.
+
+## T011–T015 — Studio, review corrections and final Windows acceptance
+
+The independent native review reproduced a write-attributes-only change of a checked empty directory into a junction. The original absolute child create followed it. Retained-parent NtCreateFile with OBJ_DONT_REPARSE refused this case in the corrected adapter. NtSetInformationFile with a bare same-parent name kept the retained source identity and refused an occupied destination. Directory handles allow shared reads and writes and deny shared deletes. The handle-relative operations enforce scope and let F02 replace its own profile while an ancestor is pinned. A regression that disables the binding after staging exposed the original sharing conflict, then passed with corrected sharing and the final profile lock.
+
+Receipt commit preserves a verified previous generation and publishes the new primary without replace. Tests recover when the primary is absent and preserve a future primary inserted in that gap. Studio handles selection and read generations separately, reports profile failures, and limits the fixture switches to an isolated temp subtree. Review dispositions are in [review.md](review.md).
+
+**Final Release evidence** on Windows 11 x64 build 26200 and actual DPI120 (125%):
+
+| Suite | PASS | FAIL | SKIP |
+|---|---:|---:|---:|
+| Core regression with published MotionHost and real target | 395 | 0 | 1 |
+| Studio regression | 57 | 0 | 0 |
+| F10 published actual UI and Windows Shell | 12 | 0 | 0 |
+| F09 published UI regression | 15 | 0 | 0 |
+| F08 published UI regression | 16 | 0 | 0 |
+| Launcher contract with published apphost | 17 | 0 | 0 |
+
+Core includes 25 receipt, 17 shell and 17 lifecycle checks. The optional packaged-instance SKIP is DMS_F05_TEST_AUMID unset. Relevant Release builds and analyzers passed with zero warnings and errors. Format and Git whitespace checks passed.
+
+Published Studio keyboard Alt+C/E/M explicitly created, repaired and removed the isolated shortcut. App/profile backups and foreign bytes were verified. Studio exited before Shell activation. The actual .lnk started the test Launcher and one verified target. The first and replacement works reached WindowReady and HandedOff. Disabled motion returned WindowReady with no host. Temporarily removing the fixture bundle host returned Failed/StartFailed and WindowReady with one target. All Shell activations preserved shortcut bytes. The Launcher fixture compiles the production entry source with an isolated profile provider and trace hook, and is never staged into the shipping publish. The shipping apphost independently returned exit 2 for unexpected CLI switches.
+
+Retained local development publish artifacts/studio-f10 has 21 SHA256-verified files. Six final logs and the hash list are in artifacts/checkpoints/f10-20261106. Both component subdirectories have exactly five required files, with no root duplicates. No test or host process remained. The actual user desktop and profile were outside the test scope.

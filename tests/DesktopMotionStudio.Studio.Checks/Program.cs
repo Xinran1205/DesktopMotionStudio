@@ -13,6 +13,7 @@ internal static class Program
         if (args is ["--discovery-worker"]) return DiscoveryWorker.Run();
         if (args is ["--ui"]) return StudioUiChecks.Run();
         if (args is ["--f09-ui"]) return F09UiChecks.Run();
+        if (args is ["--f10-ui"]) return F10UiChecks.Run();
         if (args is ["--preview-races"]) { int previewFailures = 0; PreviewRaceChecks.Run(ref previewFailures); return previewFailures; }
         if (args.Length != 0) return 2;
         string root = Path.Combine(Path.GetTempPath(), $"dms-discovery-checks-{Guid.NewGuid():N}");

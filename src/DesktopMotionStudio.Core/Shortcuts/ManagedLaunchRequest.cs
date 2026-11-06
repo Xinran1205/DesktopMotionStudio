@@ -56,7 +56,11 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
 
         RepositoryResult loaded = store.Load();
         if (!loaded.IsSuccess) return new(ManagedLaunchStatus.StorageError, StorageError: loaded.Error);
-        StudioState state = loaded.State!;
+        return Resolve(bindingId, loaded.State!);
+    }
+
+    internal ManagedLaunchPlan Resolve(string bindingId, StudioState state)
+    {
         ApplicationBinding? binding = state.Bindings.FirstOrDefault(item =>
             string.Equals(item.BindingId, bindingId, StringComparison.OrdinalIgnoreCase));
         if (binding is null) return new(ManagedLaunchStatus.BindingMissing);

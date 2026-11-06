@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Shortcuts;
+using Microsoft.Win32.SafeHandles;
 
 internal static class F10ShortcutChecks
 {
@@ -54,6 +56,9 @@ internal static class F10ShortcutChecks
                 link.WorkingDirectory == root && Convert.ToHexString(SHA256.HashData(bytes)) == proof.Sha256);
             using (var observed = platform.Inspect(name, proof))
                 check("published file retains recorded identity", observed.State == ShortcutFileState.Owned);
+            Directory.CreateDirectory(Path.Combine(desktop, "Folder.lnk"));
+            using (var folder = platform.Inspect("Folder.lnk"))
+                check("same-name directory is a conflict", folder.State == ShortcutFileState.Conflict);
 
             using (var colliding = platform.Stage(name, launcher, binding, null))
             {
@@ -128,6 +133,19 @@ internal static class F10ShortcutChecks
         check("missing desktop is not created",
             Throws<Win32Exception>(() => WindowsShortcutPlatform.Open(Path.Combine(root, "Missing")).Dispose()) &&
             !Directory.Exists(Path.Combine(root, "Missing")));
+
+        string empty = Directory.CreateDirectory(Path.Combine(root, "EmptyPinned")).FullName;
+        string outside = Directory.CreateDirectory(Path.Combine(root, "Outside")).FullName;
+        bool converted = false;
+        try
+        {
+            using var pinned = WindowsShortcutPlatform.Open(empty);
+            converted = SetJunctionWithAttributeAccess(empty, outside);
+            check("attribute-only writer cannot redirect retained-root staging",
+                converted && Throws<Win32Exception>(() => pinned.Stage(name, launcher, binding, null).Dispose()) &&
+                !Directory.GetFileSystemEntries(outside).Any());
+        }
+        finally { if (converted) Directory.Delete(empty, recursive: false); }
     }
 
     private static bool Throws<T>(Action action) where T : Exception
@@ -136,7 +154,38 @@ internal static class F10ShortcutChecks
         catch (T) { return true; }
     }
 
+    private static bool SetJunctionWithAttributeAccess(string directory, string target)
+    {
+        using var handle = CreateFileW(directory, 0x100, 7, 0, 3, 0x02200000, 0);
+        if (handle.IsInvalid) return false;
+        byte[] substitute = Encoding.Unicode.GetBytes("\\??\\" + target);
+        byte[] display = Encoding.Unicode.GetBytes(target);
+        using var bytes = new MemoryStream();
+        using var writer = new BinaryWriter(bytes);
+        writer.Write(0xA0000003u);
+        writer.Write((ushort)(12 + substitute.Length + display.Length));
+        writer.Write((ushort)0);
+        writer.Write((ushort)0);
+        writer.Write((ushort)substitute.Length);
+        writer.Write((ushort)(substitute.Length + 2));
+        writer.Write((ushort)display.Length);
+        writer.Write(substitute);
+        writer.Write((ushort)0);
+        writer.Write(display);
+        writer.Write((ushort)0);
+        byte[] payload = bytes.ToArray();
+        return DeviceIoControl(handle, 0x900A4, payload, (uint)payload.Length, 0, 0, out _, 0);
+    }
+
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CreateHardLinkW(string name, string target, nint reserved);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, ExactSpelling = true)]
+    private static extern SafeFileHandle CreateFileW(string name, uint access, uint share, nint security, uint disposition, uint flags, nint template);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeviceIoControl(SafeFileHandle file, uint code, byte[] input, uint inputSize, nint output, uint outputSize,
+        out uint returned, nint overlapped);
 }

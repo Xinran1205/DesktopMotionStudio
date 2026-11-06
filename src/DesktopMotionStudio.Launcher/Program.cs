@@ -10,17 +10,20 @@ namespace DesktopMotionStudio.Launcher;
 internal static class Program
 {
     [STAThread]
-    private static int Main(string[] args)
+    private static int Main(string[] args) => Run(args, StudioStateRepository.ForCurrentUser, ReportLaunchError);
+
+    internal static int Run(string[] args, Func<IStudioStateStore> openState, Func<string, int, int> reportError,
+        Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null)
     {
         if (ManagedLaunchRequest.ParseArguments(args) is not string bindingId) return 2;
 
         try
         {
             string bundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
-            var requests = new ManagedLaunchRequest(StudioStateRepository.ForCurrentUser(), Path.Combine(bundle, "Scenes"));
+            var requests = new ManagedLaunchRequest(openState(), Path.Combine(bundle, "Scenes"));
             ManagedLaunchPlan plan = requests.Resolve(bindingId);
             if (plan is not { Status: ManagedLaunchStatus.Ready, AppId: not null, Target: not null })
-                return ReportLaunchError(plan.Status switch
+                return reportError(plan.Status switch
                 {
                     ManagedLaunchStatus.StorageError => "无法读取应用配置。请打开 Desktop Motion Studio 检查配置状态。",
                     ManagedLaunchStatus.BindingMissing => "找不到此快捷方式的绑定。请打开 Desktop Motion Studio 检查桌面入口。",
@@ -35,26 +38,29 @@ internal static class Program
                     : launcher.Launch(target));
 
             InstanceResult result;
+            MotionHostLifecycleResult? animated = null;
             if (plan.Scene is not null && plan.Playback is not null)
             {
                 var hosts = new WindowsMotionHostProcessFactory(Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"));
                 var lifecycle = new MotionHostLifecycleCoordinator(instances, hosts);
-                result = lifecycle.OpenAsync(plan.AppId, plan.Target, plan.Scene, playback: plan.Playback).GetAwaiter().GetResult().TargetResult;
+                animated = lifecycle.OpenAsync(plan.AppId, plan.Target, plan.Scene, playback: plan.Playback).GetAwaiter().GetResult();
+                result = animated.TargetResult;
             }
             else
             {
                 result = instances.OpenAsync(plan.AppId, plan.Target).GetAwaiter().GetResult();
             }
 
+            observe?.Invoke(plan, result, animated);
             return result.Outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied ||
                    result.Process is not null && result.Outcome is InstanceOutcome.NoUsableWindow or InstanceOutcome.TimedOut
                 ? 0
-                : ReportLaunchError("未能确认应用已打开。请检查目标应用或使用其原有入口。", 4);
+                : reportError("未能确认应用已打开。请检查目标应用或使用其原有入口。", 4);
         }
         catch (Exception)
         {
             // Dispatch may already have happened. Report the failure without a second launch attempt.
-            return ReportLaunchError("启动过程中出现错误。请检查目标应用或使用其原有入口。", 4);
+            return reportError("启动过程中出现错误。请检查目标应用或使用其原有入口。", 4);
         }
     }
 

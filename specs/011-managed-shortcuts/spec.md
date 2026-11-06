@@ -2,7 +2,7 @@
 
 **Feature Branch** `codex/f10-managed-shortcuts`
 
-**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** In implementation
+**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** Complete
 
 **Input** PRD V1.0, TDD V1.0 §9, F02/F04/F07/F08/F09 contracts
 
@@ -98,3 +98,4 @@
 |---|---|---|
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline. |
 | 0.2.0 | 2026-11-06 | Define desktop scope, launch/fallback, ownership, recovery and release evidence. |
+| 1.0.0 | 2026-11-06 | Verified Windows shortcut lifecycle and independent Launcher, review and convergence complete. |

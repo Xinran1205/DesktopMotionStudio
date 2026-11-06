@@ -125,7 +125,7 @@ internal static class F09WindowChecks
         }
     }
 
-    private static void Pump(Func<Task> action)
+    internal static void Pump(Func<Task> action)
     {
         Exception? failure = null;
         var frame = new DispatcherFrame();

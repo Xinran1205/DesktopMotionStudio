@@ -2,13 +2,13 @@
 
 ## R1 — Shortcut authority and file scope
 
-**Decision** Use Shell Link with an exact binding-ID command. Treat DesktopDirectory as the current user desktop, then enforce local fixed NTFS and canonical paths. Pin directory ancestry with read sharing only and check each opened handle for reparse attributes. For publication, create and retain a regular staging child while the parent is pinned. Overlap a write-sharing pin of the same parent identity before releasing its read-only pin. The retained child keeps the directory nonempty during rename. Keep ancestor pins throughout. Avoid Shell Link Resolve and stop on unsupported capabilities.
+**Decision** Use Shell Link with an exact binding-ID command. Treat DesktopDirectory as the current user desktop, then enforce local fixed NTFS and canonical paths. Open each child relative to its retained parent with NtCreateFile, OBJ_DONT_REPARSE and FILE_OPEN_REPARSE_POINT. Reject reparse directory handles and keep ancestry pinned. Publish a retained stage using a simple same-parent filename and NtSetInformationFile with replacement disabled. A write-attributes-only handle can convert a pinned empty directory into a junction, so absolute child opens are unsafe even with read-only sharing. Avoid Shell Link Resolve and stop on unsupported capabilities.
 
 **Rationale** Known folders can be redirected. Link publication and removal must remain within the validated folder even when another process changes paths. Restricting the filesystem avoids unverified identity and rename behavior.
 
 **Alternatives considered** Fixed user-profile Desktop path, public Desktop, unguarded path checks, recursively locating relocated links.
 
-**Sources** [Microsoft known folders](https://learn.microsoft.com/windows/win32/shell/known-folders), [CreateFileW flags and sharing](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-createfilew), [Reparse-point restrictions](https://learn.microsoft.com/windows/win32/fileio/reparse-points), [Shell Link persistence](https://learn.microsoft.com/windows/win32/shell/links).
+**Sources** [Microsoft known folders](https://learn.microsoft.com/windows/win32/shell/known-folders), [User-mode NtCreateFile](https://learn.microsoft.com/windows/win32/api/winternl/nf-winternl-ntcreatefile), [Object attributes](https://learn.microsoft.com/windows/win32/api/ntdef/ns-ntdef-_object_attributes), [Same-directory rename](https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information), [Shell Link persistence](https://learn.microsoft.com/windows/win32/shell/links).
 
 ## R2 — Ownership, publication and repair
 
@@ -30,7 +30,7 @@
 
 ## R4 — Separate durable records
 
-**Decision** Use independently versioned per-binding receipt data. Take a bounded cross-process lock scoped to the user/profile and validate the current receipt before replacing it. Use flushed staging plus atomic replace within the private receipt directory. The profile and its backup are read-only to F10 shortcut operations.
+**Decision** Use independently versioned per-binding receipt data. Take a bounded cross-process lock scoped to the user/profile. Preserve verified prior bytes under a previous name, then publish the flushed primary with no replacement. Both relocations act on retained handles. An outside editor racing the commit cannot have a new primary overwritten. F10 holds the profile's existing write lock during final publication and returns the same snapshot, preserving profile and backup bytes.
 
 **Rationale** A separate receipt preserves profile2 compatibility and limits the blast radius of corruption. A pending proof protects ownership across interruption without cross-volume atomicity requirements.
 

@@ -43,7 +43,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         try
         {
             using var scope = ShortcutNativeDirectory.Open(Path.Combine(directory, "records"));
-            return Read(scope, Key(bindingId) + ".json", bindingId);
+            return ReadRecoverable(scope, Key(bindingId) + ".json", bindingId);
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
     }
@@ -65,7 +65,7 @@ internal sealed class ShortcutReceiptStore(string directory)
                 try
                 {
                     handle = locks.OpenChild(key + ".lock", ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess,
-                        share: 0, disposition: 4);
+                        share: 0, disposition: ShortcutNativeDirectory.OpenIf);
                     break;
                 }
                 catch (Win32Exception ex) when (ShortcutNativeDirectory.IsSharing(ex))
@@ -93,7 +93,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         internal ShortcutReceiptRead Read()
         {
             ObjectDisposedException.ThrowIf(gate.IsClosed, this);
-            return ShortcutReceiptStore.Read(scope, name, bindingId);
+            return ReadRecoverable(scope, name, bindingId);
         }
 
         internal ShortcutReceiptStatus Save(ShortcutReceipt receipt)
@@ -110,18 +110,32 @@ internal sealed class ShortcutReceiptStore(string directory)
                 if (bytes.Length > MaximumBytes) return ShortcutReceiptStatus.Invalid;
                 using SafeFileHandle stage = scope.OpenChild($"{Guid.NewGuid():N}.tmp",
                     ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess | ShortcutNativeDirectory.DeleteAccess,
-                    disposition: 1);
+                    disposition: ShortcutNativeDirectory.CreateNew);
                 using var stream = new FileStream(stage, FileAccess.ReadWrite);
                 bool published = false;
                 try
                 {
                     stream.Write(bytes);
                     stream.Flush(flushToDisk: true);
-                    // The lock serializes product writers. Re-read before an atomic private receipt replacement.
-                    ShortcutReceiptRead latest = Read();
+                    // Preserve a verified previous generation before publishing the new one.
+                    // All renames refuse replacement, including races with outside editors.
+                    using var primary = OpenVerified(scope, name, bindingId, out ShortcutReceiptRead latest);
                     if (latest.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return latest.Status;
-                    if (latest != existing) return ShortcutReceiptStatus.Busy;
-                    scope.Publish(stage, name, replace: existing.Status == ShortcutReceiptStatus.Ok, ref published);
+                    using var previous = OpenVerified(scope, Previous(name), bindingId, out ShortcutReceiptRead backup);
+                    if (backup.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return backup.Status;
+                    if ((latest.Status == ShortcutReceiptStatus.Ok ? latest : backup) != existing) return ShortcutReceiptStatus.Busy;
+                    if (primary is not null)
+                    {
+                        if (previous is not null)
+                        {
+                            ShortcutNativeDirectory.Delete(previous);
+                            previous.Dispose();
+                        }
+                        scope.Publish(primary, Previous(name));
+                        primary.Dispose();
+                    }
+                    scope.Publish(stage, name);
+                    published = true;
                     return ShortcutReceiptStatus.Ok;
                 }
                 finally
@@ -139,10 +153,16 @@ internal sealed class ShortcutReceiptStore(string directory)
             ObjectDisposedException.ThrowIf(gate.IsClosed, this);
             try
             {
-                using var handle = scope.OpenChild(name, ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.DeleteAccess);
-                ShortcutReceiptRead current = Decode(handle, bindingId);
-                if (current.Status != ShortcutReceiptStatus.Ok) return current.Status;
-                ShortcutNativeDirectory.Delete(handle);
+                using var current = OpenVerified(scope, name, bindingId, out ShortcutReceiptRead primary);
+                using var previous = OpenVerified(scope, Previous(name), bindingId, out ShortcutReceiptRead backup);
+                if (primary.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return primary.Status;
+                if (backup.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return backup.Status;
+                if (previous is not null)
+                {
+                    ShortcutNativeDirectory.Delete(previous);
+                    previous.Dispose();
+                }
+                if (current is not null) ShortcutNativeDirectory.Delete(current);
                 return ShortcutReceiptStatus.Ok;
             }
             catch (Win32Exception ex) when (ShortcutNativeDirectory.IsMissing(ex)) { return ShortcutReceiptStatus.Ok; }
@@ -156,6 +176,38 @@ internal sealed class ShortcutReceiptStore(string directory)
             locks.Dispose();
         }
     }
+
+    private static ShortcutReceiptRead ReadRecoverable(ShortcutNativeDirectory scope, string name, string id)
+    {
+        ShortcutReceiptRead primary = Read(scope, name, id);
+        if (primary.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return primary;
+        ShortcutReceiptRead backup = Read(scope, Previous(name), id);
+        if (backup.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return backup;
+        return primary.Status == ShortcutReceiptStatus.Ok ? primary : backup;
+    }
+
+    private static SafeFileHandle? OpenVerified(ShortcutNativeDirectory scope, string name, string id,
+        out ShortcutReceiptRead read)
+    {
+        SafeFileHandle? handle = null;
+        try
+        {
+            handle = scope.OpenChild(name, ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.DeleteAccess);
+            read = Decode(handle, id);
+            if (read.Status != ShortcutReceiptStatus.Ok) return null;
+            SafeFileHandle verified = handle;
+            handle = null;
+            return verified;
+        }
+        catch (Exception ex) when (IsStorageFailure(ex))
+        {
+            read = new(Map(ex));
+            return null;
+        }
+        finally { handle?.Dispose(); }
+    }
+
+    private static string Previous(string name) => Path.ChangeExtension(name, ".previous");
 
     private static ShortcutReceiptRead Read(ShortcutNativeDirectory scope, string name, string id)
     {
@@ -203,7 +255,17 @@ internal sealed class ShortcutReceiptStore(string directory)
         proof.FileIndex != 0 &&
         proof.Sha256 is { Length: 64 } && proof.Sha256.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F');
 
-    internal static string Key(string id) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id.ToUpperInvariant())));
+    internal static string Key(string id)
+    {
+        var normalized = new StringBuilder(id.Length);
+        foreach (Rune rune in id.EnumerateRunes())
+        {
+            string text = rune.ToString();
+            string upper = Rune.ToUpperInvariant(rune).ToString();
+            normalized.Append(string.Equals(text, upper, StringComparison.OrdinalIgnoreCase) ? upper : text);
+        }
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized.ToString())));
+    }
 
     private static bool IsStorageFailure(Exception ex) =>
         ex is IOException or UnauthorizedAccessException or JsonException or Win32Exception or InvalidDataException;

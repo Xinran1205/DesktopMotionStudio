@@ -18,10 +18,12 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
     };
     private readonly string _filePath = Path.GetFullPath(filePath);
 
-    public static StudioStateRepository ForCurrentUser()
+    public static StudioStateRepository ForCurrentUser() => new(CurrentUserPath());
+
+    public static string CurrentUserPath()
     {
         string root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return new StudioStateRepository(Path.Combine(root, "DesktopMotionStudio", "state", "studio-state.json"));
+        return Path.Combine(root, "DesktopMotionStudio", "state", "studio-state.json");
     }
 
     public RepositoryResult Load()

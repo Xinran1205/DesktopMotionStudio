@@ -7,6 +7,7 @@ using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Preview;
+using DesktopMotionStudio.Core.Shortcuts;
 using System.IO;
 
 namespace DesktopMotionStudio.Studio;
@@ -36,9 +37,12 @@ public partial class MainWindow : Window
     private int _detailsVersion;
     private bool _closing, _allowClose;
 
-    internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null)
+    internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
+        ManagedShortcutService? shortcuts = null)
     {
         InitializeComponent();
+        _shortcuts = shortcuts;
+        ShortcutPanel.Visibility = shortcuts is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
         _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))));
@@ -135,6 +139,7 @@ public partial class MainWindow : Window
         BoundCover.Source = null; BoundFallback.Visibility = Visibility.Visible;
         int version = ++_detailsVersion;
         ToggleButton.Content = row?.Binding.Binding?.Enabled == true ? "停用动效" : "启用动效";
+        RefreshShortcutDetails(row?.Binding.Binding?.BindingId, version);
         UpdateEnabled();
         if (row?.Work is not SceneLibraryItem work) return;
         var cover = await Task.Run(() => SceneCoverLoader.Load(work));
@@ -150,6 +155,7 @@ public partial class MainWindow : Window
         LibraryButton.IsEnabled = !_busy && !_closing;
         PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
         ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
+        UpdateShortcutButtons();
     }
 
     private async Task MutateAsync(Func<ApplicationRegistryResult> operation, string? selectedId)
@@ -198,7 +204,9 @@ public partial class MainWindow : Window
     private async void OnRemove(object sender, RoutedEventArgs e)
     {
         if (Selected is not ApplicationRow row) return;
-        if (MessageBox.Show(this, $"移除“{row.Name}”及其动效绑定配置？", "移除应用配置", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        string shortcutNotice = _shortcuts is not null && row.Binding.Binding is not null
+            ? "\n如已创建桌面入口，请先在本页移除入口。移除绑定后，原入口将失效。" : string.Empty;
+        if (MessageBox.Show(this, $"移除“{row.Name}”及其动效绑定配置？{shortcutNotice}", "移除应用配置", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         await MutateAsync(() => _registry.Remove(row.Profile.AppId), null);
     }
 

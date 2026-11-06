@@ -1,8 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F10 已恢复
+## 当前断点 — F10 已完成
 
-2026-11-06 已从 F09 恢复，当前分支 `codex/f10-managed-shortcuts`。F10 的 [任务清单](../specs/011-managed-shortcuts/tasks.md)已完成 T001–T005。35 项 Windows 所有权原型检查通过。独立 Launcher、配置读取、绑定 ID 校验和发布打包已实现并验证。下一步从 T006 开始，先实现并测试可恢复的所有权记录，再接入桌面创建、修复和移除。最终 F10 快捷方式激活与 UI 验收仍由 T013–T015 跟踪。参见 [F10 证据](../specs/011-managed-shortcuts/evidence.md)。
+2026-11-06 完成 F10 的 15 项任务。通过 395 项 Core、57 项 Studio 和 12 项发布版实际 UI 与 Windows Shell 检查。隔离入口已验证创建、修复、移除、关闭 Studio 后启动、换作品与原生降级。独立审查与 Converge 已完成。可复现说明和验证证据见 [F10 证据](../specs/011-managed-shortcuts/evidence.md)。
+
+本地验证产物在 `artifacts/studio-f10`，校验清单与日志在 `artifacts/checkpoints/f10-20261106`。F10 分支为 `codex/f10-managed-shortcuts`。后续从 F11 设置与本地诊断开始，先完善独立规格。
 
 ## 上次暂停记录 — F09
 
