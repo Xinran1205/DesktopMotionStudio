@@ -82,29 +82,29 @@ internal static class ShellLinkTargetReader
     private static extern IntPtr LocalFree(IntPtr memory);
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
-    private sealed class ShellLinkCom { }
+    internal sealed class ShellLinkCom { }
 
     [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IShellLinkWCom
+    internal interface IShellLinkWCom
     {
         [PreserveSig] int GetPath(StringBuilder path, int maxPath, IntPtr findData, uint flags);
         [PreserveSig] int GetIDList(out IntPtr itemIdList);
         [PreserveSig] int SetIDList(IntPtr itemIdList);
         [PreserveSig] int GetDescription(StringBuilder name, int maxName);
-        [PreserveSig] int SetDescription(string name);
+        [PreserveSig] int SetDescription([MarshalAs(UnmanagedType.LPWStr)] string name);
         [PreserveSig] int GetWorkingDirectory(StringBuilder directory, int maxPath);
-        [PreserveSig] int SetWorkingDirectory(string directory);
+        [PreserveSig] int SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string directory);
         [PreserveSig] int GetArguments(StringBuilder arguments, int maxPath);
-        [PreserveSig] int SetArguments(string arguments);
+        [PreserveSig] int SetArguments([MarshalAs(UnmanagedType.LPWStr)] string arguments);
         [PreserveSig] int GetHotkey(out short hotkey);
         [PreserveSig] int SetHotkey(short hotkey);
         [PreserveSig] int GetShowCmd(out int showCommand);
         [PreserveSig] int SetShowCmd(int showCommand);
         [PreserveSig] int GetIconLocation(StringBuilder iconPath, int maxPath, out int iconIndex);
-        [PreserveSig] int SetIconLocation(string iconPath, int iconIndex);
+        [PreserveSig] int SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string iconPath, int iconIndex);
         [PreserveSig] int SetRelativePath(string path, uint reserved);
         [PreserveSig] int Resolve(IntPtr window, uint flags);
-        [PreserveSig] int SetPath(string path);
+        [PreserveSig] int SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
     }
 
     [ComImport, Guid("0000010B-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

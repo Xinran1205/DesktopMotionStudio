@@ -15,7 +15,6 @@ internal sealed record ShortcutProof(
     [property: JsonRequired] string LauncherPath,
     [property: JsonRequired] uint VolumeSerial,
     [property: JsonRequired] ulong FileIndex,
-    [property: JsonRequired] long CreationTime,
     [property: JsonRequired] string Sha256);
 
 internal sealed record ShortcutReceipt(
@@ -43,7 +42,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         if (ManagedLaunchRequest.EncodeBindingId(bindingId) is null) return new(ShortcutReceiptStatus.Invalid);
         try
         {
-            using var scope = ShortcutNativeDirectory.Open(directory);
+            using var scope = ShortcutNativeDirectory.Open(Path.Combine(directory, "records"));
             return Read(scope, Key(bindingId) + ".json", bindingId);
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
@@ -53,18 +52,19 @@ internal sealed class ShortcutReceiptStore(string directory)
     {
         transaction = null;
         if (ManagedLaunchRequest.EncodeBindingId(bindingId) is null) return ShortcutReceiptStatus.Invalid;
-        ShortcutNativeDirectory? scope = null;
+        ShortcutNativeDirectory? locks = null;
+        ShortcutNativeDirectory? records = null;
         SafeFileHandle? handle = null;
         try
         {
-            scope = ShortcutNativeDirectory.Open(directory, create: true);
+            locks = ShortcutNativeDirectory.Open(Path.Combine(directory, "locks"), create: true);
             string key = Key(bindingId);
             var elapsed = Stopwatch.StartNew();
             while (true)
             {
                 try
                 {
-                    handle = scope.OpenChild(key + ".lock", ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess,
+                    handle = locks.OpenChild(key + ".lock", ShortcutNativeDirectory.ReadAccess | ShortcutNativeDirectory.WriteAccess,
                         share: 0, disposition: 4);
                     break;
                 }
@@ -76,16 +76,19 @@ internal sealed class ShortcutReceiptStore(string directory)
                 }
             }
             if (!ShortcutNativeDirectory.ReadInfo(handle).IsSingleRegularFile) return ShortcutReceiptStatus.Invalid;
-            transaction = new(scope, handle, key + ".json", bindingId);
-            scope = null;
+            records = ShortcutNativeDirectory.Open(Path.Combine(directory, "records"), create: true);
+            transaction = new(records, locks, handle, key + ".json", bindingId);
+            records = null;
+            locks = null;
             handle = null;
             return ShortcutReceiptStatus.Ok;
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return Map(ex); }
-        finally { handle?.Dispose(); scope?.Dispose(); }
+        finally { handle?.Dispose(); records?.Dispose(); locks?.Dispose(); }
     }
 
-    internal sealed class Transaction(ShortcutNativeDirectory scope, SafeFileHandle gate, string name, string bindingId) : IDisposable
+    internal sealed class Transaction(ShortcutNativeDirectory scope, ShortcutNativeDirectory locks,
+        SafeFileHandle gate, string name, string bindingId) : IDisposable
     {
         internal ShortcutReceiptRead Read()
         {
@@ -148,8 +151,9 @@ internal sealed class ShortcutReceiptStore(string directory)
 
         public void Dispose()
         {
-            gate.Dispose();
             scope.Dispose();
+            gate.Dispose();
+            locks.Dispose();
         }
     }
 
@@ -189,15 +193,17 @@ internal sealed class ShortcutReceiptStore(string directory)
         receipt.SchemaVersion == 1 && ManagedLaunchRequest.EncodeBindingId(receipt.BindingId) is not null &&
         string.Equals(receipt.BindingId, id, StringComparison.OrdinalIgnoreCase) &&
         (receipt.Current is not null || receipt.Pending is not null) &&
-        (receipt.Current is null || Valid(receipt.Current)) && (receipt.Pending is null || Valid(receipt.Pending));
+        (receipt.Current is null || Valid(receipt.Current)) && (receipt.Pending is null || Valid(receipt.Pending)) &&
+        (receipt.Current is null || receipt.Pending is null ||
+         string.Equals(receipt.Current.Path, receipt.Pending.Path, StringComparison.OrdinalIgnoreCase));
 
     private static bool Valid(ShortcutProof proof) =>
         ShortcutNativeDirectory.IsCanonicalLocalPath(proof.Path) && proof.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) &&
         ShortcutNativeDirectory.IsCanonicalLocalPath(proof.LauncherPath) && proof.LauncherPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-        proof.FileIndex != 0 && proof.CreationTime > 0 &&
+        proof.FileIndex != 0 &&
         proof.Sha256 is { Length: 64 } && proof.Sha256.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F');
 
-    private static string Key(string id) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id.ToUpperInvariant())));
+    internal static string Key(string id) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id.ToUpperInvariant())));
 
     private static bool IsStorageFailure(Exception ex) =>
         ex is IOException or UnauthorizedAccessException or JsonException or Win32Exception or InvalidDataException;

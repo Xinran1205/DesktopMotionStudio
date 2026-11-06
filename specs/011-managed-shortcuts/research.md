@@ -12,13 +12,13 @@
 
 ## R2 — Ownership, publication and repair
 
-**Decision** Record content digest, volume and file identity, creation timestamp and path. Open exact candidate without reparse following. Refuse directories, reparse points and multiple hard links. Hold a read/delete handle without write or delete sharing through content verification and deletion. Stage new link as a non-clickable sibling, persist proof, then rename without replacing. Preserve both proofs while repairing. Distinguish healthy current/pending proof, missing, and an occupied path with foreign bytes or identity.
+**Decision** Record content digest, volume and file identity, and path. Include a random marker in generated link bytes. Windows can restore the cached creation time for a recently removed filename during rename, so the receipt does not require that metadata. Open exact candidate without reparse following. Refuse directories, reparse points and multiple hard links. Hold a read/delete handle without write or delete sharing through content verification and deletion. Stage new link as a non-clickable sibling, persist proof, then rename without replacing. Preserve both proofs while repairing. Distinguish healthy current/pending proof, missing, and an occupied path with foreign bytes or identity.
 
 **Rationale** Exact content catches edits. File identity catches a copy of the same bytes. Holding the object through mutation avoids a check-then-delete-by-path race. Receipt-first publication covers interruption before, during and after publishing. A new foreign entry appearing after deletion still defeats publication.
 
 **Alternatives considered** Filename/comment match, digest alone, File.Replace on desktop, after-the-fact ownership receipt, Shell COM overwriting an existing .lnk, transactional NTFS.
 
-**Source** [SetFileInformationByHandle](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle).
+**Sources** [SetFileInformationByHandle](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-setfileinformationbyhandle), [GetFileTime and cached creation timestamps](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-getfiletime).
 
 ## R3 — Independent runtime
 

@@ -338,7 +338,7 @@ internal static class F09Checks
         return scene;
     }
 
-    private static void CreateJunction(string alias, string target)
+    internal static void CreateJunction(string alias, string target)
     {
         string script = "New-Item -ItemType Junction -Path '" + alias.Replace("'", "''") + "' -Target '" + target.Replace("'", "''") + "' -ErrorAction Stop | Out-Null";
         var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe")) { UseShellExecute = false, CreateNoWindow = true };

@@ -36,3 +36,11 @@ Independent launch review verified the single-dispatch path and found no further
 Core Checks `--f10-receipt-checks` reported 22 PASS, 0 FAIL on an isolated NTFS fixture after the initial build failed on the absent receipt API. Coverage includes strict schema and member checks, 16 KiB bound, old binding IDs, current and pending proof, blocked replacement preserving exact bytes, and a separate child process holding the lock. The worker persisted pending proof and was terminated before release. A competing transaction timed out at about two seconds. The pending proof was readable after termination, the next transaction could clear it, and the fixture profile and backup bytes matched.
 
 Receipt operations pin ancestry, decline unsafe objects, retain stages through flush and rename, and only replace files in the private receipt namespace under a product lock. The desktop lifecycle is a separate integration gate.
+
+## T008–T010 — Windows shortcut lifecycle, 2026-11-06
+
+Real NTFS and Shell Link integration reported 15 shell and 16 lifecycle PASS. The lifecycle run covered concurrent and repeated create, a same-name foreign file, missing and stale repair, edited and moved entries, desktop scope changes, pending proof before and after publish, explicit verified removal and exact profile/backup preservation.
+
+Initial lifecycle tests reproduced four failures. A stage creation time of 134384133594994123 changed to 134384133593853923 on same-name publication. NTFS tunneling invalidated creation time as stable ownership evidence. Keep NTFS volume/file identity, full SHA256 and a unique generation marker in the link bytes. Tests also showed a waiting transaction's record-directory pin could block the active writer. Separate locks/ and records/, open records/ after the per-binding lock, and acquire that lock before pinning the desktop. The unchanged functional assertions then passed. The schema1 shape was refined during development, before any product UI wrote receipts.
+
+Full Core regression with actual host and target fixtures reported 389 PASS, 0 FAIL and the existing optional packaged-instance SKIP. Studio win-x64 Release built with zero warnings or errors. Raw regression log dms-f10-ownership-core.log is under TEMP.

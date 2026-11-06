@@ -16,7 +16,8 @@ public sealed record ManagedLaunchPlan(
     LaunchTarget? Target = null,
     SceneManifest? Scene = null,
     ScenePlaybackDefinition? Playback = null,
-    RepositoryError StorageError = RepositoryError.None);
+    RepositoryError StorageError = RepositoryError.None,
+    string? DisplayName = null);
 
 public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalogRoot)
 {
@@ -74,7 +75,7 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
             target = new ExecutableTarget(path, executable.Arguments, executable.WorkingDirectory);
         }
 
-        var native = new ManagedLaunchPlan(ManagedLaunchStatus.Ready, app.AppId, target);
+        var native = new ManagedLaunchPlan(ManagedLaunchStatus.Ready, app.AppId, target, DisplayName: app.DisplayName);
         if (!binding.Enabled) return native;
         SceneCatalogItem? item = new BuiltInSceneCatalog().Scan(catalogRoot).Items.FirstOrDefault(candidate =>
             candidate.IsAvailable && string.Equals(candidate.Manifest?.SceneId, binding.SceneId, StringComparison.OrdinalIgnoreCase));

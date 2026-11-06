@@ -17,9 +17,9 @@
 
 - [x] T006 [US3] Add receipt and fault tests for 16 KiB limit, schema1, exact members, canonical matching ID, current/pending proof, malformed/future storage, 2-second lock and crash recovery in tests/DesktopMotionStudio.Core.Checks/F10ReceiptChecks.cs. (AC-08, AC-09)
 - [x] T007 [US3] Implement bounded versioned receipt and transaction lock in src/DesktopMotionStudio.Core/Shortcuts/ShortcutReceiptStore.cs. Preserve raw unknown or invalid bytes. (FR-006)
-- [ ] T008 [US2] Add Windows integration checks for Shell Link fields, original-byte preservation, hard links, edit, copy, move, missing/redirected root, publish race and file sharing in tests/DesktopMotionStudio.Core.Checks/F10ShortcutChecks.cs. (AC-04, AC-05, AC-06, AC-07)
-- [ ] T009 [US2] Implement read-sharing-only ancestry pins, a verified overlapping publish pin while holding the stage child, staged COM Shell Link, bounded proof (1–65536 bytes, one hard link, SHA256, identity/creation time), no-replace publish and retained-handle removal in src/DesktopMotionStudio.Core/Shortcuts/WindowsShortcutPlatform.cs. (FR-002, FR-004, FR-007)
-- [ ] T010 [US1] Implement state validation, status, create, repair and remove with durable pending proof and post-commit verification in src/DesktopMotionStudio.Core/Shortcuts/ManagedShortcutService.cs. (FR-001, FR-004, FR-006, AC-01, AC-08, SC-003)
+- [x] T008 [US2] Add Windows integration checks for Shell Link fields, original-byte preservation, hard links, edit, copy, move, missing/redirected root, publish race and file sharing in tests/DesktopMotionStudio.Core.Checks/F10ShortcutChecks.cs. (AC-04, AC-05, AC-06, AC-07)
+- [x] T009 [US2] Implement read-sharing-only ancestry pins, a verified overlapping publish pin while holding the stage child, staged COM Shell Link, bounded proof (1–65536 bytes, one hard link, NTFS identity and SHA256 including random generation marker), no-replace publish and retained-handle removal in src/DesktopMotionStudio.Core/Shortcuts/WindowsShortcutPlatform.cs. (FR-002, FR-004, FR-007)
+- [x] T010 [US1] Implement state validation, status, create, repair and remove with durable pending proof and post-commit verification in src/DesktopMotionStudio.Core/Shortcuts/ManagedShortcutService.cs and tests/DesktopMotionStudio.Core.Checks/F10LifecycleChecks.cs. (FR-001, FR-004, FR-006, AC-01, AC-08, SC-003)
 
 ## Phase 4 — Studio and real Windows acceptance
 

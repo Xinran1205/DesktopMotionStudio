@@ -25,7 +25,8 @@ internal static class F10ReceiptChecks
         Check("fresh store recovers both proofs", new ShortcutReceiptStore(storage).Read(Binding).Receipt == receipt);
         Check("legacy casing shares the receipt key", store.Read(Binding.ToUpperInvariant()).Receipt == receipt);
 
-        string path = Directory.GetFiles(storage, "*.json").Single();
+        string records = Path.Combine(storage, "records");
+        string path = Directory.GetFiles(records, "*.json").Single();
         byte[] valid = File.ReadAllBytes(path);
         string json = Encoding.UTF8.GetString(valid);
         var cases = new (string Name, string Data, ShortcutReceiptStatus Status)[]
@@ -54,7 +55,7 @@ internal static class F10ReceiptChecks
         {
             Check("blocked replacement preserves receipt and removes only its own stage",
                 Write(store, receipt with { Current = pending, Pending = null }) is ShortcutReceiptStatus.Busy or ShortcutReceiptStatus.IoError &&
-                File.ReadAllBytes(path).SequenceEqual(valid) && Directory.GetFiles(storage, "*.tmp").Length == 0);
+                File.ReadAllBytes(path).SequenceEqual(valid) && Directory.GetFiles(records, "*.tmp").Length == 0);
         }
         Check("valid atomic promotion", Write(store, receipt with { Current = pending, Pending = null }) == ShortcutReceiptStatus.Ok &&
             store.Read(Binding).Receipt is { Current: { FileIndex: 20 }, Pending: null });
@@ -102,7 +103,7 @@ internal static class F10ReceiptChecks
     }
 
     private static ShortcutProof Proof(string root, ulong id) =>
-        new(Path.Combine(root, "Fixture.lnk"), Path.Combine(root, "Launcher.exe"), 1, id, 99, new string('A', 64));
+        new(Path.Combine(root, "Fixture.lnk"), Path.Combine(root, "Launcher.exe"), 1, id, new string('A', 64));
 
     private static ShortcutReceiptStatus Write(ShortcutReceiptStore store, ShortcutReceipt receipt)
     {
