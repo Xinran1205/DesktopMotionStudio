@@ -1,6 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F10 已完成
+## 当前断点 — F11 已启动
+
+当前分支为 `codex/f11-settings-diagnostics`，以 F10 完成提交 `d41f000` 为基础。F11 已完成规格和 T001–T003，偏好事务 12 项检查通过，Fluent 主题切换已在隔离探针验证。开发任务见 [F11 清单](../specs/012-settings-diagnostics/tasks.md)。
+
+## F10 已完成
 
 2026-11-06 完成 F10 的 15 项任务。通过 395 项 Core、57 项 Studio 和 12 项发布版实际 UI 与 Windows Shell 检查。隔离入口已验证创建、修复、移除、关闭 Studio 后启动、换作品与原生降级。独立审查与 Converge 已完成。可复现说明和验证证据见 [F10 证据](../specs/011-managed-shortcuts/evidence.md)。
 

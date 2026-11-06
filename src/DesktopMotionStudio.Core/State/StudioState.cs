@@ -9,6 +9,7 @@ public sealed record ApplicationBinding(string BindingId, string AppId, string S
 public sealed record StudioSettings(string Theme, bool Muted)
 {
     public static StudioSettings Default { get; } = new("system", false);
+    internal static bool IsValid(StudioSettings? settings) => settings?.Theme is "system" or "light" or "dark";
 }
 
 public sealed record StudioState(

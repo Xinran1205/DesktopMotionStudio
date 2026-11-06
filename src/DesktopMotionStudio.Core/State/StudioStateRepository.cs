@@ -147,9 +147,9 @@ public sealed class StudioStateRepository(string filePath) : IStudioStateStore
     private static bool Validate(StudioState state)
     {
         if (state is null || state.SchemaVersion != StudioState.CurrentSchemaVersion ||
-            state.Applications is null || state.Bindings is null || state.Settings is null ||
+            state.Applications is null || state.Bindings is null ||
             state.Applications.Count > 1000 || state.Bindings.Count > 5000 ||
-            state.Settings.Theme is not ("system" or "light" or "dark")) return false;
+            !StudioSettings.IsValid(state.Settings)) return false;
 
         var apps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (ApplicationProfile? app in state.Applications)
