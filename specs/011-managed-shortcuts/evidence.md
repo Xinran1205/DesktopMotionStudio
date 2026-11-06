@@ -30,3 +30,9 @@ Fresh win-x64 framework-dependent Studio publish staged exactly five files each 
 Core full regression ran against the published MotionHost and a real WindowHost fixture. **336 PASS, 0 FAIL, 1 optional packaged-instance SKIP** (DMS_F05_TEST_AUMID unset). Studio regression **53 PASS**, fresh published F09 actual UI **15 PASS**. F09 UI run exercised Stop, Esc, removal and abrupt-close cleanup with isolated state and default system motion preference. This run did not assert a specific preference value. Release build and whitespace verification passed for the affected code. No Studio profile or real desktop link was changed.
 
 Independent launch review verified the single-dispatch path and found no further actionable issues after the packaging fix. Local logs dms-f10-native-ownership-final.log, dms-f10-launch-checks.log, dms-f10-core-regression-final.log, dms-f10-studio-regression-final.log and dms-f10-f09-published-regression.log were captured under TEMP.
+
+## T006–T007 — Durable receipts, 2026-11-06
+
+Core Checks `--f10-receipt-checks` reported 22 PASS, 0 FAIL on an isolated NTFS fixture after the initial build failed on the absent receipt API. Coverage includes strict schema and member checks, 16 KiB bound, old binding IDs, current and pending proof, blocked replacement preserving exact bytes, and a separate child process holding the lock. The worker persisted pending proof and was terminated before release. A competing transaction timed out at about two seconds. The pending proof was readable after termination, the next transaction could clear it, and the fixture profile and backup bytes matched.
+
+Receipt operations pin ancestry, decline unsafe objects, retain stages through flush and rename, and only replace files in the private receipt namespace under a product lock. The desktop lifecycle is a separate integration gate.

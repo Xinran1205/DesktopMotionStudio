@@ -34,6 +34,8 @@ if (args.Length == 1 && args[0] == "--f09-checks")
     return F09Checks.Run();
 if (args.Length is 1 or 2 && args[0] == "--f10-launch-checks")
     return F10LaunchChecks.Run(args.Length == 2 ? args[1] : null);
+if (args is ["--f10-receipt-checks"]) return F10ReceiptChecks.Run();
+if (args is ["--f10-receipt-worker", var receiptRoot]) return F10ReceiptChecks.Worker(receiptRoot);
 if (args.Length == 2 && args[0] == "--f09-catalog-check")
     return F09Checks.VerifyShippedCatalog(args[1]);
 
@@ -85,6 +87,7 @@ failures += F07Checks.Run();
 failures += F08Checks.Run();
 failures += F09Checks.Run();
 failures += F10LaunchChecks.Run(null);
+failures += F10ReceiptChecks.Run();
 failures += F09OwnershipChecks.Run();
 failures += F09PlaybackProcessChecks.Run();
 failures += RunWindowHostIntegration();

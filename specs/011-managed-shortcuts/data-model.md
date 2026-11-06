@@ -8,6 +8,8 @@ A nonblank binding ID of at most 128 UTF-16 code units with valid UTF-8 represen
 
 One bounded JSON document per binding under the current profile's private shortcut directory. Explicit version1, matching canonical binding ID, optional current proof and optional pending proof. At least one proof must be present. Unknown or duplicate members, unsupported version, invalid types and size over 16 KiB fail closed.
 
+A stable sibling lock file uses an exclusive Windows handle across processes and sessions. Hold it across the entire transaction. Keep the lock filename after release so a competing writer cannot acquire a different object. Receipt reads do not create directories or lock files. Private receipt updates use flushed stages and atomic rename under the lock. Desktop publication always refuses replacement.
+
 A proof stores the fully qualified canonical desktop path, verified launcher path, volume/file identity, creation timestamp and uppercase 64-character SHA256 of the complete .lnk. Only an ordinary file with exactly one hard link and size 1–65536 bytes can be owned. Both proofs remain in a repair receipt until publication is verified. Ownership is evaluated at a recorded path inside the currently validated desktop root. A path outside that root cannot be touched.
 
 ## Transitions
