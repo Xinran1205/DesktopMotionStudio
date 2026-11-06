@@ -13,7 +13,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
-    <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
@@ -25,6 +26,20 @@
       <_BundledMotionHostFile Include="$(_MotionHostDirectory)*" Exclude="$(_MotionHostDirectory)*.pdb" />
       <Content Include="@(_BundledMotionHostFile)">
         <Link>MotionHost/%(_BundledMotionHostFile.Filename)%(_BundledMotionHostFile.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+  <Target Name="StageLauncher" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_LauncherTarget" />
+    </MSBuild>
+    <PropertyGroup><_LauncherDirectory>@(_LauncherTarget->'%(RootDir)%(Directory)')</_LauncherDirectory></PropertyGroup>
+    <ItemGroup>
+      <_BundledLauncherFile Include="$(_LauncherDirectory)DesktopMotionStudio.Launcher.exe;$(_LauncherDirectory)DesktopMotionStudio.Launcher.dll;$(_LauncherDirectory)DesktopMotionStudio.Launcher.deps.json;$(_LauncherDirectory)DesktopMotionStudio.Launcher.runtimeconfig.json;$(_LauncherDirectory)DesktopMotionStudio.Core.dll" />
+      <Content Include="@(_BundledLauncherFile)">
+        <Link>Launcher/%(_BundledLauncherFile.Filename)%(_BundledLauncherFile.Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>

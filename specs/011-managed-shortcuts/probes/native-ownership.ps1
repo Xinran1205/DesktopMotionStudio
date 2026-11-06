@@ -53,9 +53,9 @@ public static class DmsF10NativeProof
         return CheckedOpen(path, GenericRead | (mutate ? Delete : 0), ReadShare, OpenReparse);
     }
 
-    public static SafeFileHandle PinDirectory(string path)
+    public static SafeFileHandle PinDirectory(string path, bool allowWrite = true)
     {
-        return CheckedOpen(path, 1, ReadShare | WriteShare, OpenReparse | BackupSemantics);
+        return CheckedOpen(path, 1, ReadShare | (allowWrite ? WriteShare : 0), OpenReparse | BackupSemantics);
     }
 
     private static SafeFileHandle CheckedOpen(string path, uint access, uint share, uint flags)
@@ -106,6 +106,41 @@ public static class DmsF10NativeProof
         return CreateHardLinkW(link, source, IntPtr.Zero) ? 0 : Marshal.GetLastWin32Error();
     }
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeviceIoControl(SafeFileHandle handle, uint control, byte[] input, uint size, IntPtr output, uint outputSize, out uint bytesReturned, IntPtr overlapped);
+
+    public static SafeFileHandle CreateNew(string path)
+    {
+        var handle = CreateFileW(path, GenericRead | 0x40000000 | Delete, ReadShare, IntPtr.Zero, 1, OpenReparse, IntPtr.Zero);
+        if (!handle.IsInvalid) return handle;
+        int error = Marshal.GetLastWin32Error();
+        handle.Dispose();
+        throw new Win32Exception(error);
+    }
+
+    public static int TrySetJunction(string folder, string target)
+    {
+        using var handle = CreateFileW(folder, 0x40000000, ReadShare | WriteShare | DeleteShare, IntPtr.Zero, OpenExisting, OpenReparse | BackupSemantics, IntPtr.Zero);
+        if (handle.IsInvalid) return Marshal.GetLastWin32Error();
+        byte[] substitute = Encoding.Unicode.GetBytes("\\??\\" + target);
+        byte[] print = Encoding.Unicode.GetBytes(target);
+        using var memory = new MemoryStream();
+        using var writer = new BinaryWriter(memory);
+        writer.Write(0xA0000003u);
+        writer.Write((ushort)(8 + substitute.Length + 2 + print.Length + 2));
+        writer.Write((ushort)0);
+        writer.Write((ushort)0);
+        writer.Write((ushort)substitute.Length);
+        writer.Write((ushort)(substitute.Length + 2));
+        writer.Write((ushort)print.Length);
+        writer.Write(substitute);
+        writer.Write((ushort)0);
+        writer.Write(print);
+        writer.Write((ushort)0);
+        var bytes = memory.ToArray();
+        return DeviceIoControl(handle, 0x900A4, bytes, (uint)bytes.Length, IntPtr.Zero, 0, out _, IntPtr.Zero) ? 0 : Marshal.GetLastWin32Error();
+    }
     public static int TryWriteOpen(string path)
     {
         using var h = CreateFileW(path, 0x40000000, ReadShare | WriteShare | DeleteShare, IntPtr.Zero, OpenExisting, Normal, IntPtr.Zero);
@@ -349,3 +384,74 @@ try {
 } finally { $stageHandle.Dispose() }
 $finalLink = [DmsF10ShellLinkProof]::Read($shellLinkFinal)
 Assert-Proof ($finalLink[0] -eq $exe -and $finalLink[1] -ceq $arg -and (Get-FileHash -LiteralPath $shellLinkFinal).Hash -eq $stagedHash) 'published .lnk COM readback preserves raw target and exact binding argument'
+
+$redirectTarget = Join-Path $Fixture 'junction-target'
+$shareWriteParent = Join-Path $Fixture 'share-write-parent'
+$readonlyParent = Join-Path $Fixture 'readonly-parent'
+[IO.Directory]::CreateDirectory($redirectTarget) | Out-Null
+[IO.Directory]::CreateDirectory($shareWriteParent) | Out-Null
+[IO.Directory]::CreateDirectory($readonlyParent) | Out-Null
+$pinWithWrite = [DmsF10NativeProof]::PinDirectory($shareWriteParent, $true)
+try {
+  $result = [DmsF10NativeProof]::TrySetJunction($shareWriteParent, $redirectTarget)
+  $attrs = [DmsF10NativeProof]::Info($pinWithWrite).Attributes
+  "OBSERVATION in-place junction creation with share-write pin: native=$result attrs=$attrs"
+  Assert-Proof ($result -eq 0 -and ($attrs -band 0x400) -ne 0) 'allowing directory write share permits in-place reparse race'
+} finally { $pinWithWrite.Dispose() }
+$pinReadOnly = [DmsF10NativeProof]::PinDirectory($readonlyParent, $false)
+try {
+  $result = [DmsF10NativeProof]::TrySetJunction($readonlyParent, $redirectTarget)
+  Assert-Proof ($result -eq 32 -and ([DmsF10NativeProof]::Info($pinReadOnly).Attributes -band 0x400) -eq 0) "denying directory write share blocks in-place reparse race (native=$result)"
+  $created = Join-Path $readonlyParent 'direct-stage.tmp'
+  $createdWriter = [IO.File]::Open($created, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+  try { $createdWriter.WriteByte(0x61); $createdWriter.Flush($true) }
+  finally { $createdWriter.Dispose() }
+  Assert-Proof ([IO.File]::ReadAllText($created) -ceq 'a') 'direct child creation works under read-only directory share'
+  $publication = Join-Path $readonlyParent 'direct.lnk'
+  $stagedHandle = [DmsF10NativeProof]::Open($created, $true)
+  try {
+    $readonlyRename = [DmsF10NativeProof]::Rename($stagedHandle, $publication)
+    Assert-Proof ($readonlyRename -eq 32) "no-replace rename requires write-share on immediate parent (native=$readonlyRename)"
+    [DmsF10NativeProof]::DisposeFile($stagedHandle)
+  } finally { $stagedHandle.Dispose() }
+  Assert-Proof (-not [IO.File]::Exists($created)) 'delete-by-handle works under read-only directory share'
+} finally { $pinReadOnly.Dispose() }
+
+$lockedAncestor = Join-Path $Fixture 'locked-ancestor'
+$publishParent = Join-Path $lockedAncestor 'publish-parent'
+[IO.Directory]::CreateDirectory($publishParent) | Out-Null
+$ancestorGuard = [DmsF10NativeProof]::PinDirectory($lockedAncestor, $false)
+$readonlyGuard = [DmsF10NativeProof]::PinDirectory($publishParent, $false)
+try {
+  $stagingPath = Join-Path $publishParent 'retained-stage.tmp'
+  $visiblePath = Join-Path $publishParent 'visible.lnk'
+  $owned = [DmsF10NativeProof]::CreateNew($stagingPath)
+  try {
+    $ownedWriter = [IO.FileStream]::new($owned, [IO.FileAccess]::ReadWrite)
+    try {
+      $ownedWriter.Write($linkBytes, 0, $linkBytes.Length)
+      $ownedWriter.Flush($true)
+      $directoryGuard = [DmsF10NativeProof]::PinDirectory($publishParent, $true)
+      try {
+        Assert-Proof ([DmsF10NativeProof]::Info($readonlyGuard).Id -eq [DmsF10NativeProof]::Info($directoryGuard).Id) 'overlapping parent pins refer to the same directory'
+        $readonlyGuard.Dispose()
+        $nonEmptyReparse = [DmsF10NativeProof]::TrySetJunction($publishParent, $redirectTarget)
+        Assert-Proof ($nonEmptyReparse -ne 0 -and ([DmsF10NativeProof]::Info($directoryGuard).Attributes -band 0x400) -eq 0) "retained child blocks in-place reparse with write-sharing open (native=$nonEmptyReparse)"
+        $stagingDelete = [DmsF10NativeProof]::TryDeleteOpen($stagingPath)
+        Assert-Proof ($stagingDelete -eq 32) 'staging path cannot be emptied by another process while retained'
+        try { [IO.Directory]::Move($publishParent, (Join-Path $lockedAncestor 'relocated')); throw 'FAIL publish parent moved' }
+        catch [IO.IOException] { 'PASS overlapped parent pins prevent path replacement during rename' }
+        $reopenedBytes = [byte[]]::new($linkBytes.Length)
+        $ownedWriter.Position = 0
+        $ownedWriter.ReadExactly($reopenedBytes, 0, $reopenedBytes.Length)
+        Assert-Proof ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($reopenedBytes)) -eq [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($linkBytes))) 'retained CREATE_NEW handle hashes the actual flushed bytes'
+        $visibleRename = [DmsF10NativeProof]::Rename($owned, $visiblePath)
+        Assert-Proof ($visibleRename -eq 0) "direct publication with retained CREATE_NEW handle, read-only ancestor and write-share parent (native=$visibleRename)"
+        $nonEmptyReparse = [DmsF10NativeProof]::TrySetJunction($publishParent, $redirectTarget)
+        Assert-Proof ($nonEmptyReparse -ne 0) "published retained child still blocks reparse (native=$nonEmptyReparse)"
+      } finally { $directoryGuard.Dispose() }
+    } finally { $ownedWriter.Dispose() }
+  } finally { $owned.Dispose() }
+  $published = [DmsF10ShellLinkProof]::Read($visiblePath)
+  Assert-Proof ($published[0] -eq $exe -and $published[1] -ceq $arg) 'fully retained publication yields valid Shell Link readback'
+} finally { $readonlyGuard.Dispose(); $ancestorGuard.Dispose() }

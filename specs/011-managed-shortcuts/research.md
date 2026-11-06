@@ -2,13 +2,13 @@
 
 ## R1 — Shortcut authority and file scope
 
-**Decision** Use Shell Link with an exact binding-ID command. Treat DesktopDirectory as the current user desktop, then enforce local fixed NTFS and canonical paths. Pin directory ancestry with handles opened without delete sharing through the operation. Recheck directory attributes from the handles, including refusal of reparse points. Avoid shell link resolution and stop on unsupported capabilities.
+**Decision** Use Shell Link with an exact binding-ID command. Treat DesktopDirectory as the current user desktop, then enforce local fixed NTFS and canonical paths. Pin directory ancestry with read sharing only and check each opened handle for reparse attributes. For publication, create and retain a regular staging child while the parent is pinned. Overlap a write-sharing pin of the same parent identity before releasing its read-only pin. The retained child keeps the directory nonempty during rename. Keep ancestor pins throughout. Avoid Shell Link Resolve and stop on unsupported capabilities.
 
 **Rationale** Known folders can be redirected. Link publication and removal must remain within the validated folder even when another process changes paths. Restricting the filesystem avoids unverified identity and rename behavior.
 
 **Alternatives considered** Fixed user-profile Desktop path, public Desktop, unguarded path checks, recursively locating relocated links.
 
-**Sources** [Microsoft known folders](https://learn.microsoft.com/windows/win32/shell/known-folders), [CreateFileW flags and sharing](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-createfilew), [IPersistFile](https://learn.microsoft.com/windows/win32/api/objidl/nn-objidl-ipersistfile).
+**Sources** [Microsoft known folders](https://learn.microsoft.com/windows/win32/shell/known-folders), [CreateFileW flags and sharing](https://learn.microsoft.com/windows/win32/api/fileapi/nf-fileapi-createfilew), [Reparse-point restrictions](https://learn.microsoft.com/windows/win32/fileio/reparse-points), [Shell Link persistence](https://learn.microsoft.com/windows/win32/shell/links).
 
 ## R2 — Ownership, publication and repair
 

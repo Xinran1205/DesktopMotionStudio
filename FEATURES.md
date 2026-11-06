@@ -16,7 +16,7 @@ The repository began with requirements documents only. F00–F09 are complete wi
 | 7 | Binding / F07 Cross-app scene binding | Bind any compatible complete built-in scene to supported app, reusable scene IDs | F02, F03, F04 | Complete |
 | 8 | Studio UI / F08 Application discovery and management | Add/search/detail/manage app profiles without broad system mutation | F02, F04, F07 | Complete; real UI at 100/125/150% |
 | 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F06, F07, F08 | Complete; library/preview/binding/home, real process/publish and actual100/125/150% + OS motion acceptance verified |
-| 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create, repair and remove verified owned shortcuts | F02, F04, F05, F06, F07, F08, F09 | In implementation; native proof passed |
+| 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create, repair and remove verified owned shortcuts | F02, F04, F05, F06, F07, F08, F09 | In implementation; native proof and standalone Launcher increment verified |
 | 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F10 | Spec baseline |
 | 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Spec baseline |
 | 13 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 | Spec baseline |
