@@ -12,12 +12,14 @@ internal static class WpfRaceChecks
     internal static void Run(ref int failures)
     {
         var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        StudioTheme.Apply(application, "light");
         application.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative) });
         try
         {
             F09ViewChecks.Run(ref failures);
             F09WindowChecks.Run(ref failures);
             F10StudioChecks.Run(ref failures);
+            F11SettingsUiChecks.Run(ref failures);
             using var saveStore = new GatedStore(delayUpdate: true);
             var editor = new ApplicationEditorWindow(new ApplicationRegistry(saveStore));
             ((TextBox)editor.FindName("DisplayNameBox")).Text = "Delayed fixture";

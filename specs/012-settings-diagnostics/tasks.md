@@ -7,7 +7,7 @@
 - [x] T001 [US1] Add checks for defaults, exact no-op, invalid values, stale snapshots, profile/backup preservation and old/future schema in tests/DesktopMotionStudio.Core.Checks/F11SettingsChecks.cs. (FR-002, FR-003, AC-02, AC-03)
 - [x] T002 [US1] Implement transactional preference read and compare-and-save in src/DesktopMotionStudio.Core/State/StudioSettingsService.cs. Use existing profile2 and preserve unrelated state. (FR-002, FR-003, AC-02, AC-03)
 - [x] T003 [US1] Prove Fluent Light/Dark/System dictionary loads and contrast palette switching in an isolated Windows harness under specs/012-settings-diagnostics/probes/. Actual OS transitions remain T010. (FR-001, AC-01)
-- [ ] T004 [US1] Apply palette and preference UI in src/DesktopMotionStudio.Studio/Styles.xaml, theme controller and SettingsWindow. Add controlled theme/selection cases in tests/DesktopMotionStudio.Studio.Checks/F11SettingsChecks.cs. (FR-001, FR-002, AC-01, SC-001)
+- [x] T004 [US1] Apply palette and preference UI in src/DesktopMotionStudio.Studio/Styles.xaml, theme controller and SettingsWindow. Add controlled theme/selection cases in tests/DesktopMotionStudio.Studio.Checks/F11SettingsUiChecks.cs. (FR-001, FR-002, AC-01, SC-001)
 
 ## Phase 2 — Bounded local diagnostics
 

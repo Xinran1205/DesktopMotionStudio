@@ -153,6 +153,7 @@ public partial class MainWindow : Window
         DetailsPanel.IsEnabled = _readable && !_busy && Selected is not null;
         ToggleButton.IsEnabled = Selected?.Binding.Binding is not null;
         LibraryButton.IsEnabled = !_busy && !_closing;
+        SettingsButton.IsEnabled = !_busy && !_closing;
         PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
         ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
         UpdateShortcutButtons();
@@ -244,6 +245,12 @@ public partial class MainWindow : Window
     }
 
     private async void OnLibrary(object sender, RoutedEventArgs e) => await OpenLibraryAsync(false);
+    private void OnSettings(object sender, RoutedEventArgs e)
+    {
+        if (_busy || _closing) return;
+        var window = new SettingsWindow(new StudioSettingsService(_store)) { Owner = this };
+        if (window.ShowDialog() == true) StatusText.Text = "设置已保存。";
+    }
     private async void OnReplace(object sender, RoutedEventArgs e) => await OpenLibraryAsync(true);
     private async void OnStopPreview(object sender, RoutedEventArgs e) => await _intents.StopAsync();
     private async void OnPreviewBound(object sender, RoutedEventArgs e)

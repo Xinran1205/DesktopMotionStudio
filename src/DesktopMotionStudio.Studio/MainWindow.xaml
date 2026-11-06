@@ -2,22 +2,23 @@
         Title="Desktop Motion Studio" Width="1180" Height="760" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="210" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-        <Border Background="#14223C">
+        <Border Background="{DynamicResource LayerFillColorDefaultBrush}">
             <DockPanel Margin="24,32">
                 <StackPanel DockPanel.Dock="Top">
-                    <Border Width="42" Height="42" Background="#5272FF" CornerRadius="12" HorizontalAlignment="Left" Margin="0,0,0,14"><TextBlock Text="M" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
-                    <TextBlock Text="Motion Studio" FontSize="21" FontWeight="SemiBold" Foreground="White" />
-                    <TextBlock Text="让每次启动更有表现力" FontSize="12" Foreground="#9DAEC9" Margin="0,8,0,40" />
-                    <Border Background="#283D65" CornerRadius="8" Padding="14,12"><TextBlock Text="我的应用" Foreground="White" FontWeight="SemiBold" /></Border>
+                    <Border Width="42" Height="42" Background="{DynamicResource AccentFillColorDefaultBrush}" CornerRadius="12" HorizontalAlignment="Left" Margin="0,0,0,14"><TextBlock Text="M" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                    <TextBlock Text="Motion Studio" FontSize="21" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <TextBlock Text="让每次启动更有表现力" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,8,0,40" />
+                    <Border Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="14,12"><TextBlock Text="我的应用" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" /></Border>
                     <Button x:Name="LibraryButton" Content="动效作品库(_L)" AutomationProperties.Name="打开动效作品库" Margin="0,12,0,0" Click="OnLibrary"/>
+                    <Button x:Name="SettingsButton" Content="设置(_G)" AutomationProperties.Name="打开设置" Margin="0,8,0,0" Click="OnSettings"/>
                 </StackPanel>
-                <TextBlock Text="所有配置保存在此设备" Foreground="#9DAEC9" FontSize="12" VerticalAlignment="Bottom" TextWrapping="Wrap" />
+                <TextBlock Text="所有配置保存在此设备" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" VerticalAlignment="Bottom" TextWrapping="Wrap" />
             </DockPanel>
         </Border>
         <Grid Grid.Column="1" Margin="28,28,24,20">
             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
             <DockPanel Margin="0,0,0,22">
-                <Button x:Name="AddButton" DockPanel.Dock="Right" Content="添加应用(_A)" AutomationProperties.Name="添加应用" Style="{StaticResource PrimaryButton}" Click="OnAdd" />
+                <Button x:Name="AddButton" DockPanel.Dock="Right" Content="添加应用(_A)" AutomationProperties.Name="添加应用" Style="{DynamicResource AccentButtonStyle}" ContentTemplate="{StaticResource AccessButtonContent}" Click="OnAdd" />
                 <StackPanel><TextBlock Text="我的应用" FontSize="28" FontWeight="SemiBold" /><TextBlock x:Name="CountText" Text="管理已添加的应用和动效绑定" Style="{StaticResource Caption}" Margin="0,6,0,0" /></StackPanel>
             </DockPanel>
             <Grid Grid.Row="1" Margin="0,0,0,18"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -25,21 +26,21 @@
                 <Button Grid.Column="1" Content="刷新" AutomationProperties.Name="刷新应用" Margin="10,0,0,0" Click="OnRefresh" />
             </Grid>
             <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="18" /><ColumnDefinition Width="300" /></Grid.ColumnDefinitions>
-                <Border Background="White" CornerRadius="12" BorderBrush="#E0E5EF" BorderThickness="1">
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                     <Grid>
                         <ListBox x:Name="ApplicationList" AutomationProperties.Name="已添加应用" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch" SelectionChanged="OnSelection" Padding="8">
                             <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="AutomationProperties.Name" Value="{Binding Name}" /></Style></ListBox.ItemContainerStyle>
                             <ListBox.ItemTemplate><DataTemplate>
-                                <Border Padding="10,14" BorderBrush="#EDF0F6" BorderThickness="0,0,0,1"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="46" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                    <Border Background="#E9EEFF" CornerRadius="10" Height="36" Width="36" VerticalAlignment="Top"><TextBlock Text="{Binding Initial}" FontSize="17" FontWeight="SemiBold" Foreground="#3657D9" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                                <Border Padding="10,14" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="46" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Border Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="10" Height="36" Width="36" VerticalAlignment="Top"><TextBlock Text="{Binding Initial}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                                     <StackPanel Grid.Column="1"><TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" /><TextBlock Text="{Binding Summary}" Style="{StaticResource Caption}" FontSize="12" Margin="0,5,0,0" /><TextBlock Text="{Binding Scene}" Style="{StaticResource Caption}" FontSize="12" Margin="0,4,0,0" /></StackPanel>
                                 </Grid></Border>
                             </DataTemplate></ListBox.ItemTemplate>
                         </ListBox>
-                        <TextBlock x:Name="EmptyText" Text="还没有添加应用。&#10;选择“添加应用”开始配置。" Foreground="#65728A" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="20" IsHitTestVisible="False" />
+                        <TextBlock x:Name="EmptyText" Text="还没有添加应用。&#10;选择“添加应用”开始配置。" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Center" Margin="20" IsHitTestVisible="False" />
                     </Grid>
                 </Border>
-                <Border Grid.Column="2" Background="White" CornerRadius="12" BorderBrush="#E0E5EF" BorderThickness="1" Padding="20">
+                <Border Grid.Column="2" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="12" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="20">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="DetailsPanel" IsEnabled="False">
                             <TextBlock Text="应用详情" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,20" />
@@ -48,11 +49,11 @@
                             <Button x:Name="RenameButton" Content="保存名称(_S)" AutomationProperties.Name="保存应用名称" Margin="0,10,0,20" HorizontalAlignment="Left" Click="OnRename" />
                             <TextBlock x:Name="TargetKindText" FontWeight="SemiBold" />
                             <TextBlock x:Name="TargetText" Style="{StaticResource Caption}" Margin="0,6,0,10" />
-                            <TextBlock x:Name="TargetStatusText" Foreground="#3657D9" TextWrapping="Wrap" Margin="0,0,0,12" />
+                            <TextBlock x:Name="TargetStatusText" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
                             <Button x:Name="RepairButton" Content="更换 / 确认入口(_R)" AutomationProperties.Name="修复启动入口" Margin="0,0,0,22" Click="OnRepair" />
                             <Separator Margin="0,0,0,18" />
                             <TextBlock Text="动效绑定" FontWeight="SemiBold" />
-                            <Border Background="#E9EEFF" CornerRadius="8" Height="110" Margin="0,12,0,8"><Grid><TextBlock x:Name="BoundFallback" Text="M" FontSize="38" Foreground="#5272FF" HorizontalAlignment="Center" VerticalAlignment="Center"/><Image x:Name="BoundCover" Stretch="Uniform" AutomationProperties.Name="当前绑定作品封面"/></Grid></Border>
+                            <Border Background="{DynamicResource LayerFillColorDefaultBrush}" CornerRadius="8" Height="110" Margin="0,12,0,8"><Grid><TextBlock x:Name="BoundFallback" Text="M" FontSize="38" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/><Image x:Name="BoundCover" Stretch="Uniform" AutomationProperties.Name="当前绑定作品封面"/></Grid></Border>
                             <TextBlock x:Name="BoundSceneNameText" Text="未绑定作品" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
                             <TextBlock x:Name="BindingText" Style="{StaticResource Caption}" Margin="0,8,0,10" />
                             <WrapPanel Margin="0,0,0,12"><Button x:Name="PreviewBoundButton" Content="预览(_P)" AutomationProperties.Name="预览当前绑定作品" Click="OnPreviewBound"/><Button x:Name="ReplaceButton" Content="选择 / 替换(_B)" AutomationProperties.Name="替换绑定作品" Click="OnReplace"/></WrapPanel>
@@ -68,7 +69,7 @@
                                 </WrapPanel>
                                 <TextBlock x:Name="ShortcutActionText" AutomationProperties.AutomationId="ShortcutAction" Style="{StaticResource Caption}" Margin="0,6,0,0" />
                             </StackPanel>
-                            <Button x:Name="RemoveButton" Content="移除应用配置(_D)" AutomationProperties.Name="移除应用配置" Foreground="#AC3248" BorderBrush="#E9CBD0" Margin="0" Click="OnRemove" />
+                            <Button x:Name="RemoveButton" Content="移除应用配置(_D)" AutomationProperties.Name="移除应用配置" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Margin="0" Click="OnRemove" />
                         </StackPanel>
                     </ScrollViewer>
                 </Border>

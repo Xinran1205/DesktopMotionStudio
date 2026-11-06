@@ -36,6 +36,8 @@ internal static class Program
             () => desktopRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify));
 
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
+        SettingsResult preferences = new StudioSettingsService(store).Read();
+        StudioTheme.Apply(app, preferences.Settings?.Theme ?? StudioSettings.Default.Theme);
         app.Resources.MergedDictionaries.Add(new ResourceDictionary
         {
             Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
