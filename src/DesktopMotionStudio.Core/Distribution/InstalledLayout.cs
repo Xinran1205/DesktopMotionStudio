@@ -7,6 +7,7 @@ public static class InstalledLayout
     internal const string Versions = "Versions";
     internal const string ProductDirectory = "DesktopMotionStudio";
     internal const string StartMenuName = "Desktop Motion Studio.lnk";
+    internal const string UninstallRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall";
 
     internal static string CurrentUserRoot() =>
         ResolveUserRoot() ?? throw new IOException("The current user's program directory is unavailable.");

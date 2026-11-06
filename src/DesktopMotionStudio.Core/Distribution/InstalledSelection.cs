@@ -11,7 +11,7 @@ internal sealed record InstalledSelection(Version Version, string StudioHash, st
 
     internal byte[] Encode()
     {
-        if (ParseVersion(Version.ToString()) is null || !IsDigest(StudioHash) || !IsDigest(LauncherHash))
+        if (Version is null || ParseVersion(Version.ToString()) is null || !IsDigest(StudioHash) || !IsDigest(LauncherHash))
             throw new InvalidDataException("Invalid installed version or entry digest.");
         return Encoding.ASCII.GetBytes($"{Magic}\n{Version}\n{StudioHash}\n{LauncherHash}\n");
     }
@@ -41,6 +41,6 @@ internal sealed record InstalledSelection(Version Version, string StudioHash, st
         parsed.Build is >= 0 and <= 99999 && parsed.Major <= 99999 && parsed.Minor <= 99999 &&
         parsed.Revision < 0 && value == parsed.ToString(3) ? parsed : null;
 
-    internal static bool IsDigest(string value) =>
-        value.Length == 64 && value.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F');
+    internal static bool IsDigest(string? value) =>
+        value is { Length: 64 } && value.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F');
 }

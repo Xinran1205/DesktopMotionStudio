@@ -21,8 +21,10 @@ internal sealed class InstallStage : IDisposable
     internal string EntryHash { get; }
 
     internal static InstallStage Prepare(WindowsFileScope programs, Stream manifest, Stream archive, Stream entry)
+        => Prepare(programs, InstallPayload.Read(manifest), archive, entry);
+
+    internal static InstallStage Prepare(WindowsFileScope programs, InstallPayload payload, Stream archive, Stream entry)
     {
-        InstallPayload payload = InstallPayload.Read(manifest);
         if (!entry.CanSeek || entry.Position != 0 || entry.Length is < 2 or > MaxEntryBytes ||
             entry.ReadByte() != 'M' || entry.ReadByte() != 'Z')
             throw new InvalidDataException("The stable entry image is unavailable.");
@@ -32,23 +34,28 @@ internal sealed class InstallStage : IDisposable
         try
         {
             WindowsFileScope scope = staged.Scope;
+            var rootId = scope.Identity;
+            var owner = new InstallOwner(1, Guid.NewGuid(), entryHash, rootId.Volume, rootId.Index, 0, 0);
             InstalledSelection selection;
             using (var versions = scope.OpenDirectory(InstalledLayout.Versions, WindowsFileScope.CreateNew))
             using (var generation = versions.OpenDirectory(payload.Version.ToString(3), WindowsFileScope.CreateNew))
             {
-                selection = payload.Stage(generation, archive);
-                using var inventory = WriteNew(generation, Inventory);
-                inventory.Write(payload.InventoryBytes.Span);
-                inventory.Flush(flushToDisk: true);
+                selection = WriteGeneration(generation, payload, archive);
+                RecordGeneration(versions, generation, payload, owner);
             }
             CopyEntry(scope, InstalledLayout.StudioName, entry, entryHash);
             using (var launcher = scope.OpenDirectory("Launcher", WindowsFileScope.CreateNew))
+            {
                 CopyEntry(launcher, InstalledLayout.LauncherName, entry, entryHash);
+                var id = launcher.Identity;
+                owner = owner with { LauncherVolume = id.Volume, LauncherIndex = id.Index };
+            }
             using (var next = WriteNew(scope, Next))
             {
                 next.Write(selection.Encode());
                 next.Flush(flushToDisk: true);
             }
+            InstallJournal.Write(scope, InstallJournal.OwnerName, owner);
             return new(staged, selection, entryHash);
         }
         catch
@@ -66,6 +73,42 @@ internal sealed class InstallStage : IDisposable
         using var file = root.OpenChild(Next, WindowsFileScope.ReadAccess | WindowsFileScope.DeleteAccess);
         if (InstalledSelection.Read(file) != expected) throw new InvalidDataException("The prepared selector changed.");
         root.Publish(file, InstalledEntry.Active);
+    }
+
+    internal static InstalledSelection WriteGeneration(WindowsFileScope generation, InstallPayload payload, Stream archive)
+    {
+        InstalledSelection selection = payload.Stage(generation, archive);
+        using var inventory = WriteNew(generation, Inventory);
+        inventory.Write(payload.InventoryBytes.Span);
+        inventory.Flush(flushToDisk: true);
+        return selection;
+    }
+
+    internal static string GenerationReceipt(Version version) => $"{version}.receipt.json";
+
+    internal static bool IsStageName(string name) => name.Length == 43 &&
+        name.StartsWith(".dms-stage-", StringComparison.Ordinal) && Guid.TryParseExact(name.AsSpan(11), "N", out _);
+
+    internal static void RecordGeneration(WindowsFileScope versions, WindowsFileScope generation, InstallPayload payload,
+        InstallOwner owner, string? stageName = null)
+    {
+        string name = GenerationReceipt(payload.Version);
+        var id = generation.Identity;
+        var expected = new InstallGeneration(1, owner.Id, Convert.ToHexString(SHA256.HashData(payload.InventoryBytes.Span)),
+            id.Volume, id.Index, payload.VerifyLayout(generation), stageName);
+        InstallJournal.Write(versions, name, expected);
+    }
+
+    internal static InstallGeneration VerifyGeneration(WindowsFileScope versions, WindowsFileScope generation,
+        InstallPayload payload, InstallOwner owner)
+    {
+        InstallGeneration? proof = InstallJournal.Read<InstallGeneration>(versions, GenerationReceipt(payload.Version));
+        if (proof is not { Schema: 1, InventoryHash: not null, Directories: not null } || proof.Id != owner.Id ||
+            generation.Identity != (proof.Volume, proof.Index) ||
+            Convert.ToHexString(SHA256.HashData(payload.InventoryBytes.Span)) != proof.InventoryHash ||
+            !payload.VerifyLayout(generation).SequenceEqual(proof.Directories))
+            throw new InvalidDataException("The generation has no matching ownership receipt.");
+        return proof;
     }
 
     private static void CopyEntry(WindowsFileScope directory, string name, Stream source, string hash)

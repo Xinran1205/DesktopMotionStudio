@@ -43,7 +43,8 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
             icon = launcher;
         byte[] bytes = BuildLink(launcher, args, icon!);
 
-        SafeFileHandle handle = scope.OpenChild($"{Guid.NewGuid():N}.tmp", ReadAccess | WriteAccess | DeleteAccess, disposition: CreateNew);
+        string temporaryName = $"{Guid.NewGuid():N}.tmp";
+        SafeFileHandle handle = scope.OpenChild(temporaryName, ReadAccess | WriteAccess | DeleteAccess, disposition: CreateNew);
         FileStream? stream = null;
         try
         {
@@ -52,7 +53,7 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
             stream.Flush(flushToDisk: true);
             FileInfo info = ReadInfo(handle);
             string hash = Digest(handle, info) ?? throw new InvalidDataException("The shortcut stage is not a regular bounded file.");
-            return new(scope, name, stream, new(destination, launcher, info.VolumeSerial, info.FileIndex, hash));
+            return new(scope, name, temporaryName, stream, new(destination, launcher, info.VolumeSerial, info.FileIndex, hash));
         }
         catch
         {
@@ -95,10 +96,32 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
             ? scope.Child(name)
             : throw new InvalidDataException("The managed entry must be a shortcut.");
 
-    internal sealed class StagedShortcut(WindowsFileScope scope, string name, FileStream stream, ShortcutProof proof) : IDisposable
+    internal void CompleteDirectPublication(string name, string temporaryName, ShortcutProof proof, bool allowMissing)
     {
-        private bool _published;
+        using var current = Inspect(name, proof);
+        if (current.State == ShortcutFileState.Owned) return;
+        if (current.State != ShortcutFileState.Missing ||
+            temporaryName.Length != 36 || !temporaryName.EndsWith(".tmp", StringComparison.Ordinal) ||
+            !Guid.TryParseExact(temporaryName.AsSpan(0, 32), "N", out _))
+            throw new InvalidDataException("The Start menu slot is occupied or unverifiable.");
+        try
+        {
+            using var file = scope.OpenChild(temporaryName, ReadAccess | DeleteAccess);
+            FileInfo info = ReadInfo(file);
+            if (!MatchesIdentity(proof, LinkPath(name), info) || Digest(file, info) != proof.Sha256)
+                throw new InvalidDataException("The prepared Start menu link changed.");
+            scope.Publish(file, name);
+        }
+        catch (Win32Exception ex) when (allowMissing && IsMissing(ex)) { }
+    }
+
+    internal sealed class StagedShortcut(WindowsFileScope scope, string name, string temporaryName,
+        FileStream stream, ShortcutProof proof) : IDisposable
+    {
+        private bool _published, _retained;
         internal ShortcutProof Proof { get; } = proof;
+        internal string TemporaryName { get; } = temporaryName;
+        internal void RetainForRecovery() => _retained = true;
 
         internal void Publish()
         {
@@ -113,7 +136,7 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
 
         public void Dispose()
         {
-            if (!_published && stream.CanWrite)
+            if (!_published && !_retained && stream.CanWrite)
                 try { WindowsFileScope.Delete(stream.SafeFileHandle); }
                 catch (Win32Exception) { }
                 finally { stream.Dispose(); }

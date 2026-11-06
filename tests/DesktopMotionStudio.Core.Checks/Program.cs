@@ -45,6 +45,12 @@ if (args is ["--binding", var observedBinding] && F12EntryChecks.TryObserve(obse
 if (args is ["--f12-payload-checks"]) return F12PayloadChecks.Run();
 if (args is ["--f12-stage-payload", var payload]) return F12PayloadChecks.RunBuiltPayload(payload);
 if (args is ["--f12-stage-install", var installPayload, var entryImage]) return F12PayloadChecks.RunBuiltStage(installPayload, entryImage);
+if (args is ["--f12-install-checks"]) return F12InstallChecks.Run();
+if (args is ["--f12-install-worker", var installFixture, var interrupt]) return F12InstallChecks.Worker(installFixture, interrupt);
+if (args is ["--f12-cleanup-checks"]) return F12CleanupChecks.Run();
+if (args is ["--f12-uninstall-checks"]) return F12InstallChecks.RunRemoval();
+if (args is ["--f12-uninstall-worker", var removeFixture, var removeInterrupt]) return F12InstallChecks.RemoveWorker(removeFixture, removeInterrupt);
+if (args is ["--f12-built-lifecycle", var packageA, var packageB]) return F12InstallChecks.RunBuiltLifecycle(packageA, packageB);
 if (args.Length == 2 && args[0] == "--f09-catalog-check")
     return F09Checks.VerifyShippedCatalog(args[1]);
 
@@ -103,6 +109,9 @@ failures += F11SettingsChecks.Run();
 failures += F11DiagnosticChecks.Run();
 failures += F12EntryChecks.Run();
 failures += F12PayloadChecks.Run();
+failures += F12InstallChecks.Run();
+failures += F12CleanupChecks.Run();
+failures += F12InstallChecks.RunRemoval();
 failures += F09OwnershipChecks.Run();
 failures += F09PlaybackProcessChecks.Run();
 failures += RunWindowHostIntegration();

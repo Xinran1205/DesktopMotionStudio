@@ -51,21 +51,7 @@ internal sealed class InstallPayload
             throw new InvalidDataException("The installer archive does not match its manifest.");
         archive.Position = 0;
 
-        var byPath = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
-        long bytes = 0;
-        foreach (Entry file in _manifest.Files)
-        {
-            if (file?.Path is not { Length: > 0 and <= 160 } path ||
-                path.Split('/') is not { Length: > 0 and <= 8 } parts || parts.Any(part => !LocalPathPolicy.IsUnambiguousName(part)) ||
-                string.Equals(parts[0], InstallStage.Inventory, StringComparison.OrdinalIgnoreCase) ||
-                generation.Path.Length + path.Length + 1 > 259 ||
-                file.Bytes is < 0 or > MaxFileBytes || file.Sha256 is null || !InstalledSelection.IsDigest(file.Sha256) ||
-                !byPath.TryAdd(path, file))
-                throw new InvalidDataException("Invalid or duplicate installer file.");
-            bytes += file.Bytes;
-        }
-        if (bytes > MaxExpandedBytes || RequiredFiles.Any(name => !byPath.ContainsKey(name)))
-            throw new InvalidDataException("The installer inventory is incomplete or too large.");
+        var byPath = ValidateFiles(generation.Path);
 
         using var zip = new ZipArchive(archive, ZipArchiveMode.Read, leaveOpen: true);
         if (zip.Entries.Count != byPath.Count) throw new InvalidDataException("Unexpected installer archive entry count.");
@@ -83,7 +69,57 @@ internal sealed class InstallPayload
             using Stream input = entry.Open();
             WriteFile(generation, entry.FullName.Split('/'), 0, input, byPath[entry.FullName], buffer);
         }
-        return new(Version, byPath[Studio].Sha256, byPath[Launcher].Sha256);
+        return Selection(byPath);
+    }
+
+    internal void VerifyStaged(WindowsFileScope generation, InstalledSelection expected)
+    {
+        var byPath = ValidateFiles(generation.Path);
+        if (Selection(byPath) != expected) throw new InvalidDataException("The package does not match the selected program version.");
+        using (var inventory = generation.OpenChild(InstallStage.Inventory, WindowsFileScope.ReadAccess))
+        {
+            string hash = Convert.ToHexString(SHA256.HashData(_manifestBytes));
+            if (!InstallJournal.Matches(inventory, hash, MaxManifestBytes))
+                throw new InvalidDataException("The installed inventory changed.");
+        }
+        foreach (Entry file in byPath.Values)
+            VerifyFile(generation, file.Path.Split('/'), 0, file);
+    }
+
+    private InstalledSelection Selection(Dictionary<string, Entry> files) =>
+        new(Version, files[Studio].Sha256, files[Launcher].Sha256);
+
+    private Dictionary<string, Entry> ValidateFiles(string root)
+    {
+        var byPath = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+        long bytes = 0;
+        foreach (Entry file in _manifest.Files)
+        {
+            if (file?.Path is not { Length: > 0 and <= 160 } path ||
+                path.Split('/') is not { Length: > 0 and <= 8 } parts || parts.Any(part => !LocalPathPolicy.IsUnambiguousName(part)) ||
+                string.Equals(parts[0], InstallStage.Inventory, StringComparison.OrdinalIgnoreCase) ||
+                root.Length + path.Length + 1 > 259 ||
+                file.Bytes is < 0 or > MaxFileBytes || file.Sha256 is null || !InstalledSelection.IsDigest(file.Sha256) ||
+                !byPath.TryAdd(path, file))
+                throw new InvalidDataException("Invalid or duplicate installer file.");
+            bytes += file.Bytes;
+        }
+        if (bytes > MaxExpandedBytes || RequiredFiles.Any(name => !byPath.ContainsKey(name)))
+            throw new InvalidDataException("The installer inventory is incomplete or too large.");
+        return byPath;
+    }
+
+    private static void VerifyFile(WindowsFileScope scope, string[] parts, int index, Entry expected)
+    {
+        if (index < parts.Length - 1)
+        {
+            using var child = scope.OpenDirectory(parts[index], WindowsFileScope.OpenExisting);
+            VerifyFile(child, parts, index + 1, expected);
+            return;
+        }
+        using var handle = scope.OpenChild(parts[index], WindowsFileScope.ReadAccess);
+        if (!InstallJournal.Matches(handle, expected.Sha256, expected.Bytes))
+            throw new InvalidDataException("An installed package file changed.");
     }
 
     internal static InstallPayload Read(Stream stream)
@@ -101,6 +137,81 @@ internal sealed class InstallPayload
     }
 
     internal ReadOnlyMemory<byte> InventoryBytes => _manifestBytes;
+
+    internal InstalledSelection Describe(string path) => Selection(ValidateFiles(path));
+
+    internal InstallDirectory[] VerifyLayout(WindowsFileScope generation)
+    {
+        var expected = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(StringComparer.OrdinalIgnoreCase) { InstallStage.Inventory }
+        };
+        foreach (string file in ValidateFiles(generation.Path).Keys)
+        {
+            string prefix = "";
+            string[] parts = file.Split('/');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (!expected.TryGetValue(prefix, out var names)) expected[prefix] = names = new(StringComparer.OrdinalIgnoreCase);
+                names.Add(parts[i]);
+                prefix = prefix.Length == 0 ? parts[i] : prefix + "/" + parts[i];
+            }
+        }
+        if (expected.Count > 2048) throw new InvalidDataException("The package contains too many directories.");
+        var directories = new List<InstallDirectory>();
+        Walk(generation, "");
+        return directories.OrderBy(item => item.Path, StringComparer.Ordinal).ToArray();
+
+        void Walk(WindowsFileScope scope, string prefix)
+        {
+            HashSet<string> names = expected[prefix];
+            if (!names.SetEquals(scope.ListNames(names.Count)))
+                throw new InvalidDataException("The generation contains unexpected files.");
+            foreach (string name in names)
+            {
+                string path = prefix.Length == 0 ? name : prefix + "/" + name;
+                if (!expected.ContainsKey(path)) continue;
+                using var child = scope.OpenDirectory(name, WindowsFileScope.OpenExisting);
+                var id = child.Identity;
+                directories.Add(new(path, id.Volume, id.Index));
+                Walk(child, path);
+            }
+        }
+    }
+
+    internal int RemoveFiles(WindowsFileScope generation, InstallDirectory[] proof)
+    {
+        var directories = new Dictionary<string, InstallDirectory>(StringComparer.OrdinalIgnoreCase);
+        foreach (InstallDirectory item in proof)
+            if (item?.Path is null || !directories.TryAdd(item.Path, item))
+                throw new InvalidDataException("The generation directory receipt is invalid.");
+        int preserved = 0;
+        foreach (Entry file in ValidateFiles(generation.Path).Values)
+            if (!RemoveFile(generation, file.Path.Split('/'), 0, file, directories)) preserved++;
+        return preserved;
+    }
+
+    private static bool RemoveFile(WindowsFileScope scope, string[] parts, int index, Entry expected,
+        Dictionary<string, InstallDirectory> directories)
+    {
+        if (index == parts.Length - 1)
+            return InstallJournal.RemoveFile(scope, parts[index], expected.Sha256, expected.Bytes);
+        try
+        {
+            (uint Volume, ulong Index) identity;
+            using (var child = scope.OpenDirectory(parts[index], WindowsFileScope.OpenExisting))
+            {
+                identity = child.Identity;
+                string path = string.Join("/", parts, 0, index + 1);
+                if (!directories.TryGetValue(path, out var proof) || identity != (proof.Volume, proof.Index) ||
+                    !RemoveFile(child, parts, index + 1, expected, directories)) return false;
+            }
+            scope.RemoveEmptyDirectory(parts[index], identity);
+            return true;
+        }
+        catch (Win32Exception ex) when (WindowsFileScope.IsMissing(ex)) { return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidDataException) { return false; }
+    }
 
     private static void WriteFile(WindowsFileScope scope, string[] parts, int index, Stream input, Entry expected, byte[] buffer)
     {

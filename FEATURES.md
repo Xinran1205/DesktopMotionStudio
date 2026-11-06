@@ -1,6 +1,6 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.27 · **Date:** 2026-11-06
+**Status:** Incremental implementation · **Version:** 1.0.28 · **Date:** 2026-11-06
 
 The repository began with requirements documents only. F00–F11 are complete with automated, process and interactive Windows acceptance evidence. Dependencies below define the delivery order.
 
@@ -18,7 +18,7 @@ The repository began with requirements documents only. F00–F11 are complete wi
 | 9 | Studio UI / F09 Scene library, preview, binding | Browse and preview catalog, select target app, create binding | F03, F06, F07, F08 | Complete; library/preview/binding/home, real process/publish and actual100/125/150% + OS motion acceptance verified |
 | 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create, repair and remove verified owned shortcuts | F02, F04, F05, F06, F07, F08, F09 | Complete; durable receipts, actual Shell activation and fallback verified |
 | 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F08, F09, F10 | Complete · [Windows evidence](specs/012-settings-diagnostics/evidence.md) |
-| 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | In implementation · fixed entries, verified payload and program activation · [evidence](specs/013-installer-upgrade/evidence.md) |
+| 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Clean-account acceptance pending · install/upgrade/uninstall candidates and isolated Windows evidence verified · [evidence](specs/013-installer-upgrade/evidence.md) |
 | 13 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 | Spec baseline |
 | 14 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 | Spec baseline |
 
@@ -59,3 +59,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.25 | 2026-11-06 | Specify F12 offline install, rollback, stable Launcher and receipt-driven cleanup. |
 | 1.0.26 | 2026-11-06 | Verify F12 reproducible self-contained payload and selector crash behavior. Reject MSI registration rollback after native proof. |
 | 1.0.27 | 2026-11-06 | Verify F12 stable entry forwarding, guarded package extraction, Start menu link and inactive program publication. |
+| 1.0.28 | 2026-11-06 | Build self-contained Setup and verify install, upgrade/rollback and uninstall/reinstall with isolated Windows registration. |

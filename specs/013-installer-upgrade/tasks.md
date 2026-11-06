@@ -11,15 +11,15 @@
 
 - [x] T003 [US1] Implement clean three-component publishing, inventory, versions, hashes and dependency provenance under installer/. Test shape and absence of stale/test payloads. (FR-001, FR-002, FR-006, AC-01, AC-02)
 - [x] T004 Prove atomic generation selection and recovery around real abrupt process exits. Verify complete old/new fixture payloads, committed versus uncommitted state, reparse and same-name conflicts. Production Launcher forwarding is T005. (FR-002, FR-003, AC-05)
-- [ ] T005 [US1] Author the self-contained setup executable with fixed root, stable shims, Start menu entry and Windows uninstall registration. Verify platform, scope, ownership, process preflight and payload. (FR-001, FR-002, FR-003, AC-01, AC-03, AC-06)
+- [x] T005 [US1] Author the self-contained setup executable with fixed root, stable shims, Start menu entry and Windows uninstall registration. Verify platform, scope, ownership, process preflight and payload. (FR-001, FR-002, FR-003, AC-01, AC-03, AC-06)
   - [x] T005a Implement and verify stable entries, guarded archive extraction, inactive program-root publication and explicit activation. Reuse the F10 no-replace Shell Link stage for the Start menu.
-  - [ ] T005b Embed the payload and entry image in Setup. Add current-user registration, preflight, durable registration intent and recoverable activation. Run the coordinated workflow in a fixture.
-- [ ] T006 [US2] Wire versioned upgrade, rollback policy, retry and duplicate/downgrade behavior. Test exact prior bytes, user profile and Launcher path in an isolated product-family pair. (FR-002, FR-003, AC-04–AC-06, SC-002)
+  - [x] T005b Embed the payload and entry image in Setup. Add current-user registration, preflight, durable registration intent and recoverable activation. Run the coordinated workflow in a fixture.
+- [x] T006 [US2] Wire versioned upgrade, rollback policy, retry and duplicate/downgrade behavior. Test exact prior bytes, user profile and Launcher path in an isolated product-family pair. (FR-002, FR-003, AC-04–AC-06, SC-002)
 
 ## Phase 2 — Uninstall
 
-- [ ] T007 [US3] Add receipt-key discovery and bounded ownership verification in src/DesktopMotionStudio.Core/Shortcuts/. Test corrupt, future, moved, replaced, missing, busy and orphan records. (FR-004, FR-005, AC-07–AC-09)
-- [ ] T008 [US3] Add ordinary-uninstall commit cleanup and bounded result reporting. Test rollback/upgrade skip, interruption and re-entry. (FR-004, FR-005, FR-007, AC-07–AC-09)
+- [x] T007 [US3] Add receipt-key discovery and bounded ownership verification in src/DesktopMotionStudio.Core/Shortcuts/. Test corrupt, future, moved, replaced, missing, busy and orphan records. (FR-004, FR-005, AC-07–AC-09)
+- [x] T008 [US3] Add ordinary-uninstall commit cleanup and bounded result reporting. Test rollback/upgrade skip, interruption and re-entry. (FR-004, FR-005, FR-007, AC-07–AC-09)
 
 ## Phase 3 — Windows delivery
 
@@ -29,3 +29,5 @@
 - [ ] T012 Publish verification evidence, complete independent review and Converge, document install/recovery/retention and update FEATURES.md and README.md. (FR-006, FR-007)
 
 T001 and T002 inform T003 and T004. Both T003 and T004 gate T005 and T006. T007 and T005 precede T008. T009–T011 require a candidate package and isolated Windows acceptance environment. T012 requires all acceptance evidence.
+
+The clean-account gate is pending. The verified workstation uses a filtered administrator token and has a private .NET SDK. Published candidates and isolated Windows evidence are available in [evidence](evidence.md).

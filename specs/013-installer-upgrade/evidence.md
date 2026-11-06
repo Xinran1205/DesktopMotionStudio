@@ -48,3 +48,24 @@ The 0.12.1 test build verified every one of 870 archive files, plus native start
 The existing optional packaged-instance case was skipped because DMS_F05_TEST_AUMID was unset. Release build and whitespace checks passed. Windows registry and the real Start menu were outside this increment. Setup registration, recovery of interrupted registration and standard-account acceptance remain open.
 
 The test build is retained at artifacts/f12-t005-4e40bd07 and hashes and logs at artifacts/checkpoints/f12-t005a-20261106.
+
+## T005b–T008 — Setup lifecycle
+
+Two unsigned self-contained Setup candidates were built. In each package, the embedded archive, inventory and fixed entry image matched their source SHA256. Both Setup apphosts reached their argument parser with the external runtime search path pointed at an absent location.
+
+The production coordinator ran against each published payload under a temporary Windows program root and a dedicated current-user registry key. The lifecycle verified A install, controlled B failure after retiring A, exact A selector and registration recovery, B retry, stale A rejection, unchanged stable Launcher and shortcut bytes, removal of the installed payload and owned links, and reinstall with the retained profile. Versions 0.12.3 and 0.12.4 each contained 870 payload files.
+
+Actual child-process interruption covered five initial installation checkpoints, three selector and registration upgrade checkpoints, and four uninstall checkpoints. Separate controlled fault tests covered a claimed but unpublished upgrade stage, a changed dependency at activation and a stale removal request after reinstall. Receipt cleanup verified orphan and previous-generation desktop entries, reparse rejection, bounded discovery, and preservation of moved, edited, busy, wrong-install and unsupported items.
+
+| Suite | PASS | FAIL | SKIP |
+|---|---:|---:|---:|
+| Core regression including 97 F12 checks | 522 | 0 | 1 |
+| Studio including published discovery | 67 | 0 | 0 |
+| Published Setup resources and apphost smoke | 8 | 0 | 0 |
+| Two published payloads through isolated Windows lifecycle | 6 | 0 | 0 |
+
+The optional packaged-instance test was skipped because DMS_F05_TEST_AUMID was unset. No current personal program registration, desktop entries or profile was used. The work copy of the detached uninstaller is reused by image digest. The mapped-image unlink proof was refused by Windows, so the verified work copy can remain in the user's temporary directory.
+
+The workstation has a filtered administrator token, a private .NET SDK and no Windows Sandbox or local VM command. T009–T011 remain open for a clean Windows 11 x64 standard account, offline startup, actual installed Shell launch and Installed Apps removal. Final convergence and F13 entry depend on that evidence.
+
+Candidates are retained at artifacts/f12-candidate-0.12.3-01ff9893 and artifacts/f12-candidate-0.12.4-72f8b047. Hashes and raw logs are in artifacts/checkpoints/f12-lifecycle-20261106.

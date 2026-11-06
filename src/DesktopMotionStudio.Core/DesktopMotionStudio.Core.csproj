@@ -10,5 +10,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DesktopMotionStudio.Core.Checks" />
     <InternalsVisibleTo Include="DesktopMotionStudio.Entry" />
+    <InternalsVisibleTo Include="DesktopMotionStudio.Setup" />
   </ItemGroup>
 </Project>

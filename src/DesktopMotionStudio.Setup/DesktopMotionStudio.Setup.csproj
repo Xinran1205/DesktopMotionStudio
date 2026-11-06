@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <ApplicationManifest>../DesktopMotionStudio.Studio/app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
+    <EmbeddedResource Include="$(DmsArchive)" LogicalName="payload.zip" Condition="'$(DmsArchive)' != ''" />
+    <EmbeddedResource Include="$(DmsInventory)" LogicalName="payload.manifest.json" Condition="'$(DmsInventory)' != ''" />
+    <EmbeddedResource Include="$(DmsEntry)" LogicalName="entry.exe" Condition="'$(DmsEntry)' != ''" />
+  </ItemGroup>
+</Project>

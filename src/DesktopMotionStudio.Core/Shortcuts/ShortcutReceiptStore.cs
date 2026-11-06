@@ -49,7 +49,7 @@ internal sealed class ShortcutReceiptStore(string directory)
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
     }
 
-    internal ShortcutReceiptStatus Begin(string bindingId, out Transaction? transaction)
+    internal ShortcutReceiptStatus Begin(string bindingId, out Transaction? transaction, bool wait = true)
     {
         transaction = null;
         if (ManagedLaunchRequest.EncodeBindingId(bindingId) is null) return ShortcutReceiptStatus.Invalid;
@@ -71,6 +71,7 @@ internal sealed class ShortcutReceiptStore(string directory)
                 }
                 catch (Win32Exception ex) when (WindowsFileScope.IsSharing(ex))
                 {
+                    if (!wait) return ShortcutReceiptStatus.Busy;
                     TimeSpan remaining = LockWait - elapsed.Elapsed;
                     if (remaining <= TimeSpan.Zero) return ShortcutReceiptStatus.Busy;
                     Thread.Sleep(remaining < TimeSpan.FromMilliseconds(25) ? remaining : TimeSpan.FromMilliseconds(25));
@@ -86,6 +87,26 @@ internal sealed class ShortcutReceiptStore(string directory)
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return Map(ex); }
         finally { handle?.Dispose(); records?.Dispose(); locks?.Dispose(); }
+    }
+
+    internal IReadOnlyList<ShortcutReceiptRead> Discover()
+    {
+        try
+        {
+            using var scope = WindowsFileScope.Open(Path.Combine(directory, "records"));
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string name in scope.ListNames(4096))
+            {
+                if (name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
+                    name.EndsWith(".previous", StringComparison.OrdinalIgnoreCase))
+                {
+                    string key = Path.GetFileNameWithoutExtension(name);
+                    if (key.Length == 64 && key.All(c => char.IsAsciiDigit(c) || c is >= 'A' and <= 'F')) keys.Add(key);
+                }
+            }
+            return keys.Select(key => ReadRecoverable(scope, key + ".json", id: null, key)).ToArray();
+        }
+        catch (Win32Exception ex) when (WindowsFileScope.IsMissing(ex)) { return []; }
     }
 
     internal sealed class Transaction(WindowsFileScope scope, WindowsFileScope locks,
@@ -178,11 +199,11 @@ internal sealed class ShortcutReceiptStore(string directory)
         }
     }
 
-    private static ShortcutReceiptRead ReadRecoverable(WindowsFileScope scope, string name, string id)
+    private static ShortcutReceiptRead ReadRecoverable(WindowsFileScope scope, string name, string? id, string? key = null)
     {
-        ShortcutReceiptRead primary = Read(scope, name, id);
+        ShortcutReceiptRead primary = Read(scope, name, id, key);
         if (primary.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return primary;
-        ShortcutReceiptRead backup = Read(scope, Previous(name), id);
+        ShortcutReceiptRead backup = Read(scope, Previous(name), id, key);
         if (backup.Status is not (ShortcutReceiptStatus.Ok or ShortcutReceiptStatus.Missing)) return backup;
         return primary.Status == ShortcutReceiptStatus.Ok ? primary : backup;
     }
@@ -210,17 +231,17 @@ internal sealed class ShortcutReceiptStore(string directory)
 
     private static string Previous(string name) => Path.ChangeExtension(name, ".previous");
 
-    private static ShortcutReceiptRead Read(WindowsFileScope scope, string name, string id)
+    private static ShortcutReceiptRead Read(WindowsFileScope scope, string name, string? id, string? key)
     {
         try
         {
             using var handle = scope.OpenChild(name, WindowsFileScope.ReadAccess);
-            return Decode(handle, id);
+            return Decode(handle, id, key);
         }
         catch (Exception ex) when (IsStorageFailure(ex)) { return new(Map(ex)); }
     }
 
-    private static ShortcutReceiptRead Decode(SafeFileHandle handle, string id)
+    private static ShortcutReceiptRead Decode(SafeFileHandle handle, string? id, string? key = null)
     {
         var info = WindowsFileScope.ReadInfo(handle);
         if (!info.IsSingleRegularFile || info.Length is 0 or > MaximumBytes) return new(ShortcutReceiptStatus.Invalid);
@@ -239,7 +260,9 @@ internal sealed class ShortcutReceiptStore(string directory)
             return new(ShortcutReceiptStatus.Invalid);
         if (schema > 1) return new(ShortcutReceiptStatus.Unsupported);
         ShortcutReceipt? receipt = JsonSerializer.Deserialize<ShortcutReceipt>(bytes, Json);
-        return receipt is not null && Valid(receipt, id) ? new(ShortcutReceiptStatus.Ok, receipt) : new(ShortcutReceiptStatus.Invalid);
+        return receipt is not null && Valid(receipt, id ?? receipt.BindingId) &&
+               (key is null || Key(receipt.BindingId) == key)
+            ? new(ShortcutReceiptStatus.Ok, receipt) : new(ShortcutReceiptStatus.Invalid);
     }
 
     private static bool Valid(ShortcutReceipt receipt, string id) =>

@@ -220,14 +220,17 @@ internal static class F12PayloadChecks
         return InstallStage.Prepare(parent, manifest, archive, stub);
     }
 
-    private static (byte[] Manifest, byte[] Archive) Package(string[] paths, string? wrongHash = null)
+    internal static (byte[] Manifest, byte[] Archive) Package(string[]? paths = null, string? wrongHash = null, string version = "0.12.0")
     {
+        paths ??= PayloadFiles;
         using var output = new MemoryStream();
         using (var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {
             foreach (string path in paths)
             {
-                using var file = zip.CreateEntry(path).Open();
+                ZipArchiveEntry item = zip.CreateEntry(path);
+                item.LastWriteTime = new DateTimeOffset(2000, 1, 1, 0, 0, 0, TimeSpan.Zero);
+                using var file = item.Open();
                 file.Write(Encoding.UTF8.GetBytes(path));
             }
         }
@@ -235,7 +238,7 @@ internal static class F12PayloadChecks
         byte[] manifest = JsonSerializer.SerializeToUtf8Bytes(new
         {
             schemaVersion = 1,
-            productVersion = "0.12.0",
+            productVersion = version,
             runtimeIdentifier = "win-x64",
             archiveSha256 = Digest(archive),
             frameworks = new { },

@@ -1,10 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F12 固定入口和安装文件事务已验证
+## 当前断点 — F12 实现完成，待干净账户验收
 
-当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 清单](../specs/013-installer-upgrade/tasks.md)的 T001–T004 已完成。MSI 探针恢复了旧文件，但旧版注册恢复失败。采用独立版本目录与活动选择器。870 个文件的自包含负载已通过逐项 SHA256、三组件实际启动和双构建一致性验证。选择器探针 9 项通过。详情见 [F12 证据](../specs/013-installer-upgrade/evidence.md)。
+当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 清单](../specs/013-installer-upgrade/tasks.md)的 T001–T008 已完成。自包含 Setup 0.12.3 和 0.12.4 已生成，两份实际负载在隔离 Windows 注册范围内通过安装、回滚、升级、卸载、重装。全量 Core 522 通过，Studio 67 通过。详情见 [F12 证据](../specs/013-installer-upgrade/evidence.md)。
 
-T005a 已把切换合同接入生产固定入口、负载解包和程序目录发布。Studio 从安装布局派生固定 Launcher 路径，开发版按随包布局解析。程序目录在活动选择器提交前不可启动，开始菜单链接沿用 F10 无覆盖写入。T005b 继续做自包含 Setup、进程占用检查、当前用户卸载注册和可恢复的跨资源提交。正式验收还需独立 Windows 11 标准账户环境。
+下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 收敛并进入 F13。当前主机账户属于 Administrators，使用非提升令牌且有私有 .NET SDK，Windows Sandbox 和本地 VM 工具不可用。测试候选包和验收步骤见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md)。
 
 ## F11 已完成
 

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Buffers.Binary;
 using System.Runtime.InteropServices;
 using System.Text;
 using DesktopMotionStudio.Core.IO;
@@ -72,6 +73,9 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
     internal StagedDirectory StageDirectory(string name) =>
         new(this, OpenDirectory(name, CreateNew, access: 0x00100081 | DeleteAccess));
 
+    internal StagedDirectory OpenMovableDirectory(string name) =>
+        new(this, OpenDirectory(name, OpenExisting, access: 0x00100081 | DeleteAccess));
+
     private WindowsFileScope OpenDirectory(string name, uint disposition, uint access)
     {
         string path = Child(name);
@@ -95,6 +99,28 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
             ObjectDisposedException.ThrowIf(pins.Count == 0, this);
             return pins[^1];
         }
+    }
+
+    internal (uint Volume, ulong Index) Identity
+    {
+        get
+        {
+            FileInfo info = ReadInfo(DirectoryHandle);
+            return (info.VolumeSerial, info.FileIndex);
+        }
+    }
+
+    internal bool RemoveEmptyDirectory(string name, (uint Volume, ulong Index) expected)
+    {
+        try
+        {
+            using var child = OpenDirectory(name, OpenExisting, 0x00100081 | DeleteAccess);
+            if (child.Identity != expected) return false;
+            Delete(child.DirectoryHandle);
+            return true;
+        }
+        catch (Win32Exception ex) when (IsMissing(ex)) { return true; }
+        catch (Win32Exception ex) when (ex.NativeErrorCode is 5 or 145 || IsSharing(ex)) { return false; }
     }
 
     internal sealed class StagedDirectory(WindowsFileScope parent, WindowsFileScope directory) : IDisposable
@@ -130,8 +156,45 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         if (!SetFileDisposition(handle, 4, [1], 1)) throw new Win32Exception(Marshal.GetLastWin32Error());
     }
 
+
     internal static bool IsMissing(Win32Exception ex) => ex.NativeErrorCode is 2 or 3;
     internal static bool IsSharing(Win32Exception ex) => ex.NativeErrorCode is 32 or 33;
+
+    internal IReadOnlyList<string> ListNames(int maximum)
+    {
+        const int header = 68; // FILE_FULL_DIR_INFO.FileName
+        const int restart = 15, next = 14;
+        var names = new List<string>();
+        byte[] buffer = new byte[16 * 1024];
+        int infoClass = restart;
+        while (GetDirectoryInformation(DirectoryHandle, infoClass, buffer, (uint)buffer.Length))
+        {
+            infoClass = next;
+            int offset = 0;
+            while (true)
+            {
+                Span<byte> record = buffer.AsSpan(offset);
+                if (record.Length < header) throw new InvalidDataException("Invalid directory information.");
+                int length = BinaryPrimitives.ReadInt32LittleEndian(record[60..]);
+                if (length <= 0 || (length & 1) != 0 || length > record.Length - header)
+                    throw new InvalidDataException("Invalid directory entry name.");
+                string name = Encoding.Unicode.GetString(record.Slice(header, length));
+                if (name is not ("." or ".."))
+                {
+                    if (names.Count == maximum) throw new InvalidDataException("The directory exceeds its enumeration limit.");
+                    names.Add(name);
+                }
+                int following = BinaryPrimitives.ReadInt32LittleEndian(record);
+                if (following == 0) break;
+                if (following < header + length || following > record.Length - header)
+                    throw new InvalidDataException("Invalid directory record offset.");
+                offset += following;
+            }
+        }
+        int error = Marshal.GetLastWin32Error();
+        if (error != 18) throw new Win32Exception(error);
+        return names;
+    }
 
     public void Dispose() => Release(pins);
 
@@ -250,6 +313,10 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetFileInformationByHandle(SafeFileHandle file, out FileInfo info);
+
+    [DllImport("kernel32.dll", EntryPoint = "GetFileInformationByHandleEx", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetDirectoryInformation(SafeFileHandle file, int infoClass, [Out] byte[] buffer, uint size);
 
     [DllImport("ntdll.dll", ExactSpelling = true)]
     private static extern int NtCreateFile(out SafeFileHandle file, uint access, in ObjectAttributes attributes,

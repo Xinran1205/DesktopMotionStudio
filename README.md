@@ -1,6 +1,6 @@
 # Desktop Motion Studio
 
-Windows 11 x64 desktop application for binding built-in launch animations to local apps. The repository is in early feature-by-feature development; there is no installable product yet.
+Windows 11 x64 desktop application for binding built-in launch animations to local apps. The development build is verified through F11. F12 self-contained Windows Setup candidates are awaiting clean-account acceptance.
 
 ## Development status
 
@@ -50,3 +50,7 @@ Open **设置** with Alt+G to choose a system, light or dark theme and save the 
 Open **本地诊断** with Alt+I to check versions, renderer availability, recent launch outcomes and the selected desktop entry. Copying a summary is explicit. Its typed records stay local and omit user paths, identifiers and arguments. When the selected entry can be repaired, Alt+R calls the managed-entry recovery flow.
 
 See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and [Windows evidence](specs/012-settings-diagnostics/evidence.md).
+
+## Windows Setup validation
+
+`installer/Build-Setup.ps1` produces an unsigned, self-contained Windows x64 Setup and a SHA256 file. Validation candidates install for the current user under LocalAppData and preserve the separate user-data directory during upgrades and uninstall. The isolated Windows lifecycle has passed. Standard-account offline and Installed Apps acceptance are tracked in the [F12 validation guide](specs/013-installer-upgrade/quickstart.md).
