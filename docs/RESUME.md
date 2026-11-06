@@ -1,10 +1,14 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F11 已完成
+## 当前断点 — F12 规格已建立
+
+当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 规格](../specs/013-installer-upgrade/spec.md)包含 3 个场景、9 项验收标准和 3 个成功指标。下一阶段用最小探针验证自包含打包、普通用户安装、升级回滚和清理时机，然后制定正式 Plan 与 Tasks。
+
+## F11 已完成
 
 F11 的 11 项任务已完成并通过独立审查和收敛。425 项 Core、67 项 Studio、25 项发布版键盘与 Windows Shell 验收通过。唯一跳过的是未配置 AUMID 的可选打包应用用例。Windows 配色已恢复到测试前状态。验证详情见 [F11 证据](../specs/012-settings-diagnostics/evidence.md)。
 
-开发发布目录为 `artifacts/studio-f11`。21 个文件和 11 份最终日志已核对 SHA256，清单在 `artifacts/checkpoints/f11-20261106`。从 F12 独立规格开始，验证普通用户安装、稳定 Launcher 路径、失败回滚与 F10 所有权清理。
+开发发布目录为 `artifacts/studio-f11`。21 个文件和 11 份最终日志已核对 SHA256，清单在 `artifacts/checkpoints/f11-20261106`。
 
 ## F10 已完成
 
