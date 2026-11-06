@@ -65,6 +65,54 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         return OpenRelative(pins[^1], name, access, share, disposition, directory: false);
     }
 
+    // The caller keeps this parent scope alive while using the returned child.
+    internal WindowsFileScope OpenDirectory(string name, uint disposition) =>
+        OpenDirectory(name, disposition, access: 0x00100081);
+
+    internal StagedDirectory StageDirectory(string name) =>
+        new(this, OpenDirectory(name, CreateNew, access: 0x00100081 | DeleteAccess));
+
+    private WindowsFileScope OpenDirectory(string name, uint disposition, uint access)
+    {
+        string path = Child(name);
+        SafeFileHandle child = OpenRelative(pins[^1], name, access, 3, disposition, directory: true);
+        try
+        {
+            VerifyDirectory(child);
+            return new(path, [child]);
+        }
+        catch
+        {
+            child.Dispose();
+            throw;
+        }
+    }
+
+    private SafeFileHandle DirectoryHandle
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(pins.Count == 0, this);
+            return pins[^1];
+        }
+    }
+
+    internal sealed class StagedDirectory(WindowsFileScope parent, WindowsFileScope directory) : IDisposable
+    {
+        internal WindowsFileScope Scope { get; } = directory;
+
+        internal void Publish(string name)
+        {
+            _ = parent.Child(name);
+            SafeFileHandle handle = Scope.DirectoryHandle;
+            VerifyDirectory(handle);
+            Rename(handle, name);
+            Dispose();
+        }
+
+        public void Dispose() => Scope.Dispose();
+    }
+
     internal void Publish(SafeFileHandle staged, string name)
     {
         _ = Child(name);

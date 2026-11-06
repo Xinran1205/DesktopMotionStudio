@@ -9,5 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="DesktopMotionStudio.Core.Checks" />
+    <InternalsVisibleTo Include="DesktopMotionStudio.Entry" />
   </ItemGroup>
 </Project>

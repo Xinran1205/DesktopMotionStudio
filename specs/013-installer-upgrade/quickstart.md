@@ -4,12 +4,16 @@ Run from the repository root with the pinned SDK on PATH:
 
 ```powershell
 $out = Join-Path $PWD 'artifacts/f12-local-payload'
-& .\installer\Build-Payload.ps1 -Version 0.12.0 -OutputDirectory $out
+& .\installer\Build-Payload.ps1 -Version 0.12.1 -OutputDirectory $out
 & .\specs\013-installer-upgrade\probes\Test-Payload.ps1 -OutputDirectory $out
 & .\specs\013-installer-upgrade\probes\Test-Selector.ps1
+dotnet publish src/DesktopMotionStudio.Entry -c Release -r win-x64 --self-contained true -o (Join-Path $out 'entry') `
+    -p:Version=0.12.1 -p:RuntimeFrameworkVersion=10.0.14 -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None
+dotnet run --project tests/DesktopMotionStudio.Core.Checks -c Release -- --f12-stage-install $out (Join-Path $out 'entry/DesktopMotionStudio.Entry.exe')
 ```
 
-The output directory must be new. These commands build an offline payload and verify local execution and selector behavior. See [evidence.md](evidence.md) for the verified scope.
+The output directory must be new. These commands build an offline payload and fixed entry, then verify program publication and activation under an isolated temporary root. See [evidence.md](evidence.md) for the verified scope.
 
 ## Full installation acceptance
 

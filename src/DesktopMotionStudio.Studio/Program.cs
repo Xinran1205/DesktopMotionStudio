@@ -4,6 +4,7 @@ using DesktopMotionStudio.Core.State;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Diagnostics;
+using DesktopMotionStudio.Core.Distribution;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -33,7 +34,7 @@ internal static class Program
         var store = new StudioStateRepository(profile);
         ManagedShortcutService? shortcuts = stateFile is not null && desktopRoot is null ? null : new(
             store, catalogRoot, Path.Combine(Path.GetDirectoryName(profile)!, "managed-shortcuts"),
-            Path.Combine(AppContext.BaseDirectory, "Launcher", "DesktopMotionStudio.Launcher.exe"),
+            InstalledLayout.LauncherForBundle(AppContext.BaseDirectory),
             () => desktopRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify));
 
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };

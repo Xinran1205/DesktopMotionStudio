@@ -23,9 +23,17 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
 
     internal StagedShortcut Stage(string name, string launcher, string bindingId, string? icon)
     {
-        string destination = LinkPath(name);
         string token = ManagedLaunchRequest.EncodeBindingId(bindingId) ??
             throw new InvalidDataException("The shortcut binding ID is invalid.");
+        return StageLink(name, launcher, "--binding " + token, icon);
+    }
+
+    internal StagedShortcut StageDirect(string name, string executable) =>
+        StageLink(name, executable, "", executable);
+
+    private StagedShortcut StageLink(string name, string launcher, string args, string? icon)
+    {
+        string destination = LinkPath(name);
         if (!IsCanonicalLocalPath(launcher) || !File.Exists(launcher) ||
             !LaunchTargetIdentityResolver.IsLocalPath(launcher) ||
             !launcher.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
@@ -33,7 +41,7 @@ internal sealed class WindowsShortcutPlatform(WindowsFileScope scope) : IDisposa
 
         if (!IsCanonicalLocalPath(icon) || !File.Exists(icon) || !LaunchTargetIdentityResolver.IsLocalPath(icon))
             icon = launcher;
-        byte[] bytes = BuildLink(launcher, "--binding " + token, icon!);
+        byte[] bytes = BuildLink(launcher, args, icon!);
 
         SafeFileHandle handle = scope.OpenChild($"{Guid.NewGuid():N}.tmp", ReadAccess | WriteAccess | DeleteAccess, disposition: CreateNew);
         FileStream? stream = null;

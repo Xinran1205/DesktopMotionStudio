@@ -27,3 +27,24 @@ Nine Windows checks passed. A child writer flushed the selector stage, then the 
 This is a retained-handle selection proof with marker payloads. Production Setup, real launcher forwarding, registration recovery and clean-account installation are subsequent tasks.
 
 Logs are retained locally at artifacts/checkpoints/f12-20261106. The verified payload is at artifacts/f12-payload-0.12.0-d962d681.
+
+## T005a — Fixed entries and program staging
+
+The actual process-forwarding tests used isolated apphost fixtures. They verified exact F10 binding arguments and the selected working directory before and after switching versions. A missing active selector selected the verified previous version. A malformed primary, changed image or missing selected executable failed closed. The Studio development bundle kept its bundled Launcher location and 21-file publish layout.
+
+The preparation tests validated bounded archive and inventory matching, rejected path traversal, case aliases and a nested Windows junction, and preserved competing files. NTFS no-replace directory publication refused a product root occupied after staging. After publication the new directory still had no active selector. Promoting the verified selector enabled the selected generation, and a foreign primary survived a refused promotion.
+
+The real Start menu-format Shell Link retained the fixed Studio target and an empty argument list. Its write handle was closed before Windows Shell readback. A same-name link arriving between preparation and publication retained its bytes. All link tests used an isolated directory.
+
+The 0.12.1 test build verified every one of 870 archive files, plus native startup of all three components from their bundled runtimes. A real isolated preparation and activation used that archive and the published self-contained stable entry binary. Both renamed entry copies started and rejected the fixture install location with exit 2, with external DOTNET_ROOT paths set to a missing directory and extraction isolated to the test directory. The forwarding checks used the same production forwarding logic with fixture executables.
+
+| Suite | PASS | FAIL | SKIP |
+|---|---:|---:|---:|
+| Core regression including 28 F12 checks | 453 | 0 | 1 |
+| Studio including real discovery protocol | 67 | 0 | 0 |
+| Published 0.12.1 archive/layout/apphost checks | 5 | 0 | 0 |
+| Published package staging and activation | 3 | 0 | 0 |
+
+The existing optional packaged-instance case was skipped because DMS_F05_TEST_AUMID was unset. Release build and whitespace checks passed. Windows registry and the real Start menu were outside this increment. Setup registration, recovery of interrupted registration and standard-account acceptance remain open.
+
+The test build is retained at artifacts/f12-t005-4e40bd07 and hashes and logs at artifacts/checkpoints/f12-t005a-20261106.
