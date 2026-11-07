@@ -30,4 +30,4 @@
 
 T001 and T002 inform T003 and T004. Both T003 and T004 gate T005 and T006. T007 and T005 precede T008. T009–T011 require a candidate package and isolated Windows acceptance environment. T012 requires all acceptance evidence.
 
-The clean-account gate is pending. The verified workstation uses a filtered administrator token and has a private .NET SDK. Published candidates and isolated Windows evidence are available in [evidence](evidence.md).
+The clean-account gate is pending. Workstation proof now includes native Setup, Start menu launch, Busy, two-version rollback and retry, downgrade refusal, registered removal and reinstall. The host uses a filtered administrator token and has a private .NET SDK. See [evidence](evidence.md) and the [clean-account runbook](quickstart.md#clean-account-runbook).

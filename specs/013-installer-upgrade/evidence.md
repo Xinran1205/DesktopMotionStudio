@@ -69,3 +69,26 @@ The optional packaged-instance test was skipped because DMS_F05_TEST_AUMID was u
 The workstation has a filtered administrator token, a private .NET SDK and no Windows Sandbox or local VM command. T009–T011 remain open for a clean Windows 11 x64 standard account, offline startup, actual installed Shell launch and Installed Apps removal. Final convergence and F13 entry depend on that evidence.
 
 Candidates are retained at artifacts/f12-candidate-0.12.3-01ff9893 and artifacts/f12-candidate-0.12.4-72f8b047. Hashes and raw logs are in artifacts/checkpoints/f12-lifecycle-20261106.
+
+## T009–T011 — Additional workstation proof, 2026-11-07
+
+Windows 11 Home x64 build 26200, filtered administrator, with an external desktop runtime installed. Both Setup images match their prior published SHA256. The first run reached a recoverable inactive installation and returned exit 5 while writing the Start menu link. A native probe observed error 4395 under `OBJ_DONT_REPARSE`. A disposable delete-on-close probe identified the alternative path under the Codex application's private package cache. An ordinary interactive Windows process launched through a short-lived limited task used the physical Start menu directory. Production reparse checks and candidate bytes were preserved.
+
+| Real workstation operation | Observed result |
+|---|---|
+| Resume Setup A at its normal per-user location | Exit 0. Original owner retained, Start menu link published and HKCU registration reports 0.12.3. |
+| Start the installed Studio through its Start menu Shell Link | The stable entry opened the actual 0.12.3 Studio window. The external runtime search variables pointed to an absent path. |
+| Run B while Studio is running | Exit 4. A selector SHA256, registration version and Studio process unchanged. |
+| Close Studio, run B and rerun stale A | B exit 0 and version 0.12.4. A exit 5 and B selector unchanged. Start menu link, stable Studio and Launcher images, and ownership record retained their exact bytes. |
+| Invoke the exact current-user registered uninstall command | Exit 0. The detached worker removed the program root, Start menu link and registration. |
+| Reinstall A into the empty product slot | Exit 0 with a new owner, working registration and Start menu entry. |
+| Block B's two selector operations in sequence | With `active` held read-only, B exited 4 and left a recoverable `active.next`. With only `active.next` held read-only, B again exited 4. A filesystem watcher recorded `active → active.previous → active`. A's exact selector hash and registration version survived. B retried successfully after releasing the handle. |
+| Remove the second test installation | Exit 0. The program, menu, registry and user-data slots were empty at the end. The digest-verified helper remains reusable in the temporary directory. |
+
+The host used the ordinary uninstall command read from registration. The Settings **Installed Apps** flow, managed Desktop Shell launch, renderer failure and conflict retention in a clean offline profile remain in the guest runbook. The workstation's redirected Desktop was left untouched. No application state was created by this smoke test. Short-lived task registrations were removed.
+
+The Windows Hypervisor Platform partition probe succeeded. No provisioned Windows guest was available on this workstation. The Windows PowerShell 5.1 [preflight](probes/Test-GuestPrerequisites.ps1) correctly rejected the host token, connected adapters and external .NET Desktop runtime, while verifying both media hashes and all empty post-test slots. A separate mismatched-executable fixture was rejected before host inspection.
+
+Release regression with the published MotionHost and Studio payloads passed 522 Core checks and 67 Studio checks with no failures. The optional packaged-instance check was skipped because `DMS_F05_TEST_AUMID` was unset.
+
+The local media directory is `artifacts/f12-offline-acceptance-20261107`. It contains both unmodified candidates, payload manifests, the offline runbook and a self-contained WindowHost test target. The target apphost reached its parser with the external runtime path pointed at an absent directory. The media manifest has nine SHA256 records. Its own SHA256 is `AA1B0487BBF8674459734CF631F4C24E74B6810988E7636124C0E3037B5E04FA`. Workstation logs are in `artifacts/checkpoints/f12-cancel-20261107`. The feature remains gated on T009–T011 in the clean guest.

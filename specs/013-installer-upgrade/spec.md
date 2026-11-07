@@ -2,7 +2,7 @@
 
 **Feature Branch** `codex/f12-installer-upgrade`
 
-**Created** 2026-11-03 · **Updated** 2026-11-06 · **Status** Clean-account acceptance pending
+**Created** 2026-11-03 · **Updated** 2026-11-07 · **Status** Clean-account acceptance pending
 
 **Input** PRD V1.0 发行与恢复，TDD V1.0 §9，F02 配置、F10 入口所有权和 F11 诊断合同。
 
@@ -83,3 +83,4 @@
 | 0.1.0 | 2026-11-03 | Initial independent feature baseline. |
 | 0.2.0 | 2026-11-06 | Specify offline install, stable upgrades, rollback, verified cleanup and clean-account acceptance. |
 | 0.3.0 | 2026-11-06 | Implement the Setup lifecycle, verify two published payloads and retain the clean-account acceptance gate. |
+| 0.3.1 | 2026-11-07 | Record native workstation Setup and rollback evidence. Add the offline guest preflight and reproducible acceptance steps. |

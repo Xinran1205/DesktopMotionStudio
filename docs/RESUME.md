@@ -4,7 +4,9 @@
 
 当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 清单](../specs/013-installer-upgrade/tasks.md)的 T001–T008 已完成。自包含 Setup 0.12.3 和 0.12.4 已生成，两份实际负载在隔离 Windows 注册范围内通过安装、回滚、升级、卸载、重装。全量 Core 522 通过，Studio 67 通过。详情见 [F12 证据](../specs/013-installer-upgrade/evidence.md)。
 
-下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 收敛并进入 F13。当前主机账户属于 Administrators，使用非提升令牌且有私有 .NET SDK，Windows Sandbox 和本地 VM 工具不可用。测试候选包和验收步骤见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md)。
+2026-11-07 已在当前 Windows 真实路径验证 Setup、开始菜单启动、占用拒绝、选择器实际回滚和重试、旧包拒绝、注册卸载与重装。测试程序和注册均已清除。主机支持 Windows Hypervisor Platform，当前没有可用的干净来宾系统。宿主账户属于 Administrators，使用非提升令牌且有私有 .NET SDK。
+
+离线验收介质已整理到 `artifacts/f12-offline-acceptance-20261107`。下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 收敛并进入 F13。见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md#clean-account-runbook)。
 
 ## F11 已完成
 
