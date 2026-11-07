@@ -21,7 +21,7 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
         return InstallJournal.Read<RemoveIntent>(programs, InstallJournal.RemoveName)?.Owner?.Id;
     }
 
-    internal static UninstallResult RunForCurrentUser(Guid owner, bool resumeOnly = false)
+    internal static UninstallResult RunForCurrentUser(Guid owner, bool resumeOnly = false, string? entryHash = null)
     {
         string programs = Path.GetDirectoryName(InstalledLayout.CurrentUserRoot())!;
         string menu = Environment.GetFolderPath(Environment.SpecialFolder.Programs, Environment.SpecialFolderOption.DoNotVerify);
@@ -29,10 +29,11 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
         string receipts = Path.Combine(Path.GetDirectoryName(StudioStateRepository.CurrentUserPath())!, "managed-shortcuts");
         return new UninstallCoordinator(programs, menu, new InstallRegistration(registry), receipts,
             () => Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify))
-            .Run(expectedOwner: owner, resumeOnly: resumeOnly);
+            .Run(expectedOwner: owner, resumeOnly: resumeOnly, expectedEntryHash: entryHash);
     }
 
-    internal UninstallResult Run(Action<RemoveStep>? checkpoint = null, Guid? expectedOwner = null, bool resumeOnly = false)
+    internal UninstallResult Run(Action<RemoveStep>? checkpoint = null, Guid? expectedOwner = null, bool resumeOnly = false,
+        string? expectedEntryHash = null)
     {
         string rootPath = Path.Combine(programsPath, InstalledLayout.ProductDirectory);
         using var gate = new InstallGate(rootPath);
@@ -48,7 +49,8 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
             using var dispatch = InstallGate.ForEntry(rootPath);
             if (!dispatch.Entered) return new(true, 0, new(0, 0, false));
             InstallOwner owner = InstallCoordinator.ReadOwnerRecord(root!);
-            if (expectedOwner is Guid requested && requested != owner.Id)
+            if (expectedOwner is Guid requested && requested != owner.Id ||
+                expectedEntryHash is not null && expectedEntryHash != owner.EntryHash)
                 throw new InvalidDataException("The requested installation has changed.");
             if (InstallJournal.Read<UpgradeIntent>(root!, InstallJournal.UpgradeName) is not null ||
                 InstallCoordinator.ReadSelector(root!, InstallStage.Next) is not null)
@@ -71,6 +73,7 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
 
         InstallOwner installedOwner = intent.Owner;
         if (installedOwner.Id == Guid.Empty || expectedOwner is Guid wanted && wanted != installedOwner.Id ||
+            expectedEntryHash is not null && expectedEntryHash != installedOwner.EntryHash ||
             installedOwner.EntryHash is null || !InstalledSelection.IsDigest(installedOwner.EntryHash) ||
             root is not null && root.Identity != (installedOwner.Volume, installedOwner.Index))
             throw new InvalidDataException("The uninstall intent does not match the program root.");

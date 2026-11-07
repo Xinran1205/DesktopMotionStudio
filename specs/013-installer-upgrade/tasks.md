@@ -26,6 +26,7 @@
 - [x] T013 Reproduce the stable entry rejecting dispatch while an unrelated setup transaction holds its gate. Separate dispatch from staging while serializing activation and durable removal. Verify current-version forwarding and refusal after removal intent. (FR-003, FR-008, SC-004)
 - [x] T014 Verify three consecutive upgrades and prune fully owned versions older than the rollback generation. Verify current/previous generations, file conflicts, unrelated directories and incomplete-cleanup retry. (FR-003, FR-004, FR-009, SC-005)
 - [x] T015 Verify partial extraction and failed publication cleanup against exact staged identities. Preserve injected foreign files and durable upgrade retry. (FR-004, FR-010, SC-006)
+- [x] T016 Update verified stable entry images at their existing paths. Test differing images, killed-process recovery, stale or foreign file refusal and uninstall with the new ownership record. (FR-002, FR-003, FR-011, SC-007)
 
 - [ ] T009 [US1] Run clean standard-account offline Windows install and real Shell launch, fallback and process-lock tests. (SC-001)
 - [ ] T010 [US2] Run two-version Windows upgrade, rollback, retry and stale installer checks. (SC-002)
@@ -34,4 +35,4 @@
 
 T001 and T002 inform T003 and T004. Both T003 and T004 gate T005 and T006. T007 and T005 precede T008. T009–T011 require a candidate package and isolated Windows acceptance environment. T012 requires all acceptance evidence.
 
-The clean-account gate is pending. Workstation proof now includes native Setup, Start menu launch, Busy, two-version rollback and retry, downgrade refusal, registered removal and reinstall. The host uses a filtered administrator token and has a private .NET SDK. See [evidence](evidence.md) and the [clean-account runbook](quickstart.md#clean-account-runbook).
+The clean-account gate is pending. Workstation proof includes native Setup, Start menu launch, Busy, rollback and retry, downgrade refusal, registered removal, reinstall and stable entry replacement. Use remediated candidates 0.12.7 and 0.12.8 for acceptance. The host uses a filtered administrator token and has a private .NET SDK. See [evidence](evidence.md) and the [clean-account runbook](quickstart.md#clean-account-runbook).

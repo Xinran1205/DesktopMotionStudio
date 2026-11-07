@@ -38,6 +38,8 @@ After the selector and registration commit, reuse uninstall's generation receipt
 
 Track handles' file and directory identities in fresh installer stages so ordinary failure can remove the exact created objects. Preserve unknown content and claimed upgrade stages that have durable retry receipts. An abrupt process exit before durable proof can leave an unverified stage. Its name alone gives no authority to delete it.
 
+Record the old and new stable entry image digests in the upgrade intent. Publish the new generation first. Under the dispatch gate, replace each stable file through verified no-replace retirement and promotion in its pinned parent. Update the ownership record and remove the verified old copies only after both images match. A normal failure attempts to restore the retired name. An abrupt exit during a name transition may require the same Setup to restore entry availability. Retain the installed locations and existing link bytes.
+
 ## Phase 3 — Convergence
 
 Run build, static checks, regression, package layout and native lifecycle checks. Run real install, Shell launch, fault/rollback, upgrade, uninstall and reinstall in a disposable Windows 11 x64 VM with a standard account, no preinstalled product runtime and detached networking. Record this host's isolated non-elevated evidence separately. Close independent review and verify every FR, AC and SC.

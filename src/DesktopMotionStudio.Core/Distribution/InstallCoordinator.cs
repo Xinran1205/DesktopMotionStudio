@@ -9,7 +9,8 @@ internal enum InstallOutcome { Installed, AlreadyInstalled, Upgraded, Busy, Inco
 internal enum InstallStep
 {
     DirectoryPublished, MenuPrepared, MenuPublished, RegistrationClaimed, Registered,
-    UpgradeClaimed, UpgradePrepared, UpgradeRetired, UpgradeActivated
+    UpgradeClaimed, UpgradePrepared, UpgradeRetired, UpgradeActivated,
+    EntryStudioRetired, EntryLauncherRetired, EntryOwnerRetired
 }
 
 [SupportedOSPlatform("windows")]
@@ -29,7 +30,7 @@ internal sealed class InstallCoordinator(string programsPath, string menuPath, I
         {
             if (root is not null)
             {
-                return Complete(root, menu, payload, archive, checkpoint);
+                return Complete(root, menu, payload, archive, entry, checkpoint);
             }
         }
         using (var menuSlot = menu.Inspect(InstalledLayout.StartMenuName))
@@ -41,21 +42,24 @@ internal sealed class InstallCoordinator(string programsPath, string menuPath, I
         using (InstallStage stage = InstallStage.Prepare(programs, payload, archive, entry)) stage.Publish();
         checkpoint?.Invoke(InstallStep.DirectoryPublished);
         using var installed = programs.OpenDirectory(InstalledLayout.ProductDirectory, WindowsFileScope.OpenExisting);
-        return Complete(installed, menu, payload, archive, checkpoint);
+        return Complete(installed, menu, payload, archive, entry, checkpoint);
     }
 
-    private InstallOutcome Complete(WindowsFileScope root, WindowsShortcutPlatform menu, InstallPayload payload, Stream archive,
+    private InstallOutcome Complete(WindowsFileScope root, WindowsShortcutPlatform menu, InstallPayload payload, Stream archive, Stream entry,
         Action<InstallStep>? checkpoint)
     {
-        InstallOwner owner = ReadOwner(root);
         InstalledSelection? active = ReadSelector(root, InstalledEntry.Active);
         InstalledSelection? pending = ReadSelector(root, InstallStage.Next);
         UpgradeIntent? upgrade = InstallJournal.Read<UpgradeIntent>(root, InstallJournal.UpgradeName);
+        bool recoveringEntry = upgrade?.Entry is not null;
+        InstallOwner owner = ReadOwnerRecord(root, allowRetired: recoveringEntry);
+        using var launcher = OpenOwnedLauncher(root, owner);
+        if (!recoveringEntry) VerifyEntries(root, launcher, owner);
         if (upgrade is not null || active is not null && active.Version < payload.Version)
         {
             if (upgrade is not null && upgrade.To?.Version != payload.Version) return InstallOutcome.IncompatibleVersion;
             EnsureMenu(root, menu, owner, mayCreate: false);
-            return new InstallUpgrade(root, registration, owner).Run(payload, archive, active, pending, upgrade, checkpoint);
+            return new InstallUpgrade(root, registration, owner).Run(payload, archive, entry, active, pending, upgrade, checkpoint);
         }
         InstalledSelection selected = active ?? pending ?? throw new InvalidDataException("The installation has no recoverable selector.");
         if (selected.Version != payload.Version) return InstallOutcome.IncompatibleVersion;
@@ -113,18 +117,37 @@ internal sealed class InstallCoordinator(string programsPath, string menuPath, I
     internal static InstallOwner ReadOwner(WindowsFileScope root)
     {
         InstallOwner owner = ReadOwnerRecord(root);
-        using var studio = root.OpenChild(InstalledLayout.StudioName, WindowsFileScope.ReadAccess);
-        using var launcherDir = root.OpenDirectory("Launcher", WindowsFileScope.OpenExisting);
-        using var launcher = launcherDir.OpenChild(InstalledLayout.LauncherName, WindowsFileScope.ReadAccess);
-        if (!InstallJournal.Matches(studio, owner.EntryHash, 128 * 1024 * 1024) ||
-            !InstallJournal.Matches(launcher, owner.EntryHash, 128 * 1024 * 1024))
-            throw new InvalidDataException("The stable program entries changed.");
+        using var launcher = OpenOwnedLauncher(root, owner);
+        VerifyEntries(root, launcher, owner);
         return owner;
     }
 
-    internal static InstallOwner ReadOwnerRecord(WindowsFileScope root)
+    internal static WindowsFileScope OpenOwnedLauncher(WindowsFileScope root, InstallOwner owner)
+    {
+        WindowsFileScope launcher = root.OpenDirectory("Launcher", WindowsFileScope.OpenExisting);
+        try
+        {
+            if (launcher.Identity != (owner.LauncherVolume, owner.LauncherIndex))
+                throw new InvalidDataException("The stable Launcher directory changed.");
+            return launcher;
+        }
+        catch { launcher.Dispose(); throw; }
+    }
+
+    private static void VerifyEntries(WindowsFileScope root, WindowsFileScope launcherDir, InstallOwner owner)
+    {
+        using var studio = root.OpenChild(InstalledLayout.StudioName, WindowsFileScope.ReadAccess);
+        using var launcher = launcherDir.OpenChild(InstalledLayout.LauncherName, WindowsFileScope.ReadAccess);
+        if (!InstallJournal.Matches(studio, owner.EntryHash, InstallStage.MaxEntryBytes) ||
+            !InstallJournal.Matches(launcher, owner.EntryHash, InstallStage.MaxEntryBytes))
+            throw new InvalidDataException("The stable program entries changed.");
+    }
+
+    internal static InstallOwner ReadOwnerRecord(WindowsFileScope root, bool allowRetired = false)
     {
         InstallOwner? owner = InstallJournal.Read<InstallOwner>(root, InstallJournal.OwnerName);
+        if (owner is null && allowRetired)
+            owner = InstallJournal.Read<InstallOwner>(root, InstallEntryUpgrade.RetiredOwnerName);
         if (owner is not { Schema: 1, EntryHash: not null } || owner.Id == Guid.Empty || !InstalledSelection.IsDigest(owner.EntryHash) ||
             root.Identity != (owner.Volume, owner.Index))
             throw new InvalidDataException("The program root is not a recognized installation.");

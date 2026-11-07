@@ -17,7 +17,10 @@ internal sealed record InstallMenuIntent([property: JsonRequired] int Schema, [p
 
 internal sealed record UpgradeIntent([property: JsonRequired] int Schema, [property: JsonRequired] Guid Id,
     [property: JsonRequired] InstalledSelection From, [property: JsonRequired] InstalledSelection To,
-    InstalledSelection? Obsolete);
+    InstalledSelection? Obsolete,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] EntryUpgradeIntent? Entry = null);
+
+internal sealed record EntryUpgradeIntent([property: JsonRequired] string FromHash, [property: JsonRequired] string ToHash);
 
 internal sealed record InstallGeneration([property: JsonRequired] int Schema, [property: JsonRequired] Guid Id,
     [property: JsonRequired] string InventoryHash, [property: JsonRequired] uint Volume, [property: JsonRequired] ulong Index,
@@ -63,19 +66,21 @@ internal static class InstallJournal
 
     internal static void Write<T>(WindowsFileScope root, string name, T value)
     {
-        byte[] data = JsonSerializer.SerializeToUtf8Bytes(value, Json);
+        byte[] data = Encode(value);
         if (data.Length > MaxBytes) throw new InvalidDataException("Installer journal exceeded its limit.");
         WriteFile(root, name, data);
     }
 
     internal static void Remove<T>(WindowsFileScope root, string name, T expected)
     {
-        byte[] data = JsonSerializer.SerializeToUtf8Bytes(expected, Json);
+        byte[] data = Encode(expected);
         using var file = root.OpenChild(name, WindowsFileScope.ReadAccess | WindowsFileScope.DeleteAccess);
         if (!Matches(file, Convert.ToHexString(SHA256.HashData(data)), MaxBytes))
             throw new InvalidDataException("The installer journal changed.");
         WindowsFileScope.Delete(file);
     }
+
+    internal static byte[] Encode<T>(T value) => JsonSerializer.SerializeToUtf8Bytes(value, Json);
 
     internal static bool RemoveFile(WindowsFileScope root, string name, string expected, long maxBytes)
     {

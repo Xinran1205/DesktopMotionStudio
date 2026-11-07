@@ -9,7 +9,7 @@ namespace DesktopMotionStudio.Core.Distribution;
 [SupportedOSPlatform("windows")]
 internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration registration, InstallOwner owner)
 {
-    internal InstallOutcome Run(InstallPayload payload, Stream archive, InstalledSelection? active, InstalledSelection? pending,
+    internal InstallOutcome Run(InstallPayload payload, Stream archive, Stream entry, InstalledSelection? active, InstalledSelection? pending,
         UpgradeIntent? intent, Action<InstallStep>? checkpoint)
     {
         using var versions = root.OpenDirectory(InstalledLayout.Versions, WindowsFileScope.OpenExisting);
@@ -23,8 +23,10 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
                 throw new InvalidDataException("The installation is not ready for an upgrade.");
             CheckProgramLocks(versions, active.Version);
             registration.Ensure(owner, root.Path, active.Version);
+            string entryHash = InstallStage.DescribeEntry(entry);
+            EntryUpgradeIntent? change = entryHash == owner.EntryHash ? null : new(owner.EntryHash, entryHash);
             PrepareGeneration(versions, payload, archive, expected, owner, checkpoint);
-            intent = new(1, owner.Id, active, expected, previous);
+            intent = new(1, owner.Id, active, expected, previous, change);
             InstallJournal.Write(root, InstallJournal.UpgradeName, intent);
         }
         else
@@ -32,6 +34,12 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
             if (intent.Schema != 1 || intent.Id != owner.Id || intent.From?.Version is null || intent.To != expected ||
                 intent.From.Version >= expected.Version || intent.Obsolete is not null && intent.Obsolete.Version >= intent.From.Version)
                 throw new InvalidDataException("The upgrade journal does not match the installation.");
+            if (intent.Entry is { } change &&
+                (change.FromHash is null || change.ToHash is null || !InstalledSelection.IsDigest(change.FromHash) ||
+                 !InstalledSelection.IsDigest(change.ToHash) || change.FromHash == change.ToHash ||
+                 (owner.EntryHash != change.FromHash && owner.EntryHash != change.ToHash) ||
+                 InstallStage.DescribeEntry(entry) != change.ToHash))
+                throw new InvalidDataException("The pending entry update does not match the installation.");
             using var generation = versions.OpenDirectory(version, WindowsFileScope.OpenExisting);
             payload.VerifyStaged(generation, expected);
             InstallStage.VerifyGeneration(versions, generation, payload, owner);
@@ -88,6 +96,12 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
         }
 
         registration.Ensure(owner, root.Path, expected.Version, previousVersion: intent.From.Version);
+        if (intent.Entry is { } images)
+        {
+            using var dispatch = InstallGate.ForEntry(root.Path);
+            if (!dispatch.Entered) return InstallOutcome.Busy;
+            InstallEntryUpgrade.Complete(root, owner, images, entry, checkpoint);
+        }
         InstallJournal.Remove(root, InstallJournal.UpgradeName, intent);
         PruneRetired(expected.Version);
         return InstallOutcome.Upgraded;

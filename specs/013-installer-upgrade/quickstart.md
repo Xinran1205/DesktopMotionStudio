@@ -22,8 +22,8 @@ Build two unsigned validation packages on the development host:
 ```powershell
 $a = Join-Path $PWD 'artifacts/f12-vm-a'
 $b = Join-Path $PWD 'artifacts/f12-vm-b'
-& .\installer\Build-Setup.ps1 -Version 0.12.3 -OutputDirectory $a
-& .\installer\Build-Setup.ps1 -Version 0.12.4 -OutputDirectory $b
+& .\installer\Build-Setup.ps1 -Version 0.12.7 -OutputDirectory $a
+& .\installer\Build-Setup.ps1 -Version 0.12.8 -OutputDirectory $b
 dotnet run --project tests/DesktopMotionStudio.Core.Checks -c Release -- --f12-built-lifecycle $a $b
 ```
 
@@ -33,10 +33,10 @@ For a normal install, the program path is `%LOCALAPPDATA%\Programs\DesktopMotion
 
 ## Clean-account runbook
 
-Use a disposable Windows 11 x64 VM and an interactive standard-user account. Transfer the two Setup executables, each package's `setup.sha256` and `payload.manifest.json`, the self-contained WindowHost test target and `Test-GuestPrerequisites.ps1`. Keep the guest disconnected throughout the run. Use ordinary Explorer or a native Windows PowerShell window in the guest. A process launched from a packaged desktop app can inherit file-system redirection, even when it reports no package identity. The installer refuses redirected writes.
+Use a disposable Windows 11 x64 VM and an interactive standard-user account. Transfer the two Setup executables, each package's `setup.sha256`, `entry.sha256` and `payload.manifest.json`, the self-contained WindowHost test target and `Test-GuestPrerequisites.ps1`. Generate `entry.sha256` on the build host from `entry\DesktopMotionStudio.Entry.exe` when assembling the media. Keep the guest disconnected throughout the run. Use ordinary Explorer or a native Windows PowerShell window in the guest. A process launched from a packaged desktop app can inherit file-system redirection, even when it reports no package identity. The installer refuses redirected writes.
 
 ```powershell
-& .\Test-GuestPrerequisites.ps1 -CandidateA .\0.12.3 -CandidateB .\0.12.4 |
+& .\Test-GuestPrerequisites.ps1 -CandidateA .\0.12.7 -CandidateB .\0.12.8 |
     Tee-Object -FilePath .\guest-preflight.json
 ```
 
@@ -57,7 +57,7 @@ In the disposable profile, hold a read-only file handle while running the normal
 
 ```powershell
 $root = Join-Path $env:LOCALAPPDATA 'Programs\DesktopMotionStudio'
-$setupB = (Resolve-Path .\0.12.4\DesktopMotionStudio.Setup.exe).Path
+$setupB = (Resolve-Path .\0.12.8\DesktopMotionStudio.Setup.exe).Path
 function Invoke-BlockedUpgrade([string]$Selector) {
     $held = [IO.File]::Open((Join-Path $root $Selector), 'Open', 'Read', 'Read')
     try { (Start-Process -FilePath $setupB -Wait -PassThru).ExitCode }
@@ -68,7 +68,7 @@ Invoke-BlockedUpgrade 'active'
 Invoke-BlockedUpgrade 'active.next'
 ```
 
-The first attempt stages B while keeping A active. The second attempt blocks B's commit after the old selector moves. Record the rename from `active` to `active.previous` and back using a `FileSystemWatcher` on the program root if capturing the transition. Check exit `4`, A's exact selector hash, A's registry version and a working A launch. Close Studio and run B with both handles released. Record exit `0`, B's version and unchanged stable entry, managed link, profile, backup and sentinel bytes. Run A again and verify exit `5` and unchanged B. Use the isolated lifecycle and child-interruption checks to retain additional evidence at the abrupt termination boundaries.
+The first attempt stages B while keeping A active. The second attempt blocks B's commit after the old selector moves. Record the rename from `active` to `active.previous` and back using a `FileSystemWatcher` on the program root if capturing the transition. Check exit `4`, A's exact selector and stable entry hashes, A's registry version and a working A launch. Close Studio and run B with both handles released. Record exit `0`, B's version, unchanged stable paths, both entry hashes matching B's published entry image, and unchanged managed link, profile, backup and sentinel bytes. Run A again and verify exit `5` and unchanged B. Use the isolated lifecycle and child-interruption checks to retain additional evidence at the abrupt termination boundaries. If an abrupt exit interrupts a stable entry name change, rerun the same Setup B to finish.
 
 ### T011 — Installed Apps removal and reinstall
 

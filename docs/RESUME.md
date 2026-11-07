@@ -6,7 +6,9 @@
 
 2026-11-07 已在当前 Windows 真实路径验证 Setup、开始菜单启动、占用拒绝、选择器实际回滚和重试、旧包拒绝、注册卸载与重装。测试程序和注册均已清除。主机支持 Windows Hypervisor Platform，当前没有可用的干净来宾系统。宿主账户属于 Administrators，使用非提升令牌且有私有 .NET SDK。
 
-离线验收介质已整理到 `artifacts/f12-offline-acceptance-20261107`。下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 收敛并进入 F13。见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md#clean-account-runbook)。
+整体审查后的增量已修复启动所有权恢复、升级期间启动、受验证的暂存清理、旧版本回收和稳定入口更新。历史介质位于 `artifacts/f12-offline-acceptance-20261107`，修复后的介质位于 `artifacts/f12-offline-remediated-20261107`。
+
+下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 的独立审查和收敛。之后实施已补入交付顺序的 [F15 测试启动](../specs/016-test-launch/spec.md)，再交付 F13 和 F14。见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md#clean-account-runbook)。
 
 ## F11 已完成
 

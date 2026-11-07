@@ -50,6 +50,7 @@
 - **FR-008** 正常安装版入口在升级准备期间仍能启动已提交版本。程序切换和卸载仍须保护启动中的程序。卸载意图已提交时拒绝新启动。
 - **FR-009** 升级成功后保留当前程序版本和直接上一版用于恢复。更旧代只有在目录身份、清单和文件内容可验证时才回收。占用或无法验证的条目保留，后续同版本修复或升级可重新尝试回收。
 - **FR-010** 暂存准备失败或发布遇到冲突时，移除本次操作已记录身份的暂存文件与空目录。为重试持久登记的完整代继续保留。进程突然退出留下且无法验证归属的对象安全保留。
+- **FR-011** 相邻版本升级在固定路径上更新已验证的 Studio、Launcher 入口和卸载宿主。现有快捷方式字节保持一致。入口更新由升级意图记录，提交后异常终止可用同一安装包继续。遇到未知内容不覆盖。
 
 ## Business Rules, Inputs & Outputs
 
@@ -74,6 +75,7 @@
 - **SC-004** 另一个执行者持有升级事务期间，隔离的已安装入口启动一次已提交版本。卸载意图发布后，入口不再启动；同一入口的正常并发启动可等待短暂的程序发布边界。
 - **SC-005** 三次相邻升级验证当前版和直接上一版仍可读取，完全拥有的过时版本被移除，更旧代的冲突文件和未登记目录保留原字节。
 - **SC-006** 在部分解包后注入失败及在发布时制造冲突，验证本次拥有的暂存内容被清理，未登记对象保留，已登记的升级暂存可以重试。
+- **SC-007** 两个不同入口映像完成升级，固定路径和快捷方式字节一致，卸载使用新入口映像。在退役入口后终止安装，重跑同包完成恢复，并验证竞争文件保留。
 
 ## Assumptions and Clarifications
 
@@ -90,3 +92,4 @@
 | 0.2.0 | 2026-11-06 | Specify offline install, stable upgrades, rollback, verified cleanup and clean-account acceptance. |
 | 0.3.0 | 2026-11-06 | Implement the Setup lifecycle, verify two published payloads and retain the clean-account acceptance gate. |
 | 0.3.1 | 2026-11-07 | Record native workstation Setup and rollback evidence. Add the offline guest preflight and reproducible acceptance steps. |
+| 0.4.0 | 2026-11-07 | Refine launch availability, owned stage cleanup, version retention and serviceability of stable program entries after review. |

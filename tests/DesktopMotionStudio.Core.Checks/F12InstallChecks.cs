@@ -19,13 +19,15 @@ internal static class F12InstallChecks
     {
         int failures = 0;
         void Check(string name, bool result) => F09Checks.Check("F12 built " + name, result, ref failures);
+        string versionA = ReadVersion(first);
+        string versionB = ReadVersion(second);
         WithFixture((directory, registry) =>
         {
             InstallCoordinator setup = new(Path.Combine(directory, "Programs"), Path.Combine(directory, "Menu"), new InstallRegistration(registry));
             string root = InstallRoot(directory);
             string profile = Path.Combine(directory, "profile.json");
             File.WriteAllText(profile, "retained profile");
-            Check("real package A installs", InstallBuilt(first) == InstallOutcome.Installed && RegistrationMatches(directory, registry, "0.12.3"));
+            Check("real package A installs", InstallBuilt(first) == InstallOutcome.Installed && RegistrationMatches(directory, registry, versionA));
             string shortcut = CreateManagedEntry(directory);
             string active = Path.Combine(root, InstalledEntry.Active);
             byte[] previous = File.ReadAllBytes(active);
@@ -34,12 +36,17 @@ internal static class F12InstallChecks
             bool failed = false;
             try { InstallBuilt(second, step => { if (step == InstallStep.UpgradeRetired) throw new OperationCanceledException(); }); }
             catch (OperationCanceledException) { failed = true; }
-            Check("real package B rollback retains old selector and registration", failed &&
-                File.ReadAllBytes(active).SequenceEqual(previous) && RegistrationMatches(directory, registry, "0.12.3"));
-            Check("real package B commits and stale A is refused", InstallBuilt(second) == InstallOutcome.Upgraded &&
-                InstallBuilt(first) == InstallOutcome.IncompatibleVersion && RegistrationMatches(directory, registry, "0.12.4"));
-            Check("real upgrade preserves exact stable entry and shell link bytes", File.ReadAllBytes(shortcut).SequenceEqual(link) &&
+            Check("real package B rollback retains old selector, registration and stable entry", failed &&
+                File.ReadAllBytes(active).SequenceEqual(previous) && RegistrationMatches(directory, registry, versionA) &&
                 File.ReadAllBytes(InstalledLayout.LauncherPath(root)).SequenceEqual(entry));
+            Check("real package B commits and stale A is refused", InstallBuilt(second) == InstallOutcome.Upgraded &&
+                InstallBuilt(first) == InstallOutcome.IncompatibleVersion && RegistrationMatches(directory, registry, versionB));
+            Check("real upgrade preserves Shell Link bytes and installs both new images at stable paths",
+                File.ReadAllBytes(shortcut).SequenceEqual(link) &&
+                File.ReadAllBytes(InstalledLayout.LauncherPath(root)).SequenceEqual(
+                    File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))) &&
+                File.ReadAllBytes(Path.Combine(root, InstalledLayout.StudioName)).SequenceEqual(
+                    File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))));
             UninstallResult result = Uninstall(directory, registry);
             Check("real payload files, registration and owned links are removed", !result.Busy && result.PreservedProgramItems == 0 &&
                 result.Shortcuts.Removed == 1 && !Directory.Exists(root) && !File.Exists(shortcut) &&
@@ -56,6 +63,12 @@ internal static class F12InstallChecks
             }
         });
         return failures;
+
+        static string ReadVersion(string package)
+        {
+            using var manifest = File.OpenRead(Path.Combine(package, "payload.manifest.json"));
+            return InstallPayload.Read(manifest).Version.ToString(3);
+        }
     }
 
     [SupportedOSPlatform("windows")]
@@ -363,6 +376,97 @@ internal static class F12InstallChecks
                 File.Exists(Path.Combine(foreign, InstalledLayout.StudioName)) &&
                 !File.Exists(Path.Combine(root, InstalledLayout.Versions, "0.12.1.receipt.json")));
         });
+        WithFixture((directory, registry) =>
+        {
+            if (Install(directory, registry) != InstallOutcome.Installed)
+                throw new InvalidOperationException("Could not install initial entry images.");
+            string root = InstallRoot(directory);
+            InstallOwner original;
+            using (var scope = DesktopMotionStudio.Core.IO.WindowsFileScope.Open(root))
+                original = InstallCoordinator.ReadOwnerRecord(scope);
+            byte[] link = File.ReadAllBytes(MenuLink(directory));
+            Check("upgrade updates both stable entry images in place and preserves the menu link",
+                Install(directory, registry, version: "0.12.1", image: "MZ upgraded fixture") == InstallOutcome.Upgraded &&
+                File.ReadAllText(InstalledLayout.LauncherPath(root)) == "MZ upgraded fixture" &&
+                File.ReadAllText(Path.Combine(root, InstalledLayout.StudioName)) == "MZ upgraded fixture" &&
+                File.ReadAllBytes(MenuLink(directory)).SequenceEqual(link) && RegistrationMatches(directory, registry, "0.12.1"));
+            Check("uninstall refuses a request from the superseded entry image",
+                RejectRemoval(() => Uninstall(directory, registry, expectedOwner: original.Id, entryHash: original.EntryHash)) &&
+                RegistrationMatches(directory, registry, "0.12.1"));
+            Check("updated entry ownership permits removal of both stable files",
+                Uninstall(directory, registry).PreservedProgramItems == 0 && !Directory.Exists(root));
+        });
+        foreach (InstallStep interruption in new[]
+        {
+            InstallStep.EntryStudioRetired, InstallStep.EntryLauncherRetired, InstallStep.EntryOwnerRetired
+        })
+        {
+            WithFixture((directory, registry) =>
+            {
+                if (Install(directory, registry) != InstallOutcome.Installed)
+                    throw new InvalidOperationException("Could not install the entry recovery fixture.");
+                using Process worker = StartWorker(directory, interruption);
+                try
+                {
+                    string? observed = worker.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15)).GetAwaiter().GetResult();
+                    if (observed != interruption.ToString()) throw new InvalidOperationException($"Entry worker missed {interruption}: {observed}.");
+                    worker.Kill();
+                    if (!worker.WaitForExit(5000)) throw new TimeoutException("Interrupted entry worker did not exit.");
+                }
+                finally { if (!worker.HasExited) { worker.Kill(); worker.WaitForExit(); } }
+
+                string root = InstallRoot(directory);
+                Check($"{interruption} resumes the committed version and clears swap files",
+                    RegistrationMatches(directory, registry, "0.12.1") &&
+                    Install(directory, registry, version: "0.12.1", image: "MZ upgraded fixture") == InstallOutcome.Upgraded &&
+                    File.ReadAllText(InstalledLayout.LauncherPath(root)) == "MZ upgraded fixture" &&
+                    File.ReadAllText(Path.Combine(root, InstalledLayout.StudioName)) == "MZ upgraded fixture" &&
+                    !File.Exists(Path.Combine(root, InstallJournal.UpgradeName)) &&
+                    !File.Exists(Path.Combine(root, InstallEntryUpgrade.RetiredOwnerName)) &&
+                    !File.Exists(InstalledLayout.LauncherPath(root) + ".previous"));
+            });
+        }
+        WithFixture((directory, registry) =>
+        {
+            if (Install(directory, registry) != InstallOutcome.Installed)
+                throw new InvalidOperationException("Could not install the entry race fixture.");
+            string launcher = InstalledLayout.LauncherPath(InstallRoot(directory));
+            bool conflict = false;
+            try
+            {
+                Install(directory, registry, step =>
+                {
+                    if (step == InstallStep.EntryLauncherRetired) File.WriteAllText(launcher, "foreign winner");
+                }, "0.12.1", "MZ upgraded fixture");
+            }
+            catch (System.ComponentModel.Win32Exception) { conflict = true; }
+            Check("a file arriving in the stable path is preserved during entry promotion and recovery",
+                conflict && File.ReadAllText(launcher) == "foreign winner" &&
+                Reject(() => Install(directory, registry, version: "0.12.1", image: "MZ upgraded fixture")) &&
+                File.ReadAllText(launcher) == "foreign winner");
+            File.Delete(launcher);
+            Check("entry recovery can continue after the fixture removes its own conflict",
+                Install(directory, registry, version: "0.12.1", image: "MZ upgraded fixture") == InstallOutcome.Upgraded &&
+                File.ReadAllText(launcher) == "MZ upgraded fixture");
+        });
+        WithFixture((directory, registry) =>
+        {
+            if (Install(directory, registry) != InstallOutcome.Installed)
+                throw new InvalidOperationException("Could not install the Launcher directory identity fixture.");
+            string root = InstallRoot(directory);
+            string launcher = InstalledLayout.LauncherPath(root);
+            string launcherFolder = Path.GetDirectoryName(launcher)!;
+            string retained = Path.Combine(directory, "original-launcher");
+            Directory.Move(launcherFolder, retained);
+            Directory.CreateDirectory(launcherFolder);
+            File.Copy(Path.Combine(retained, InstalledLayout.LauncherName), launcher);
+            byte[] before = File.ReadAllBytes(Path.Combine(root, InstalledEntry.Active));
+            Check("a byte-identical entry in a replaced Launcher directory is refused before commit",
+                Reject(() => Install(directory, registry, version: "0.12.1", image: "MZ upgraded fixture")) &&
+                RegistrationMatches(directory, registry) &&
+                File.ReadAllBytes(Path.Combine(root, InstalledEntry.Active)).SequenceEqual(before) &&
+                File.ReadAllText(launcher) == "MZ install fixture");
+        });
         return failures;
     }
 
@@ -376,7 +480,8 @@ internal static class F12InstallChecks
             if (step != expected) return;
             Console.WriteLine(step);
             Console.ReadLine();
-        }, expected >= InstallStep.UpgradeClaimed ? "0.12.1" : "0.12.0");
+        }, expected >= InstallStep.UpgradeClaimed ? "0.12.1" : "0.12.0",
+            expected >= InstallStep.EntryStudioRetired ? "MZ upgraded fixture" : "MZ install fixture");
         return 3;
     }
 
@@ -396,9 +501,9 @@ internal static class F12InstallChecks
 
     [SupportedOSPlatform("windows")]
     private static UninstallResult Uninstall(string directory, RegistryKey registry, Action<RemoveStep>? checkpoint = null,
-        Guid? expectedOwner = null, bool resumeOnly = false) =>
+        Guid? expectedOwner = null, bool resumeOnly = false, string? entryHash = null) =>
         new UninstallCoordinator(Path.Combine(directory, "Programs"), Path.Combine(directory, "Menu"), new InstallRegistration(registry),
-            Path.Combine(directory, "receipts"), () => Path.Combine(directory, "Desktop")).Run(checkpoint, expectedOwner, resumeOnly);
+            Path.Combine(directory, "receipts"), () => Path.Combine(directory, "Desktop")).Run(checkpoint, expectedOwner, resumeOnly, entryHash);
 
     private static bool RejectRemoval(Func<UninstallResult> remove)
     {
@@ -408,12 +513,12 @@ internal static class F12InstallChecks
 
     [SupportedOSPlatform("windows")]
     private static InstallOutcome Install(string directory, RegistryKey registry, Action<InstallStep>? checkpoint = null,
-        string version = "0.12.0")
+        string version = "0.12.0", string image = "MZ install fixture")
     {
         var package = F12PayloadChecks.Package(version: version);
         using var manifest = new MemoryStream(package.Manifest);
         using var archive = new MemoryStream(package.Archive);
-        using var entry = new MemoryStream("MZ install fixture"u8.ToArray());
+        using var entry = new MemoryStream(System.Text.Encoding.ASCII.GetBytes(image));
         return new InstallCoordinator(Path.Combine(directory, "Programs"), Path.Combine(directory, "Menu"),
             new InstallRegistration(registry)).Install(manifest, archive, entry, checkpoint);
     }

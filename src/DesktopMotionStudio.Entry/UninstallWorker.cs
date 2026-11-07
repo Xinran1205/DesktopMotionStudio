@@ -67,6 +67,7 @@ internal static class UninstallWorker
         if (directory is null || Path.GetFileName(process) != Image ||
             !string.Equals(Path.GetDirectoryName(directory), temp, StringComparison.OrdinalIgnoreCase))
             return 2;
+        string entryHash;
         using (var scope = WindowsFileScope.Open(root))
         using (var work = WindowsFileScope.Open(directory))
         using (var executable = work.OpenChild(Image, WindowsFileScope.ReadAccess))
@@ -75,6 +76,7 @@ internal static class UninstallWorker
             if (owner.Id != ownerId || Path.GetFileName(directory) != $"dms-remove-{owner.EntryHash}" ||
                 !InstallJournal.Matches(executable, owner.EntryHash, 128 * 1024 * 1024))
                 return 2;
+            entryHash = owner.EntryHash;
         }
         try
         {
@@ -85,6 +87,6 @@ internal static class UninstallWorker
                 throw new IOException("The installed uninstaller is still running.");
         }
         catch (ArgumentException) { }
-        return Program.ReportRemoval(UninstallCoordinator.RunForCurrentUser(ownerId));
+        return Program.ReportRemoval(UninstallCoordinator.RunForCurrentUser(ownerId, entryHash: entryHash));
     }
 }

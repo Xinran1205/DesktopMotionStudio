@@ -8,7 +8,7 @@ internal sealed class InstallStage : IDisposable
 {
     internal const string Inventory = "install.inventory.json";
     internal const string Next = "active.next";
-    private const long MaxEntryBytes = 128 * 1024 * 1024;
+    internal const long MaxEntryBytes = 128 * 1024 * 1024;
     private readonly WindowsFileScope.StagedDirectory _directory;
 
     private InstallStage(WindowsFileScope.StagedDirectory directory, InstalledSelection selection, string entryHash)
@@ -26,11 +26,7 @@ internal sealed class InstallStage : IDisposable
 
     internal static InstallStage Prepare(WindowsFileScope programs, InstallPayload payload, Stream archive, Stream entry)
     {
-        if (!entry.CanSeek || entry.Position != 0 || entry.Length is < 2 or > MaxEntryBytes ||
-            entry.ReadByte() != 'M' || entry.ReadByte() != 'Z')
-            throw new InvalidDataException("The stable entry image is unavailable.");
-        entry.Position = 0;
-        string entryHash = Convert.ToHexString(SHA256.HashData(entry));
+        string entryHash = DescribeEntry(entry);
         var staged = programs.StageDirectory($".dms-stage-{Guid.NewGuid():N}");
         try
         {
@@ -64,6 +60,17 @@ internal sealed class InstallStage : IDisposable
             staged.Dispose();
             throw;
         }
+    }
+
+    internal static string DescribeEntry(Stream entry)
+    {
+        if (!entry.CanSeek || entry.Position != 0 || entry.Length is < 2 or > MaxEntryBytes ||
+            entry.ReadByte() != 'M' || entry.ReadByte() != 'Z')
+            throw new InvalidDataException("The stable entry image is unavailable.");
+        entry.Position = 0;
+        string hash = Convert.ToHexString(SHA256.HashData(entry));
+        entry.Position = 0;
+        return hash;
     }
 
     // Publishing the complete directory does not activate it. Registration is a separate step.

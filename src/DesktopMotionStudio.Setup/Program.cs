@@ -47,7 +47,7 @@ internal static class Program
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Win32Exception or InvalidDataException or JsonException)
         {
-            return Report("无法完成安装。请检查安装包和安装位置，关闭正在运行的 Studio 组件后重试。现有用户配置会保留。", 5);
+            return Report("无法完成安装。请检查安装位置，关闭正在运行的 Studio 组件后重试。若升级中断，请重新运行同一版本的安装包。", 5);
         }
     }
 

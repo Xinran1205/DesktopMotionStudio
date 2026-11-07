@@ -53,4 +53,6 @@ See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and
 
 ## Windows Setup validation
 
-`installer/Build-Setup.ps1` produces an unsigned, self-contained Windows x64 Setup and a SHA256 file. Validation candidates install for the current user under LocalAppData and preserve the separate user-data directory during upgrades and uninstall. The isolated Windows lifecycle has passed. Standard-account offline and Installed Apps acceptance are tracked in the [F12 validation guide](specs/013-installer-upgrade/quickstart.md).
+`installer/Build-Setup.ps1` produces an unsigned, self-contained Windows x64 Setup and a SHA256 file. Validation candidates install for the current user under LocalAppData and preserve the separate user-data directory during upgrades and uninstall. Upgrades keep the registered entry paths and existing link bytes, update both verified entry binaries, and keep the active and immediately previous program generations for recovery. If an upgrade is interrupted during entry replacement, rerun the same Setup package.
+
+Standard-account offline and Installed Apps acceptance are tracked in the [F12 validation guide](specs/013-installer-upgrade/quickstart.md). Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix. The planned [Studio test launch](specs/016-test-launch/spec.md) precedes the licensed launch works.
