@@ -100,3 +100,7 @@ The new stable-entry regression failed with an unrelated Setup transaction holdi
 ## T014 — Retired generation maintenance
 
 Three consecutive fixture upgrades retained current and previous generations while deleting an older verified generation and its receipt. An unrelated version-shaped directory and a foreign file inside another retired generation survived. The foreign file blocked removal of its directory and receipt. After the fixture removed its conflict, rerunning the already installed package completed retirement. The targeted Release suite passed 39 Setup checks and 25 uninstall checks.
+
+## T015 — Unpublished stage cleanup
+
+The old implementation failed both the partial-extraction and ownership cleanup checks. After the fix, a failed final archive entry left no program stage, a raced program slot preserved the unrelated directory and its bytes, and an unrelated file injected into a private stage survived while the file recorded as created was removed. Claimed upgrade stages still survived a killed process and resumed. Targeted Release checks passed 20 payload, 39 Setup, 25 uninstall and 13 entry cases. Stages from abruptly killed processes without durable ownership remain preserved.

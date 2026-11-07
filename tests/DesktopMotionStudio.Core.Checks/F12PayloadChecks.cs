@@ -72,6 +72,27 @@ internal static class F12PayloadChecks
             Check("failed file hash removes only the unverified stage", Reject<InvalidDataException>(() => Stage(partial, incorrectDigest)) &&
                 !File.Exists(Path.Combine(partial, Studio)));
 
+            string failedPrograms = NewDirectory("failed-programs");
+            var incomplete = Package(PayloadFiles, PayloadFiles[^1]);
+            using (var parent = WindowsFileScope.Open(failedPrograms))
+            {
+                Check("partial setup extraction removes the files already written to its private stage",
+                    Reject<InvalidDataException>(() => Prepare(parent, incomplete)) &&
+                    !Directory.EnumerateFileSystemEntries(failedPrograms).Any());
+                string stageName = $".dms-stage-{Guid.NewGuid():N}";
+                string stagePath = Path.Combine(failedPrograms, stageName);
+                using (var stage = parent.StageDirectory(stageName))
+                {
+                    using (var owned = stage.Scope.OpenChild("owned.bin", WindowsFileScope.WriteAccess,
+                        disposition: WindowsFileScope.CreateNew))
+                        RandomAccess.Write(owned, "owned"u8, 0);
+                    File.WriteAllText(Path.Combine(stagePath, "foreign.bin"), "foreign");
+                }
+                Check("failure cleanup removes only the recorded file and retains foreign bytes",
+                    !File.Exists(Path.Combine(stagePath, "owned.bin")) &&
+                    File.ReadAllText(Path.Combine(stagePath, "foreign.bin")) == "foreign");
+            }
+
             string omitted = NewDirectory("omitted");
             Check("missing required child runtime is refused", Reject<InvalidDataException>(() => Stage(omitted, Package(PayloadFiles[..^1]))) &&
                 !Directory.EnumerateFileSystemEntries(omitted).Any());
@@ -131,6 +152,9 @@ internal static class F12PayloadChecks
                     Reject<Win32Exception>(prepared.Publish) && File.ReadAllText(sentinel) == "foreign" &&
                     !File.Exists(Path.Combine(foreign, InstalledEntry.Active)));
             }
+            Check("failed publication reclaims the private stage and leaves the competing root",
+                !Directory.EnumerateDirectories(occupied, ".dms-stage-*").Any() &&
+                File.ReadAllText(Path.Combine(occupied, InstalledLayout.ProductDirectory, "other.txt")) == "foreign");
 
             string NewDirectory(string name) => Directory.CreateDirectory(Path.Combine(root, name)).FullName;
             return failures;

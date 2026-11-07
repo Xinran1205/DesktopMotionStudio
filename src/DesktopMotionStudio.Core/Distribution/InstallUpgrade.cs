@@ -164,6 +164,7 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
         if (InstallStage.WriteGeneration(staged.Scope, payload, archive) != expected)
             throw new InvalidDataException("The staged upgrade did not match its manifest.");
         InstallStage.RecordGeneration(versions, staged.Scope, payload, owner, stageName);
+        staged.RetainForRecovery();
         checkpoint?.Invoke(InstallStep.UpgradeClaimed);
         staged.Publish(name);
     }

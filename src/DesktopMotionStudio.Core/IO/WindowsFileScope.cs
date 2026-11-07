@@ -10,6 +10,8 @@ namespace DesktopMotionStudio.Core.IO;
 // A bounded local NTFS directory scope. Pin each component before resolving the next.
 internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) : IDisposable
 {
+    private StageContents? _stage;
+
     internal string Path { get; } = path;
 
     internal static bool IsCanonicalLocalPath(string? path)
@@ -63,27 +65,60 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
     internal SafeFileHandle OpenChild(string name, uint access, uint share = 1, uint disposition = OpenExisting)
     {
         _ = Child(name);
-        return OpenRelative(pins[^1], name, access, share, disposition, directory: false);
+        const uint readAttributes = 0x80;
+        uint desiredAccess = _stage is not null && disposition == CreateNew ? access | readAttributes : access;
+        SafeFileHandle handle = OpenRelative(pins[^1], name, desiredAccess, share, disposition, directory: false);
+        if (_stage is null || disposition != CreateNew) return handle;
+        try
+        {
+            FileInfo info = ReadInfo(handle);
+            if (!info.IsSingleRegularFile) throw new InvalidDataException("A staged file is not regular.");
+            _stage.Files.Add((info.VolumeSerial, info.FileIndex), name);
+            return handle;
+        }
+        catch { handle.Dispose(); throw; }
     }
 
     // The caller keeps this parent scope alive while using the returned child.
     internal WindowsFileScope OpenDirectory(string name, uint disposition) =>
         OpenDirectory(name, disposition, access: 0x00100081);
 
-    internal StagedDirectory StageDirectory(string name) =>
-        new(this, OpenDirectory(name, CreateNew, access: 0x00100081 | DeleteAccess));
+    internal StagedDirectory StageDirectory(string name)
+    {
+        WindowsFileScope directory = OpenDirectory(name, CreateNew, access: 0x00100081 | DeleteAccess);
+        try
+        {
+            directory._stage = new StageContents(directory.Identity);
+            return new(this, name, directory);
+        }
+        catch { directory.Dispose(); throw; }
+    }
 
     internal StagedDirectory OpenMovableDirectory(string name) =>
-        new(this, OpenDirectory(name, OpenExisting, access: 0x00100081 | DeleteAccess));
+        new(this, name, OpenDirectory(name, OpenExisting, access: 0x00100081 | DeleteAccess));
 
     private WindowsFileScope OpenDirectory(string name, uint disposition, uint access)
     {
         string path = Child(name);
+        StageContents? tracked = null;
+        if (_stage is not null)
+        {
+            _stage.Directories.TryGetValue(name, out tracked);
+            if (disposition == OpenIf) disposition = tracked is null ? CreateNew : OpenExisting;
+            if (disposition == OpenExisting && tracked is null)
+                throw new InvalidDataException("The staging directory was not created by this operation.");
+        }
         SafeFileHandle child = OpenRelative(pins[^1], name, access, 3, disposition, directory: true);
         try
         {
-            VerifyDirectory(child);
-            return new(path, [child]);
+            FileInfo info = VerifyDirectory(child);
+            if (_stage is not null)
+            {
+                var identity = (info.VolumeSerial, info.FileIndex);
+                if (tracked is null) _stage.Directories.Add(name, tracked = new StageContents(identity));
+                else if (tracked.Identity != identity) throw new InvalidDataException("A staged directory changed.");
+            }
+            return new(path, [child]) { _stage = tracked };
         }
         catch
         {
@@ -123,9 +158,12 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         catch (Win32Exception ex) when (ex.NativeErrorCode is 5 or 145 || IsSharing(ex)) { return false; }
     }
 
-    internal sealed class StagedDirectory(WindowsFileScope parent, WindowsFileScope directory) : IDisposable
+    internal sealed class StagedDirectory(WindowsFileScope parent, string temporaryName, WindowsFileScope directory) : IDisposable
     {
+        private bool _retain, _disposed;
         internal WindowsFileScope Scope { get; } = directory;
+
+        internal void RetainForRecovery() => _retain = true;
 
         internal void Publish(string name)
         {
@@ -133,19 +171,71 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
             SafeFileHandle handle = Scope.DirectoryHandle;
             VerifyDirectory(handle);
             Rename(handle, name);
+            _retain = true;
             Dispose();
         }
 
-        public void Dispose() => Scope.Dispose();
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            StageContents? abandoned = _retain ? null : Scope._stage;
+            try { abandoned?.RemoveCreated(Scope); }
+            finally { Scope.Dispose(); }
+            if (abandoned is not null)
+            {
+                try { parent.RemoveEmptyDirectory(temporaryName, abandoned.Identity); }
+                catch (Exception ex) when (IsStageCleanupFailure(ex)) { }
+            }
+        }
     }
+
+    private sealed class StageContents((uint Volume, ulong Index) identity)
+    {
+        internal (uint Volume, ulong Index) Identity { get; } = identity;
+        internal Dictionary<(uint Volume, ulong Index), string> Files { get; } = [];
+        internal Dictionary<string, StageContents> Directories { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        internal void RemoveCreated(WindowsFileScope scope)
+        {
+            foreach (var (expected, name) in Files)
+            {
+                try
+                {
+                    using SafeFileHandle handle = scope.OpenChild(name, ReadAccess | DeleteAccess);
+                    FileInfo current = ReadInfo(handle);
+                    if (current.IsSingleRegularFile && (current.VolumeSerial, current.FileIndex) == expected)
+                        Delete(handle);
+                }
+                catch (Exception ex) when (IsStageCleanupFailure(ex)) { }
+            }
+            foreach (var (name, contents) in Directories)
+            {
+                try
+                {
+                    using (WindowsFileScope child = scope.OpenDirectory(name, OpenExisting))
+                        contents.RemoveCreated(child);
+                    scope.RemoveEmptyDirectory(name, contents.Identity);
+                }
+                catch (Exception ex) when (IsStageCleanupFailure(ex)) { }
+            }
+        }
+    }
+
+    private static bool IsStageCleanupFailure(Exception ex) => ex is Win32Exception or IOException or
+        InvalidDataException or UnauthorizedAccessException;
 
     internal void Publish(SafeFileHandle staged, string name)
     {
         _ = Child(name);
         var stagedInfo = ReadInfo(staged);
         if (!stagedInfo.IsSingleRegularFile) throw new InvalidDataException("Staged file is no longer a single regular file.");
+        var identity = (stagedInfo.VolumeSerial, stagedInfo.FileIndex);
+        if (_stage is not null && !_stage.Files.ContainsKey(identity))
+            throw new InvalidDataException("The file was not created in this stage.");
         // A bare filename and null RootDirectory keep the retained file in its actual parent.
         Rename(staged, name);
+        if (_stage is not null) _stage.Files[identity] = name;
     }
 
     internal static FileInfo ReadInfo(SafeFileHandle handle) =>
@@ -216,10 +306,12 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         catch { handle.Dispose(); throw; }
     }
 
-    private static void VerifyDirectory(SafeFileHandle handle)
+    private static FileInfo VerifyDirectory(SafeFileHandle handle)
     {
-        if ((ReadInfo(handle).Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory)
+        FileInfo info = ReadInfo(handle);
+        if ((info.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != FileAttributes.Directory)
             throw new InvalidDataException("Shortcut path includes a reparse point or non-directory.");
+        return info;
     }
 
     private static SafeFileHandle OpenRelative(SafeFileHandle parent, string name, uint access, uint share, uint disposition, bool directory)

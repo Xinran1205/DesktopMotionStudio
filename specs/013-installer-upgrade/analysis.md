@@ -13,3 +13,5 @@ The requirements checklist passes 16/16. All 7 FR, 9 AC and 3 SC keys are traced
 The analysis allows the payload build and the new transaction proof to proceed. Production setup is gated by both.
 
 The review increment traces FR-008 and SC-004 to T013 and FR-009 and SC-005 to T014. The entry and transaction gates have one acquisition order. Maintenance runs after commit and verifies ownership before reclaiming a retired generation. The clean-account acceptance tasks remain required.
+
+FR-010 and SC-006 trace to T015. Unpublished failure cleanup checks recorded identities and operates relative to retained handles. Claimed upgrade stages preserve their durable receipt and remain recoverable.

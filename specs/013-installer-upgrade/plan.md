@@ -36,6 +36,8 @@ Separate the installer transaction gate from the stable-entry dispatch gate. An 
 
 After the selector and registration commit, reuse uninstall's generation receipt and digest checks to reclaim owned generations strictly older than the previous selector. Keep current and previous intact. A conflict or interrupted retirement retains its proof and can be retried by rerunning the installed package. This maintenance does not affect the upgrade commit result.
 
+Track handles' file and directory identities in fresh installer stages so ordinary failure can remove the exact created objects. Preserve unknown content and claimed upgrade stages that have durable retry receipts. An abrupt process exit before durable proof can leave an unverified stage. Its name alone gives no authority to delete it.
+
 ## Phase 3 — Convergence
 
 Run build, static checks, regression, package layout and native lifecycle checks. Run real install, Shell launch, fault/rollback, upgrade, uninstall and reinstall in a disposable Windows 11 x64 VM with a standard account, no preinstalled product runtime and detached networking. Record this host's isolated non-elevated evidence separately. Close independent review and verify every FR, AC and SC.
