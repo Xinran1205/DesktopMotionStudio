@@ -4,11 +4,11 @@
 
 ## Phase 1 — Setup
 
-- [ ] T001 在 `specs/014-first-licensed-scene/evidence.md` 记录 0.15.0 旧作品、配置与真实启动基线，准备隔离发布目录、受管入口和两种测试目标。
+- [x] T001 在 `specs/014-first-licensed-scene/evidence.md` 记录 0.15.0 旧作品、配置与真实启动基线，准备隔离发布目录、受管入口和两种测试目标。
 
 ## Phase 2 — Foundational
 
-- [ ] T002 在 `specs/014-first-licensed-scene/poc/` 做短分镜与窗口时序小样。记录居中／单屏全屏、提前／迟到、Esc、淡出时长与减少动态效果。通过 FR-004 的构图比较和无阻塞退场后再进入正式实现。
+- [x] T002 在 `specs/014-first-licensed-scene/poc/` 做短分镜与窗口时序小样。记录居中／单屏全屏、提前／迟到、Esc、淡出时长与减少动态效果。通过 FR-004 的构图比较和无阻塞退场后再进入正式实现。
 
 ## Phase 3 — US1 完整预览（P1）
 
