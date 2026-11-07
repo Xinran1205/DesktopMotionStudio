@@ -69,7 +69,11 @@ internal sealed class InstallCoordinator(string programsPath, string menuPath, I
         EnsureMenu(root, menu, owner, mayCreate: active is null, checkpoint);
         registration.Ensure(owner, root.Path, selected.Version, () => checkpoint?.Invoke(InstallStep.RegistrationClaimed));
         checkpoint?.Invoke(InstallStep.Registered);
-        if (active is not null) return InstallOutcome.AlreadyInstalled;
+        if (active is not null)
+        {
+            new InstallUpgrade(root, registration, owner).PruneRetired(active.Version);
+            return InstallOutcome.AlreadyInstalled;
+        }
         using (var versions = root.OpenDirectory(InstalledLayout.Versions, WindowsFileScope.OpenExisting))
         using (var generation = versions.OpenDirectory(selected.Version.ToString(3), WindowsFileScope.OpenExisting))
         {

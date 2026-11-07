@@ -96,3 +96,7 @@ The local media directory is `artifacts/f12-offline-acceptance-20261107`. It con
 ## T013 — Launch during Setup preparation
 
 The new stable-entry regression failed with an unrelated Setup transaction holding the former shared gate. A separate dispatch gate allowed the same verified executable and binding token to run during that hold. A durable removal intent still prevented dispatch. Upgrade and removal interruption regressions passed with the new gate ordering. This proof covers the rebuilt entry implementation. The earlier 0.12.3 and 0.12.4 candidate binaries still contain their original entry code.
+
+## T014 — Retired generation maintenance
+
+Three consecutive fixture upgrades retained current and previous generations while deleting an older verified generation and its receipt. An unrelated version-shaped directory and a foreign file inside another retired generation survived. The foreign file blocked removal of its directory and receipt. After the fixture removed its conflict, rerunning the already installed package completed retirement. The targeted Release suite passed 39 Setup checks and 25 uninstall checks.

@@ -89,8 +89,48 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
 
         registration.Ensure(owner, root.Path, expected.Version, previousVersion: intent.From.Version);
         InstallJournal.Remove(root, InstallJournal.UpgradeName, intent);
+        PruneRetired(expected.Version);
         return InstallOutcome.Upgraded;
     }
+
+    internal void PruneRetired(Version active)
+    {
+        try
+        {
+            InstalledSelection? rollback = ReadSelector(root, InstalledEntry.Previous);
+            if (rollback is null || rollback.Version >= active) return;
+            using var versions = root.OpenDirectory(InstalledLayout.Versions, WindowsFileScope.OpenExisting);
+            using (var previous = versions.OpenDirectory(rollback.Version.ToString(3), WindowsFileScope.OpenExisting))
+            {
+                var proof = InstallJournal.Read<InstallGeneration>(versions, InstallStage.GenerationReceipt(rollback.Version));
+                if (proof is not { Schema: 1, InventoryHash: not null } || proof.Id != owner.Id ||
+                    previous.Identity != (proof.Volume, proof.Index)) return;
+                InstallPayload inventory = InstallStage.ReadInventory(previous, proof.InventoryHash);
+                if (inventory.Describe(previous.Path) != rollback) return;
+            }
+            const string suffix = ".receipt.json";
+            foreach (string receipt in versions.ListNames(512))
+            {
+                if (!receipt.EndsWith(suffix, StringComparison.Ordinal) ||
+                    InstalledSelection.ParseVersion(receipt[..^suffix.Length]) is not Version retired ||
+                    retired >= rollback.Version) continue;
+                try
+                {
+                    var proof = InstallJournal.Read<InstallGeneration>(versions, receipt);
+                    if (proof is not { Schema: 1, InventoryHash: not null, Directories: not null } || proof.Id != owner.Id ||
+                        !InstalledSelection.IsDigest(proof.InventoryHash)) continue;
+                    CheckProgramLocks(versions, retired, allowMissing: true);
+                    if (InstallStage.RemoveGeneration(versions, retired.ToString(3), proof))
+                        InstallJournal.Remove(versions, receipt, proof);
+                }
+                catch (Exception ex) when (IsRetirementFailure(ex)) { }
+            }
+        }
+        catch (Exception ex) when (IsRetirementFailure(ex)) { }
+    }
+
+    private static bool IsRetirementFailure(Exception ex) => ex is
+        Win32Exception or IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException;
 
     private static void PrepareGeneration(WindowsFileScope versions, InstallPayload payload, Stream archive, InstalledSelection expected,
         InstallOwner owner, Action<InstallStep>? checkpoint)

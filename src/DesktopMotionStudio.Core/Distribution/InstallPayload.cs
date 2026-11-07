@@ -122,11 +122,13 @@ internal sealed class InstallPayload
             throw new InvalidDataException("An installed package file changed.");
     }
 
-    internal static InstallPayload Read(Stream stream)
+    internal static InstallPayload Read(Stream stream, string? expectedHash = null)
     {
         byte[] bytes = new byte[MaxManifestBytes + 1];
         int length = stream.ReadAtLeast(bytes, bytes.Length, false);
         if (length is 0 or > MaxManifestBytes) throw new InvalidDataException("Invalid installer manifest size.");
+        if (expectedHash is not null && Convert.ToHexString(SHA256.HashData(bytes.AsSpan(0, length))) != expectedHash)
+            throw new InvalidDataException("The installer manifest does not match its receipt.");
         Manifest? contract = JsonSerializer.Deserialize<Manifest>(bytes.AsSpan(0, length), Json);
         if (contract is not { SchemaVersion: 1, RuntimeIdentifier: "win-x64", Files.Length: > 0 and <= MaxFiles } ||
             contract.ProductVersion is null || InstalledSelection.ParseVersion(contract.ProductVersion) is not Version version ||

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.ComponentModel;
 using DesktopMotionStudio.Core.IO;
 
 namespace DesktopMotionStudio.Core.Distribution;
@@ -109,6 +110,42 @@ internal sealed class InstallStage : IDisposable
             !payload.VerifyLayout(generation).SequenceEqual(proof.Directories))
             throw new InvalidDataException("The generation has no matching ownership receipt.");
         return proof;
+    }
+
+    internal static bool RemoveGeneration(WindowsFileScope versions, string name, InstallGeneration proof)
+    {
+        WindowsFileScope? published = OpenOptional(name);
+        string? staged = published is null ? proof.StageName : null;
+        if (staged is not null && !IsStageName(staged)) return false;
+        string actualName = staged ?? name;
+        using var generation = published ?? (staged is null ? null : OpenOptional(staged));
+        if (generation is null) return true;
+        if (generation.Identity != (proof.Volume, proof.Index)) return false;
+        if (generation.ListNames(4096).Count != 0)
+        {
+            InstallPayload payload = ReadInventory(generation, proof.InventoryHash);
+            if (payload.Version.ToString(3) != name || payload.RemoveFiles(generation, proof.Directories) != 0 ||
+                generation.ListNames(4096).Any(file => file != Inventory)) return false;
+            if (!InstallJournal.RemoveFile(generation, Inventory, proof.InventoryHash, 512 * 1024)) return false;
+        }
+        var id = generation.Identity;
+        generation.Dispose();
+        return versions.RemoveEmptyDirectory(actualName, id);
+
+        WindowsFileScope? OpenOptional(string child)
+        {
+            try { return versions.OpenDirectory(child, WindowsFileScope.OpenExisting); }
+            catch (Win32Exception ex) when (WindowsFileScope.IsMissing(ex)) { return null; }
+        }
+    }
+
+    internal static InstallPayload ReadInventory(WindowsFileScope generation, string expectedHash)
+    {
+        using var inventory = generation.OpenChild(Inventory, WindowsFileScope.ReadAccess);
+        if (!WindowsFileScope.ReadInfo(inventory).IsSingleRegularFile)
+            throw new InvalidDataException("The generation inventory is not a regular file.");
+        using var stream = new FileStream(inventory, FileAccess.Read);
+        return InstallPayload.Read(stream, expectedHash);
     }
 
     private static void CopyEntry(WindowsFileScope directory, string name, Stream source, string hash)

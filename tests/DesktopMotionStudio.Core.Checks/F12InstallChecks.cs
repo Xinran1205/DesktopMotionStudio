@@ -320,6 +320,36 @@ internal static class F12InstallChecks
         });
         WithFixture((directory, registry) =>
         {
+            if (Install(directory, registry) != InstallOutcome.Installed ||
+                Install(directory, registry, version: "0.12.1") != InstallOutcome.Upgraded)
+                throw new InvalidOperationException("Could not install two versions.");
+            string root = InstallRoot(directory);
+            string versions = Path.Combine(root, InstalledLayout.Versions);
+            string unrelated = Directory.CreateDirectory(Path.Combine(versions, "0.11.9")).FullName;
+            string unrelatedFile = Path.Combine(unrelated, "foreign.txt");
+            File.WriteAllText(unrelatedFile, "unrelated");
+            string first = Path.Combine(versions, "0.12.0");
+            bool heldAfterFirstUpgrade = Directory.Exists(first);
+            Check("third version retires only fully owned programs older than rollback",
+                Install(directory, registry, version: "0.12.2") == InstallOutcome.Upgraded &&
+                heldAfterFirstUpgrade && !Directory.Exists(first) && File.ReadAllText(unrelatedFile) == "unrelated" &&
+                Directory.Exists(Path.Combine(versions, "0.12.1")) && Directory.Exists(Path.Combine(versions, "0.12.2")));
+
+            string older = Path.Combine(versions, "0.12.1");
+            string conflict = Path.Combine(older, "foreign.txt");
+            File.WriteAllText(conflict, "owned directory, foreign file");
+            Check("retirement preserves foreign bytes and proof for retry",
+                Install(directory, registry, version: "0.12.3") == InstallOutcome.Upgraded &&
+                File.ReadAllText(conflict) == "owned directory, foreign file" &&
+                File.Exists(Path.Combine(versions, "0.12.1.receipt.json")));
+            File.Delete(conflict);
+            Check("same-version retry completes retirement without touching either selected generation",
+                Install(directory, registry, version: "0.12.3") == InstallOutcome.AlreadyInstalled &&
+                !Directory.Exists(older) && File.ReadAllText(unrelatedFile) == "unrelated" &&
+                Directory.Exists(Path.Combine(versions, "0.12.2")) && Directory.Exists(Path.Combine(versions, "0.12.3")));
+        });
+        WithFixture((directory, registry) =>
+        {
             if (Install(directory, registry) != InstallOutcome.Installed) throw new InvalidOperationException("Could not install fixture.");
             string root = InstallRoot(directory);
             string foreign = Directory.CreateDirectory(Path.Combine(root, InstalledLayout.Versions, "0.12.1")).FullName;

@@ -183,7 +183,7 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
                     continue;
                 }
                 string name = version.ToString(3);
-                if (RemoveGeneration(versions, name, proof)) InstallJournal.Remove(versions, receipt, proof);
+                if (InstallStage.RemoveGeneration(versions, name, proof)) InstallJournal.Remove(versions, receipt, proof);
                 else preserved++;
             }
             catch (Exception ex) when (ex is Win32Exception or IOException or UnauthorizedAccessException or InvalidDataException or System.Text.Json.JsonException)
@@ -193,34 +193,6 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
         versions.Dispose();
         if (!root.RemoveEmptyDirectory(InstalledLayout.Versions, id)) preserved++;
         return preserved;
-    }
-
-    private static bool RemoveGeneration(WindowsFileScope versions, string name, InstallGeneration proof)
-    {
-        WindowsFileScope? published = OpenOptional(versions, name);
-        string? staged = published is null ? proof.StageName : null;
-        if (staged is not null && !InstallStage.IsStageName(staged)) return false;
-        string actualName = staged ?? name;
-        using var generation = published ?? (staged is null ? null : OpenOptional(versions, staged));
-        if (generation is null) return true;
-        if (generation.Identity != (proof.Volume, proof.Index)) return false;
-        if (generation.ListNames(4096).Count != 0)
-        {
-            InstallPayload payload;
-            using (var inventory = generation.OpenChild(InstallStage.Inventory, WindowsFileScope.ReadAccess))
-            {
-                if (!InstallJournal.Matches(inventory, proof.InventoryHash, 512 * 1024)) return false;
-                using var stream = new FileStream(inventory, FileAccess.Read);
-                stream.Position = 0;
-                payload = InstallPayload.Read(stream);
-            }
-            if (payload.Version.ToString(3) != name || payload.RemoveFiles(generation, proof.Directories) != 0 ||
-                generation.ListNames(4096).Any(file => file != InstallStage.Inventory)) return false;
-            if (!InstallJournal.RemoveFile(generation, InstallStage.Inventory, proof.InventoryHash, 512 * 1024)) return false;
-        }
-        var id = generation.Identity;
-        generation.Dispose();
-        return versions.RemoveEmptyDirectory(actualName, id);
     }
 
     private static bool RemoveLauncher(WindowsFileScope root, InstallOwner owner)
