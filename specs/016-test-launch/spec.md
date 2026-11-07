@@ -1,6 +1,6 @@
 # Feature Specification — F15 测试启动
 
-**Status** Planned · **Date** 2026-11-07
+**Branch** codex/f15-test-launch · **Status** Accepted on Windows workstation · **Date** 2026-11-07
 
 **Input** PRD V1.0 §2.2、§3 F06、§4.1，TDD V1.0「测试启动」。
 
@@ -26,6 +26,8 @@
 **输出** 一次实际目标启动或已有窗口激活，以及 Studio 的本次请求状态。
 
 **边界** 配置并发变更、失效或未知的绑定、动画停用、重复操作、切换选中项、Studio 关闭、安装中占用、渲染异常。
+
+**澄清** 使用 Alt+T 或首页按钮发起测试。同一 Studio 窗口同时只等待一个测试。退出 Studio 只结束界面的等待。测试请求由同一发布包的 Launcher 处理，使用产品的当前用户配置。显式配置或作品库覆盖模式隐藏此动作，避免启动真实用户的绑定或显示与启动不同的作品。Launcher 返回针对 Studio 的简洁结果，桌面快捷方式沿用原参数及退出行为。
 
 **依赖** F05 实例协调、F06 渲染降级、F09 首页与绑定、F10 受管 Launcher、F11 诊断。按当前交付流程，实施前完成 F12。
 

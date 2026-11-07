@@ -13,7 +13,8 @@ using System.IO;
 
 namespace DesktopMotionStudio.Studio;
 
-internal sealed record ApplicationRow(ApplicationProfile Profile, BindingResolution Binding, string TargetStatus, SceneLibraryItem? Work)
+internal sealed record ApplicationRow(ApplicationProfile Profile, BindingResolution Binding, string TargetStatus,
+    bool TargetAvailable, SceneLibraryItem? Work)
 {
     public string Name => Profile.DisplayName;
     public string Initial => Name[..1].ToUpperInvariant();
@@ -40,12 +41,14 @@ public partial class MainWindow : Window
     private bool _closing, _allowClose;
 
     internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
-        ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null)
+        ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null, TestLaunchClient? testLaunch = null)
     {
         InitializeComponent();
         _shortcuts = shortcuts;
         _diagnostics = diagnostics;
+        _testLaunch = testLaunch;
         ShortcutPanel.Visibility = shortcuts is null ? Visibility.Collapsed : Visibility.Visible;
+        TestLaunchPanel.Visibility = testLaunch is null ? Visibility.Collapsed : Visibility.Visible;
         DiagnosticsButton.Visibility = diagnostics is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
@@ -62,6 +65,7 @@ public partial class MainWindow : Window
             if (_busy) { StatusText.Text = "正在保存配置，请稍候再关闭。"; return; }
             if (_closing) return;
             _closing = true; _refreshVersion++; IsEnabled = false;
+            _testLaunchWait?.Cancel();
             await _intents.DisposeAsync(); _allowClose = true; Close();
         };
         Closed += (_, _) => { _closed = true; _refreshVersion++; _detailsVersion++; _presenter.Dispose(); };
@@ -82,11 +86,12 @@ public partial class MainWindow : Window
                 ApplicationRow[] rows = result.IsSuccess ? result.State!.Applications.Select(profile =>
                 {
                     LaunchTarget? target = ApplicationRegistry.GetTarget(profile);
-                    string status = target is null ? "需要确认目标" : new LaunchTargetIdentityResolver().Resolve(target).Succeeded
+                    bool targetAvailable = target is not null && new LaunchTargetIdentityResolver().Resolve(target).Succeeded;
+                    string status = target is null ? "需要确认目标" : targetAvailable
                         ? profile.Target!.Kind == ApplicationTargetKind.Packaged ? "身份格式有效" : "入口可用" : "入口不可用";
                     BindingResolution binding = _bindings.Resolve(profile.AppId);
                     SceneLibraryItem? work = binding.Binding is null ? null : library.Items.FirstOrDefault(item => string.Equals(item.Catalog.Manifest?.SceneId, binding.Binding.SceneId, StringComparison.OrdinalIgnoreCase));
-                    return new ApplicationRow(profile, binding, status, work);
+                    return new ApplicationRow(profile, binding, status, targetAvailable, work);
                 }).OrderBy(row => row.Name, StringComparer.CurrentCultureIgnoreCase).ToArray() : [];
                 return (result, rows);
             });
@@ -143,6 +148,7 @@ public partial class MainWindow : Window
         BoundCover.Source = null; BoundFallback.Visibility = Visibility.Visible;
         int version = ++_detailsVersion;
         ToggleButton.Content = row?.Binding.Binding?.Enabled == true ? "停用动效" : "启用动效";
+        RefreshTestLaunchDetails(row);
         RefreshShortcutDetails(row?.Binding.Binding?.BindingId, version);
         UpdateEnabled();
         if (row?.Work is not SceneLibraryItem work) return;
@@ -161,6 +167,7 @@ public partial class MainWindow : Window
         DiagnosticsButton.IsEnabled = !_busy && !_closing && _diagnostics is not null;
         PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
         ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
+        TestLaunchButton.IsEnabled = CanTestLaunch;
         UpdateShortcutButtons();
     }
 

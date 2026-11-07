@@ -16,6 +16,8 @@ internal static class Program
         if (args is ["--f10-ui"]) return F10UiChecks.Run();
         if (args is ["--f11-launch-ui"]) return F10UiChecks.Run(diagnostics: true);
         if (args is ["--f11-ui"]) return F10UiChecks.Run(diagnostics: true, settingsAndRecovery: true);
+        if (args is ["--f15-native", var fixture, var pid, var executable] && int.TryParse(pid, out int ownedPid))
+            return F15NativeChecks.Run(fixture, ownedPid, executable);
         if (args is ["--preview-races"]) { int previewFailures = 0; PreviewRaceChecks.Run(ref previewFailures); return previewFailures; }
         if (args.Length != 0) return 2;
         string root = Path.Combine(Path.GetTempPath(), $"dms-discovery-checks-{Guid.NewGuid():N}");

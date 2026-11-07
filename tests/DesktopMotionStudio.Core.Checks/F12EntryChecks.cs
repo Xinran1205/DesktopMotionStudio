@@ -28,6 +28,13 @@ internal static class F12EntryChecks
             File.WriteAllBytes(selector, a.Encode());
             string[] binding = ["--binding", ManagedLaunchRequest.EncodeBindingId("测试 version A/B")!];
             Check("running A receives exact canonical token and working directory", Observe(root, first, binding));
+            string[] test = [TestLaunchProtocol.Command, binding[1]];
+            Check("test command forwards the same token and yields the actual child's typed result",
+                Observe(root, first, test, (int)TestLaunchOutcome.OpenedWithoutMotion));
+            Check("test command accepts only its exact argument shape and only the Launcher entry",
+                !InstalledEntry.AcceptsArguments(false, test) &&
+                !InstalledEntry.AcceptsArguments(true, [TestLaunchProtocol.Command, "%bad"]) &&
+                !InstalledEntry.AcceptsArguments(true, [.. test, "--extra"]));
             using (var staging = new InstallGate(root))
             {
                 bool dispatched = Task.Run(() =>
@@ -107,7 +114,7 @@ internal static class F12EntryChecks
         return directory;
     }
 
-    private static bool Observe(string root, string generation, string[] binding)
+    private static bool Observe(string root, string generation, string[] binding, int expectedExit = 0)
     {
         string trace = Path.Combine(generation, "trace.txt");
         File.Delete(trace);
@@ -122,7 +129,7 @@ internal static class F12EntryChecks
                 process.WaitForExit();
                 return false;
             }
-            return process.ExitCode == 0 && File.Exists(trace) && File.ReadAllLines(trace).SequenceEqual([binding[1], generation]);
+            return process.ExitCode == expectedExit && File.Exists(trace) && File.ReadAllLines(trace).SequenceEqual([binding[1], generation]);
         }
         finally { Environment.SetEnvironmentVariable(TraceVariable, previous); }
     }

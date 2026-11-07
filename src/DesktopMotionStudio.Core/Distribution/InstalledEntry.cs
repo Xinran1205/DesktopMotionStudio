@@ -12,7 +12,7 @@ internal static class InstalledEntry
     internal const string Previous = "active.previous";
 
     internal static bool AcceptsArguments(bool launcher, string[] args) =>
-        launcher ? ManagedLaunchRequest.ParseArguments(args) is not null : args.Length == 0;
+        launcher ? ManagedLaunchRequest.ParseArguments(args) is not null || TestLaunchProtocol.ParseArguments(args) is not null : args.Length == 0;
 
     internal static Process Start(string root, bool launcher, string[] args)
     {

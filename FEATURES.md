@@ -1,6 +1,6 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.31 · **Date:** 2026-11-07
+**Status:** Incremental implementation · **Version:** 1.0.32 · **Date:** 2026-11-07
 
 The repository began with requirements documents only. F00–F12 are complete under the recorded acceptance scope. Dependencies below define the delivery order.
 
@@ -19,7 +19,7 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 10 | Shell integration / F10 Managed shortcut lifecycle | Explicitly create, repair and remove verified owned shortcuts | F02, F04, F05, F06, F07, F08, F09 | Complete; durable receipts, actual Shell activation and fallback verified |
 | 11 | Diagnostics / F11 Settings and local diagnostics | Theme, mute, status, bounded redacted logs and recovery actions | F02, F06, F08, F09, F10 | Complete · [Windows evidence](specs/012-settings-diagnostics/evidence.md) |
 | 12 | Distribution / F12 Installer, upgrade and uninstall | Install, update/rollback, preserve config and clean owned artifacts | F10, F11 | Complete · workstation Setup, installed Shell launch and fallback, isolated rollback and ownership · [evidence](specs/013-installer-upgrade/evidence.md) |
-| 13 | Studio / F15 Test launch | Launch the actual bound application from Studio before creating a desktop link | F05, F06, F09, F10, F11 | [Specification and plan](specs/016-test-launch/spec.md) |
+| 13 | Studio / F15 Test launch | Launch the actual bound application from Studio before creating a desktop link | F05, F06, F09, F10, F11 | Complete · Alt+T, actual launch, warm reuse and fallback · [evidence](specs/016-test-launch/evidence.md) |
 | 14 | Content / F13 First licensed scene | One high-quality scene with cleared assets and cross-app handoff | F03, F06, F07 | Spec baseline |
 | 15 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 | Spec baseline |
 
@@ -28,6 +28,8 @@ The repository began with requirements documents only. F00–F12 are complete un
 F00 is first because the existing TDD identifies transparent top-level rendering as a high-risk unknown; validating it early prevents building UI and contracts around an infeasible host. It is a bounded prototype, not a product feature release. It must demonstrate full-screen/centered placement, Esc close, DPI-aware monitor selection, transparency, and clean shutdown. Windows App SDK/WinUI 3 integration and GPU-composition remain separate later decisions.
 
 The F IDs here are engineering feature IDs and do not map one-to-one to the PRD F01–F12 capability IDs. The PRD's two proposed launch scenes map to F13 and F14; their specific creative identity and rights require per-asset verification before release.
+
+Develop the built-in works one at a time with distinct styles. User-requested directions include anime, technology, comedy and cinematic spectacle. The development bundle currently contains Studio Pulse.
 
 ## Decomposition note
 
@@ -64,3 +66,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.29 | 2026-11-07 | Verify Setup, Start menu launch, real selector rollback and registered removal on Windows. Stage media for clean-account acceptance. |
 | 1.0.30 | 2026-11-07 | Trace the original test-launch requirement to F15 and schedule it after F12 acceptance and before the licensed works. |
 | 1.0.31 | 2026-11-07 | Close F12 using the revised workstation acceptance and recorded compatibility scope. |
+| 1.0.32 | 2026-11-07 | Close F15 with installed and unpackaged evidence. Record the requested scene directions and pause feature work for user familiarization. |

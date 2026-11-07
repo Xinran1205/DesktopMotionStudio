@@ -2,9 +2,9 @@
 
 ## Architecture
 
-Studio resolves the bundle's Launcher with the existing installed/development layout and submits the same encoded binding argument used by managed desktop entries. Launcher remains the authority for the latest profile, application identity, diagnostics and fail-open playback. Studio owns request submission, per-view feedback and keyboard access. Wait for the owned Launcher process asynchronously. Closing Studio leaves an already dispatched target running.
+Studio resolves Launcher with the existing installed/development layout. The test request uses `--test-binding` with the existing canonical binding token. In an installed bundle the stable shim verifies the selected Launcher image, starts it and forwards the child's exit code for this explicit mode. Launcher reports typed exit codes to Studio without a second dialog and remains the authority for the latest profile, application identity, diagnostics and fail-open playback. Studio owns a bounded asynchronous wait and per-selection feedback. Closing Studio detaches the wait and leaves the Launcher and target running.
 
-Use the existing pinned .NET SDK and WPF surface. Keep the profile schema, shortcut format and Launcher CLI grammar. An injectable Launcher process boundary allows deterministic testing without writing a shortcut or invoking an arbitrary executable from Studio.
+Use the existing pinned .NET SDK and WPF surface. Keep the profile schema, shortcut format and the existing `--binding` behavior. The stable installed Launcher shim accepts the two exact forms and only waits for the explicit test form. An injectable process boundary allows deterministic testing. Explicit Studio profile or catalog overrides hide the action.
 
 ## Verification
 

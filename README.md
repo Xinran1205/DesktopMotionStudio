@@ -2,6 +2,8 @@
 
 Windows 11 x64 desktop application for binding built-in launch animations to local apps. The self-contained Windows Setup has passed workstation acceptance through F12. The current candidates are unsigned development builds.
 
+[中文使用指南](docs/USER_GUIDE.zh-CN.md)
+
 ## Development status
 
 The original [PRD](Desktop_Motion_Studio_PRD_V1.0.md) and [technical design](Desktop_Motion_Studio_Technical_Design_V1.0.md) remain source baselines. [Feature inventory](FEATURES.md), [Spec Kit constitution](.specify/memory/constitution.md), [decisions](docs/DECISIONS.md), and independent specifications under `specs/` track the executable plan and refinements.
@@ -37,6 +39,10 @@ Studio build/publish automatically bundles MotionHost and the original neutral d
 
 See [F09 validation guide](specs/010-scene-preview-binding-ui/quickstart.md), [evidence](specs/010-scene-preview-binding-ui/evidence.md) and [review](specs/010-scene-preview-binding-ui/review.md). The actual desktop covered100/125/150% and both system motion preferences, restoring original settings.
 
+## Test launch
+
+Select an application with a binding in **我的应用** and choose **测试启动** or press Alt+T. Studio opens the real target with the current binding and shows the result. An already running target can be reused. A disabled scene or unavailable renderer still allows the target to open. Test launch leaves the profile and desktop entries as they were. See the [F15 verification guide](specs/016-test-launch/quickstart.md).
+
 ## Managed desktop entries
 
 Select a saved application with an enabled and available work. In **受管理桌面入口**, use Alt+C to create its desktop entry, Alt+E to repair a missing or stale entry, and Alt+M to remove it. The entry works after Studio closes and follows the current binding. Disabling the work leaves the entry available for native launch. Desktop files that are edited, replaced, or in conflict are preserved and Studio shows their status. This feature requires a supported local NTFS desktop. The development bundle's location must stay available for its entries to launch.
@@ -57,4 +63,4 @@ See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and
 
 Run the verified Setup, then open **Desktop Motion Studio** from Start. Run a newer Setup to upgrade. Use **Settings → Apps → Installed apps** to uninstall. Preferences, backups and local diagnostics are retained under `%LOCALAPPDATA%\DesktopMotionStudio`.
 
-The [F12 validation guide](specs/013-installer-upgrade/quickstart.md) describes workstation testing and additional compatibility coverage. Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix. The planned [Studio test launch](specs/016-test-launch/spec.md) precedes the licensed launch works.
+The [F12 validation guide](specs/013-installer-upgrade/quickstart.md) describes workstation testing and additional compatibility coverage. Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix.

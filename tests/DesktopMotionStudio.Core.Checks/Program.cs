@@ -42,6 +42,8 @@ if (args is ["--f11-settings-checks"]) return F11SettingsChecks.Run();
 if (args is ["--f11-diagnostic-checks"]) return F11DiagnosticChecks.Run();
 if (args is ["--f12-entry-checks"]) return F12EntryChecks.Run();
 if (args is ["--binding", var observedBinding] && F12EntryChecks.TryObserve(observedBinding)) return 0;
+if (args is [DesktopMotionStudio.Core.Shortcuts.TestLaunchProtocol.Command, var testBinding] && F12EntryChecks.TryObserve(testBinding))
+    return (int)DesktopMotionStudio.Core.Shortcuts.TestLaunchOutcome.OpenedWithoutMotion;
 if (args is ["--f12-payload-checks"]) return F12PayloadChecks.Run();
 if (args is ["--f12-stage-payload", var payload]) return F12PayloadChecks.RunBuiltPayload(payload);
 if (args is ["--f12-stage-install", var installPayload, var entryImage]) return F12PayloadChecks.RunBuiltStage(installPayload, entryImage);

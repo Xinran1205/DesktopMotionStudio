@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using DesktopMotionStudio.Core.Distribution;
+using DesktopMotionStudio.Core.Shortcuts;
 
 namespace DesktopMotionStudio.Entry;
 
@@ -13,6 +14,7 @@ internal static class Program
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000) ||
             RuntimeInformation.OSArchitecture != Architecture.X64) return 3;
 
+        bool test = args.Length > 0 && args[0] == TestLaunchProtocol.Command;
         try
         {
             string root = InstalledLayout.CurrentUserRoot();
@@ -32,10 +34,16 @@ internal static class Program
             if ((!launcher && !string.Equals(process, Path.Combine(root, InstalledLayout.StudioName), StringComparison.OrdinalIgnoreCase)) ||
                 !InstalledEntry.AcceptsArguments(launcher, args)) return 2;
             using var child = InstalledEntry.Start(root, launcher, args);
+            if (test)
+            {
+                child.WaitForExit();
+                return child.ExitCode;
+            }
             return 0;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or Win32Exception or JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or Win32Exception or JsonException or InvalidOperationException)
         {
+            if (test) return (int)TestLaunchOutcome.ComponentUnavailable;
             if (Environment.UserInteractive)
                 MessageBoxW(0, "无法启动已安装版本。请关闭正在使用的 Studio 组件，再运行安装程序修复。", "Desktop Motion Studio", 0x10);
             return 4;

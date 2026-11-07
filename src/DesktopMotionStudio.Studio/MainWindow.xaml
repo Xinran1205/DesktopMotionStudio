@@ -59,6 +59,12 @@
                             <TextBlock x:Name="BindingText" Style="{StaticResource Caption}" Margin="0,8,0,10" />
                             <WrapPanel Margin="0,0,0,12"><Button x:Name="PreviewBoundButton" Content="预览(_P)" AutomationProperties.Name="预览当前绑定作品" Click="OnPreviewBound"/><Button x:Name="ReplaceButton" Content="选择 / 替换(_B)" AutomationProperties.Name="替换绑定作品" Click="OnReplace"/></WrapPanel>
                             <Button x:Name="ToggleButton" Content="停用动效" AutomationProperties.Name="切换动效启用状态" Margin="0,0,0,20" Click="OnToggle" IsEnabled="False" />
+                            <StackPanel x:Name="TestLaunchPanel" Margin="0,0,0,16">
+                                <Button x:Name="TestLaunchButton" Content="测试启动(_T)" AutomationProperties.Name="测试启动" AutomationProperties.AutomationId="TestLaunchButton"
+                                        ContentTemplate="{StaticResource AccessButtonContent}" HorizontalAlignment="Left" Click="OnTestLaunch" IsEnabled="False" />
+                                <TextBlock x:Name="TestLaunchStatusText" AutomationProperties.AutomationId="TestLaunchStatus" AutomationProperties.LiveSetting="Polite"
+                                           Style="{StaticResource Caption}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
                             <StackPanel x:Name="ShortcutPanel" Margin="0,0,0,20">
                                 <Separator Margin="0,0,0,12" />
                                 <TextBlock Text="受管理桌面入口" FontWeight="SemiBold" />

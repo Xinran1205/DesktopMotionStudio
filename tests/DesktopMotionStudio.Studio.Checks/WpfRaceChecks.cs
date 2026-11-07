@@ -21,6 +21,7 @@ internal static class WpfRaceChecks
             F10StudioChecks.Run(ref failures);
             F11SettingsUiChecks.Run(ref failures);
             F11DiagnosticsUiChecks.Run(ref failures);
+            F15TestLaunchChecks.Run(ref failures);
             using var saveStore = new GatedStore(delayUpdate: true);
             var editor = new ApplicationEditorWindow(new ApplicationRegistry(saveStore));
             ((TextBox)editor.FindName("DisplayNameBox")).Text = "Delayed fixture";

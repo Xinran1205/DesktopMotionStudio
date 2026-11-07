@@ -46,7 +46,9 @@ internal static class Program
         });
         var diagnostics = new DiagnosticLogStore(stateFile is null ? DiagnosticLogStore.CurrentUserDirectory() :
             Path.Combine(Path.GetDirectoryName(profile)!, "logs"));
-        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics));
+        TestLaunchClient? testLaunch = stateFile is null && !seen.Contains("--catalog-root")
+            ? new(InstalledLayout.LauncherForBundle(AppContext.BaseDirectory)) : null;
+        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics, testLaunch: testLaunch));
     }
 
     private static bool IsFixtureDesktop(string stateFile, string desktop)

@@ -19,12 +19,14 @@ internal static class Program
         Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null,
         Action<DiagnosticEvent[]>? diagnostics = null)
     {
-        if (args.Length == 0 || args[0] != "--binding") return 2;
+        bool test = args.Length > 0 && args[0] == TestLaunchProtocol.Command;
+        if (!test && (args.Length == 0 || args[0] != "--binding")) return 2;
         var elapsed = Stopwatch.StartNew();
         Guid request = Guid.NewGuid();
         DiagnosticAdapter adapter = DiagnosticAdapter.Unknown;
         DiagnosticStage stage = DiagnosticStage.Request;
-        if (ManagedLaunchRequest.ParseArguments(args) is not string bindingId)
+        string? bindingId = test ? TestLaunchProtocol.ParseArguments(args) : ManagedLaunchRequest.ParseArguments(args);
+        if (bindingId is null)
         {
             Record(diagnostics, request, elapsed, adapter, (stage, DiagnosticResultCode.InvalidRequest, DiagnosticFallback.None));
             return 2;
@@ -37,6 +39,12 @@ internal static class Program
             if (plan is not { Status: ManagedLaunchStatus.Ready, AppId: not null, Target: not null })
             {
                 Record(diagnostics, request, elapsed, adapter, (stage, RequestResult(plan.Status), DiagnosticFallback.None));
+                if (test) return (int)(plan.Status switch
+                {
+                    ManagedLaunchStatus.StorageError => TestLaunchOutcome.ConfigurationUnavailable,
+                    ManagedLaunchStatus.BindingMissing => TestLaunchOutcome.BindingUnavailable,
+                    _ => TestLaunchOutcome.TargetUnavailable
+                });
                 return reportError(plan.Status switch
                 {
                     ManagedLaunchStatus.StorageError => "无法读取应用配置。请打开 Desktop Motion Studio 检查配置状态。",
@@ -75,6 +83,16 @@ internal static class Program
                 (DiagnosticStage.Animation, animation.Result, animation.Fallback));
             try { observe?.Invoke(plan, result, animated); }
             catch (Exception) { }
+            if (test) return (int)(result.Outcome switch
+            {
+                InstanceOutcome.WindowReady => animation.Fallback is DiagnosticFallback.None or DiagnosticFallback.RendererCleanupFailed
+                    ? TestLaunchOutcome.Opened : TestLaunchOutcome.OpenedWithoutMotion,
+                InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied => TestLaunchOutcome.ExistingWindow,
+                InstanceOutcome.TimedOut or InstanceOutcome.NoUsableWindow => TestLaunchOutcome.TimedOut,
+                InstanceOutcome.GateTimedOut => TestLaunchOutcome.Busy,
+                InstanceOutcome.InvalidTarget => TestLaunchOutcome.TargetUnavailable,
+                _ => TestLaunchOutcome.Failed
+            });
             return result.Outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied ||
                    result.Process is not null && result.Outcome is InstanceOutcome.NoUsableWindow or InstanceOutcome.TimedOut
                 ? 0
@@ -84,7 +102,8 @@ internal static class Program
         {
             Record(diagnostics, request, elapsed, adapter, (stage, DiagnosticResultCode.UnexpectedFailure, DiagnosticFallback.None));
             // Dispatch may already have happened. Report the failure without a second launch attempt.
-            return reportError("启动过程中出现错误。请检查目标应用或使用其原有入口。", 4);
+            return test ? (int)TestLaunchOutcome.Failed :
+                reportError("启动过程中出现错误。请检查目标应用或使用其原有入口。", 4);
         }
     }
 
