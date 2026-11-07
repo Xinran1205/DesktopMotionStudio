@@ -51,6 +51,8 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
             else if (active is not null || previous != intent.From)
                 throw new InvalidDataException("The active selector changed during upgrade.");
 
+            using var dispatch = InstallGate.ForEntry(root.Path);
+            if (!dispatch.Entered) return InstallOutcome.Busy;
             CheckProgramLocks(versions, intent.From.Version);
             registration.Ensure(owner, root.Path, intent.From.Version);
             if (pending is null) InstallJournal.WriteFile(root, InstallStage.Next, expected.Encode());

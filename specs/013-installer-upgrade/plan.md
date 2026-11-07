@@ -30,6 +30,10 @@ Author the Windows package build under `installer/`. Publish Studio, Launcher an
 
 Discover candidates in F10's private receipt store. Reopen and revalidate the exact current-desktop file and this install's Launcher identity. The ordinary uninstall helper runs from an owned copy outside the installation tree and deletes desktop entries only after program removal commits. Preserve unresolved evidence and retain bounded cleanup status. Program removal and user cleanup have distinct outcomes. See the [interface contract](contracts/installation.md).
 
+## Review fixes before delivery
+
+Separate the installer transaction gate from the stable-entry dispatch gate. An upgrade can stage a new generation while entries dispatch the current generation. Hold the dispatch gate around the final process-lock check and selection change. Hold both gates when first publishing the durable removal intent, then rely on that intent to deny dispatch while uninstall removes files. This preserves removal safety and the final process-lock preflight.
+
 ## Phase 3 — Convergence
 
 Run build, static checks, regression, package layout and native lifecycle checks. Run real install, Shell launch, fault/rollback, upgrade, uninstall and reinstall in a disposable Windows 11 x64 VM with a standard account, no preinstalled product runtime and detached networking. Record this host's isolated non-elevated evidence separately. Close independent review and verify every FR, AC and SC.

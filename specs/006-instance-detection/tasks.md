@@ -35,6 +35,10 @@
 
 - [x] T011 Add the optional, exception-isolated `beforeDispatch` observer after the exact existing-instance scan and before the single F04 dispatch; preserve source-compatible existing calls and record the preparation HRESULT in `InstanceResult`.
 
+## Phase 7: Abandoned launch ownership
+
+- [x] T012 Reproduce a killed gate owner while another process retains the gate. Switch to recoverable ownership and run the cancellation, timeout, same-AppId and independent-AppId regressions. (FR-008, FR-012, SC-007)
+
 ## Dependencies
 
 `T001` precedes `T002`. T003's proof is complete and gates native implementation. `T004` precedes T005/T006. `T007` precedes T008. T009 depends on the complete coordinator and Windows platform. T010 follows all implementation and test tasks. Tasks share the single executable harness and are intentionally sequential.

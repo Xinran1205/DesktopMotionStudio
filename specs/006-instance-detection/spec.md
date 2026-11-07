@@ -58,6 +58,7 @@ The user opens an application that is not running. The target is dispatched once
 - **FR-009**: Return structured outcomes for existing-instance activation, new launch/window ready, no usable window, timeout, denied focus, invalid identity, and native errors.
 - **FR-010**: Run without administrator rights, network discovery, target process termination, or mutation of target files/configuration.
 - **FR-011**: Support an optional synchronous best-effort `beforeDispatch` observer after the no-existing-instance scan and immediately before F04 dispatch. Invoke it only for the new-launch path under the AppId gate. Catch observer exceptions, record the native preparation error on the result, and still dispatch F04 exactly once. Calls that omit the observer retain their existing source behavior.
+- **FR-012**: If a Launcher process exits while owning the per-AppId gate, the next waiting request can acquire the abandoned gate within the normal deadline. It must perform the same identity scan before deciding whether to dispatch.
 
 ## Business Rules, Inputs & Outputs
 
@@ -76,6 +77,7 @@ The user opens an application that is not running. The target is dispatched once
 - **SC-004**: A simulated foreground denial returns `ForegroundDenied` and makes one notification call with no retry loop.
 - **SC-005**: A timeout or no-window result leaves the target process alive and does not modify unrelated files.
 - **SC-006**: The optional pre-dispatch observer runs zero times for an existing instance and once before one dispatch for a new instance; an observer exception is reported without suppressing or repeating the target dispatch.
+- **SC-007**: Kill a separate gate owner before dispatch with another process still holding a handle to the gate. The next request acquires the same gate and dispatches the verified target exactly once.
 
 ## Dependencies and Assumptions
 

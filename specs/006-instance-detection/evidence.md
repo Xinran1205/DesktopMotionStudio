@@ -40,3 +40,7 @@ Ran the complete executable contract harness with `DMS_F05_TEST_AUMID=Microsoft.
 - A subsequent F06 regression pass verified that an existing matching instance activates without invoking the observer or target dispatch.
 - The new-launch path invoked the host observer before exactly one target dispatch. A simulated observer/process-start exception was recorded in `LaunchPreparationErrorCode`; the target still reached `WindowReady`.
 - Existing calls without an observer remain valid. The F06 integration seam is additive to the F05 behavior and does not alter its target identity, wait, or activation rules.
+
+## Abandoned launch ownership
+
+A child held the per-AppId gate before dispatch. The harness retained another handle and terminated the child. The old semaphore implementation failed the two-second recovery check. With thread-owned mutex acquisition, the same test rescanned the target, dispatched once and returned `WindowReady`. The existing concurrency, cancellation and timeout checks passed. Release regression passed 525 Core, 67 Studio and 10 MotionHost checks. The optional packaged instance test was skipped in this run.

@@ -591,7 +591,7 @@ static int RunInstanceChecks()
         string appId = Guid.NewGuid().ToString("N");
         string? processPath = Environment.ProcessPath;
         if (processPath is null) throw new InvalidOperationException("Test process executable path is unavailable.");
-        ProcessStartInfo MakeWorker(string role)
+        ProcessStartInfo MakeWorker(string role, string id)
         {
             bool isDotnetHost = string.Equals(Path.GetFileNameWithoutExtension(processPath), "dotnet", StringComparison.OrdinalIgnoreCase);
             var start = new ProcessStartInfo(processPath)
@@ -604,14 +604,14 @@ static int RunInstanceChecks()
             if (isDotnetHost) start.ArgumentList.Add(System.Reflection.Assembly.GetExecutingAssembly().Location);
             start.ArgumentList.Add("--f05-instance-worker");
             start.ArgumentList.Add(processGateDirectory);
-            start.ArgumentList.Add(appId);
+            start.ArgumentList.Add(id);
             start.ArgumentList.Add(role);
             start.Environment["DOTNET_ROOT"] = "C:\\Users\\AAA\\.dotnet";
             return start;
         }
 
-        using Process workerA = Process.Start(MakeWorker("a")) ?? throw new InvalidOperationException("Worker A did not start.");
-        using Process workerB = Process.Start(MakeWorker("b")) ?? throw new InvalidOperationException("Worker B did not start.");
+        using Process workerA = Process.Start(MakeWorker("a", appId)) ?? throw new InvalidOperationException("Worker A did not start.");
+        using Process workerB = Process.Start(MakeWorker("b", appId)) ?? throw new InvalidOperationException("Worker B did not start.");
         Task<string> outputA = workerA.StandardOutput.ReadToEndAsync();
         Task<string> errorA = workerA.StandardError.ReadToEndAsync();
         Task<string> outputB = workerB.StandardOutput.ReadToEndAsync();
@@ -629,6 +629,39 @@ static int RunInstanceChecks()
         if (!separateProcessPass)
             Console.WriteLine($"  worker details: A={workerA.ExitCode}/{outcomeA} {outputA.Result}{errorA.Result}; B={workerB.ExitCode}/{outcomeB} {outputB.Result}{errorB.Result}");
         Record("same AppId is serialized across separate coordinator processes", separateProcessPass, ref failures);
+
+        string abandonedAppId = Guid.NewGuid().ToString("N");
+        using Process crashed = Process.Start(MakeWorker("crash", abandonedAppId)) ??
+            throw new InvalidOperationException("Crash worker did not start.");
+        try
+        {
+            bool held = SpinWait.SpinUntil(() => File.Exists(Path.Combine(processGateDirectory, "owner-ready")) || crashed.HasExited,
+                TimeSpan.FromSeconds(5)) && !crashed.HasExited;
+            using WaitHandle retained = ApplicationInstanceCoordinator.CreateGate(abandonedAppId);
+            if (!crashed.HasExited) crashed.Kill();
+            bool stopped = crashed.WaitForExit(5000);
+            var recoveredPlatform = new FakeWindowPlatform();
+            ProcessStamp recoveredProcess = Stamp(5040, identity);
+            int recoveryDispatches = 0;
+            var recovery = new ApplicationInstanceCoordinator(recoveredPlatform, _ =>
+            {
+                recoveryDispatches++;
+                recoveredPlatform.AddProcess(recoveredProcess, Candidate(recoveredProcess, 5041));
+                return new LaunchResult(LaunchStatus.Started, recoveredProcess.ProcessId,
+                    ProcessCreationFileTimeUtc: recoveredProcess.CreationFileTimeUtc);
+            }, gateWait: TimeSpan.FromSeconds(2));
+            InstanceResult afterCrash = recovery.OpenAsync(abandonedAppId, target).GetAwaiter().GetResult();
+            Record("abandoned AppId gate recovers with another process holding its handle",
+                held && stopped && afterCrash.Outcome == InstanceOutcome.WindowReady && recoveryDispatches == 1, ref failures);
+        }
+        finally
+        {
+            if (!crashed.HasExited)
+            {
+                crashed.Kill();
+                crashed.WaitForExit(5000);
+            }
+        }
     }
     finally { Directory.Delete(processGateDirectory, recursive: true); }
 
@@ -640,9 +673,15 @@ static int RunInstanceWorker(string stateDirectory, string appId, string role)
     try
     {
         var platform = new FileBackedWindowPlatform(stateDirectory);
-        var coordinator = new ApplicationInstanceCoordinator(platform, _ => platform.DispatchOnce());
+        var coordinator = new ApplicationInstanceCoordinator(role == "crash" ? new FakeWindowPlatform() : platform,
+            _ => platform.DispatchOnce());
         string executable = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
-        InstanceResult result = coordinator.OpenAsync(appId, new ExecutableTarget(executable, [])).GetAwaiter().GetResult();
+        InstanceResult result = coordinator.OpenAsync(appId, new ExecutableTarget(executable, []),
+            beforeDispatch: role == "crash" ? () =>
+            {
+                File.WriteAllText(Path.Combine(stateDirectory, "owner-ready"), "");
+                Thread.Sleep(Timeout.Infinite);
+            } : null).GetAwaiter().GetResult();
         File.WriteAllText(Path.Combine(stateDirectory, $"result-{role}.txt"), result.Outcome.ToString());
         Console.WriteLine(result.Outcome);
         return result.Outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting ? 0 : 1;

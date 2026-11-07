@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using DesktopMotionStudio.Core.Distribution;
+using DesktopMotionStudio.Core.IO;
 using DesktopMotionStudio.Core.Shortcuts;
 
 internal static class F12EntryChecks
@@ -17,7 +18,7 @@ internal static class F12EntryChecks
         void Check(string name, bool pass) => F09Checks.Check("F12 entry " + name, pass, ref failures);
         try
         {
-            string root = fixture.FullName;
+            string root = Directory.CreateDirectory(Path.Combine(fixture.FullName, "Programs", InstalledLayout.ProductDirectory)).FullName;
             string first = Stage(root, "1.0.0", out string hash);
             string second = Stage(root, "1.0.1", out _);
             string selector = Path.Combine(root, InstalledEntry.Active);
@@ -27,6 +28,24 @@ internal static class F12EntryChecks
             File.WriteAllBytes(selector, a.Encode());
             string[] binding = ["--binding", ManagedLaunchRequest.EncodeBindingId("测试 version A/B")!];
             Check("running A receives exact canonical token and working directory", Observe(root, first, binding));
+            using (var staging = new InstallGate(root))
+            {
+                bool dispatched = Task.Run(() =>
+                {
+                    try { return Observe(root, first, binding); }
+                    catch (IOException) { return false; }
+                }).GetAwaiter().GetResult();
+                Check("an open setup transaction does not prevent stable entry dispatch", staging.Entered && dispatched);
+            }
+            using (var programs = WindowsFileScope.Open(Path.GetDirectoryName(root)!))
+            {
+                var owner = new InstallOwner(1, Guid.NewGuid(), hash, 0, 0, 0, 0);
+                var intent = new RemoveIntent(1, owner, a, null);
+                InstallJournal.Write(programs, InstallJournal.RemoveName, intent);
+                Check("a published removal intent prevents dispatch",
+                    Reject<InvalidDataException>(() => InstalledEntry.Start(root, launcher: true, binding)));
+                InstallJournal.Remove(programs, InstallJournal.RemoveName, intent);
+            }
             File.Move(selector, previous);
             Check("missing primary runs verified previous version", Observe(root, first, binding));
             File.WriteAllBytes(selector, b.Encode());

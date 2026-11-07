@@ -92,3 +92,7 @@ The Windows Hypervisor Platform partition probe succeeded. No provisioned Window
 Release regression with the published MotionHost and Studio payloads passed 522 Core checks and 67 Studio checks with no failures. The optional packaged-instance check was skipped because `DMS_F05_TEST_AUMID` was unset.
 
 The local media directory is `artifacts/f12-offline-acceptance-20261107`. It contains both unmodified candidates, payload manifests, the offline runbook and a self-contained WindowHost test target. The target apphost reached its parser with the external runtime path pointed at an absent directory. The media manifest has nine SHA256 records. Its own SHA256 is `AA1B0487BBF8674459734CF631F4C24E74B6810988E7636124C0E3037B5E04FA`. Workstation logs are in `artifacts/checkpoints/f12-cancel-20261107`. The feature remains gated on T009–T011 in the clean guest.
+
+## T013 — Launch during Setup preparation
+
+The new stable-entry regression failed with an unrelated Setup transaction holding the former shared gate. A separate dispatch gate allowed the same verified executable and binding token to run during that hold. A durable removal intent still prevented dispatch. Upgrade and removal interruption regressions passed with the new gate ordering. This proof covers the rebuilt entry implementation. The earlier 0.12.3 and 0.12.4 candidate binaries still contain their original entry code.

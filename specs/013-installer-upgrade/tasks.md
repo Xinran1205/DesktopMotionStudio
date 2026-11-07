@@ -23,6 +23,8 @@
 
 ## Phase 3 — Windows delivery
 
+- [x] T013 Reproduce the stable entry rejecting dispatch while an unrelated setup transaction holds its gate. Separate dispatch from staging while serializing activation and durable removal. Verify current-version forwarding and refusal after removal intent. (FR-003, FR-008, SC-004)
+
 - [ ] T009 [US1] Run clean standard-account offline Windows install and real Shell launch, fallback and process-lock tests. (SC-001)
 - [ ] T010 [US2] Run two-version Windows upgrade, rollback, retry and stale installer checks. (SC-002)
 - [ ] T011 [US3] Run Installed Apps uninstall, conflict preservation and reinstall tests. (SC-003)

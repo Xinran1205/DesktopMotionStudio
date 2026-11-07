@@ -9,7 +9,7 @@ Build a per-user-session launch coordinator that resolves exact executable/AUMID
 ## Technical Context
 
 - **Language/version**: C# / .NET 10.0.403
-- **Primary dependencies**: BCL `Process`, `Semaphore`, `Stopwatch` through injectable `IInstanceClock`; Win32 `EnumWindows`, `GetWindowThreadProcessId`, `QueryFullProcessImageNameW`, `GetApplicationUserModelId`, `DwmGetWindowAttribute`, `ShowWindowAsync`, `SetForegroundWindow`, `FlashWindowEx`
+- **Primary dependencies**: BCL `Process`, `Mutex`, `Stopwatch` through injectable `IInstanceClock`, and the existing Windows window and process APIs.
 - **Storage**: None
 - **Testing**: Existing executable contract harness; injectable process/window/time seams; Windows desktop integration using the existing WindowHost POC
 - **Target platform**: Windows 11 x64, current interactive user session
@@ -31,7 +31,7 @@ Build a per-user-session launch coordinator that resolves exact executable/AUMID
 2. **Use exact process identity.** Executable identity is normalized full path; packaged identity is exact AUMID. Process creation time is part of post-launch correlation. Basename/title matching is prohibited.
 3. **Treat window selection conservatively.** Enumerate top-level HWNDs, associate process IDs, inspect visible/cloaked/owned/minimized state, and score candidates. Prefer an exact foreground match, then the process main window, then an unowned visible candidate. Equal best scores return `AmbiguousWindow`.
 4. **Keep native calls behind `IWindowPlatform`.** Production P/Invoke lives in one Windows-only implementation. Contract tests inject platform and clock fakes.
-5. **Serialize by stable AppId.** A SHA-256-based `Local\` named semaphore coordinates separate Launcher processes in one user session. Wait at most 30 seconds; after acquiring the gate, rescan rather than trusting stale PID/window state.
+5. **Serialize by stable AppId.** A SHA-256-based `Local\` named mutex coordinates Launcher processes and reports owner termination. The owning worker waits, runs the request and releases on the same thread. Acquisition remains cancellable and bounded to 30 seconds. Rescan after successful or abandoned acquisition.
 6. **Wait without holding up the target.** Start the 15-second timer after F04 returns. Poll every 100 ms using monotonic time. Cancellation stops this caller's wait only; it never cancels or kills the target.
 7. **Respect foreground policy.** Restore a minimized window asynchronously, call `SetForegroundWindow` once, and flash only the taskbar three times in one bounded `FlashWindowEx` call if Windows denies foreground status.
 

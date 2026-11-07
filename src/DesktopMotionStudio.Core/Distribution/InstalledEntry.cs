@@ -17,7 +17,7 @@ internal static class InstalledEntry
     internal static Process Start(string root, bool launcher, string[] args)
     {
         if (!AcceptsArguments(launcher, args)) throw new ArgumentException("Invalid installed entry arguments.", nameof(args));
-        using var gate = new InstallGate(root);
+        using var gate = InstallGate.ForEntry(root);
         if (!gate.Entered) throw new IOException("The installation is busy.");
 
         using var programs = WindowsFileScope.Open(Path.GetDirectoryName(root)!);

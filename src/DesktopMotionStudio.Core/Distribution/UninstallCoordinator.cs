@@ -45,6 +45,8 @@ internal sealed class UninstallCoordinator(string programsPath, string menuPath,
 
         if (intent is null)
         {
+            using var dispatch = InstallGate.ForEntry(rootPath);
+            if (!dispatch.Entered) return new(true, 0, new(0, 0, false));
             InstallOwner owner = InstallCoordinator.ReadOwnerRecord(root!);
             if (expectedOwner is Guid requested && requested != owner.Id)
                 throw new InvalidDataException("The requested installation has changed.");

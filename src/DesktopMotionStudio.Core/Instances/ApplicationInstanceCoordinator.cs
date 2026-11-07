@@ -55,15 +55,23 @@ public sealed class ApplicationInstanceCoordinator
         if (!Environment.UserInteractive || _platform.CurrentSessionId == 0)
             return new InstanceResult(InstanceOutcome.IdentityUnavailable);
 
-        Semaphore gate;
+        return await Task.Run(() => OpenWithGate(appId, resolution.Target, requestedAt, cancellationToken, beforeDispatch))
+            .ConfigureAwait(false);
+    }
+
+    private InstanceResult OpenWithGate(string appId, ResolvedLaunchTarget target, long requestedAt,
+        CancellationToken cancellationToken, Action? beforeDispatch)
+    {
+        if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
+        Mutex gate;
         try { gate = CreateGate(appId); }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException)
         { return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: ex.HResult); }
         using (gate)
         {
             int gateResult;
-            try { gateResult = await WaitForGateAsync(gate, cancellationToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) { return new InstanceResult(InstanceOutcome.Canceled); }
+            try { gateResult = WaitHandle.WaitAny([gate, cancellationToken.WaitHandle], _gateWait); }
+            catch (AbandonedMutexException ex) when (ex.MutexIndex == 0) { gateResult = 0; }
             catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException)
             { return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: ex.HResult); }
 
@@ -75,9 +83,11 @@ public sealed class ApplicationInstanceCoordinator
             try
             {
                 if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
-                return await OpenInsideGateAsync(resolution.Target, requestedAt, cancellationToken, beforeDispatch).ConfigureAwait(false);
+                // A mutex belongs to this worker thread. Keep it here while the asynchronous
+                // request completes on other threads, including after abandoned ownership.
+                return OpenInsideGateAsync(target, requestedAt, cancellationToken, beforeDispatch).GetAwaiter().GetResult();
             }
-            finally { gate.Release(); }
+            finally { gate.ReleaseMutex(); }
         }
     }
 
@@ -223,21 +233,11 @@ public sealed class ApplicationInstanceCoordinator
     private static bool IsValidAppId(string appId) =>
         !string.IsNullOrWhiteSpace(appId) && appId.Length <= 128 && !appId.Any(char.IsControl);
 
-    private static Semaphore CreateGate(string appId)
+    internal static Mutex CreateGate(string appId)
     {
         byte[] digest = SHA256.HashData(Encoding.UTF8.GetBytes(appId));
-        string name = $"Local\\DesktopMotionStudio.Instance.{Convert.ToHexString(digest)}";
-        return new Semaphore(1, 1, name);
-    }
-
-    private async Task<int> WaitForGateAsync(Semaphore gate, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return await Task.Run(() =>
-        {
-            WaitHandle[] handles = [gate, cancellationToken.WaitHandle];
-            return WaitHandle.WaitAny(handles, _gateWait);
-        }, CancellationToken.None).ConfigureAwait(false);
+        string name = $"Local\\DesktopMotionStudio.InstanceMutex.{Convert.ToHexString(digest)}";
+        return new Mutex(initiallyOwned: false, name);
     }
 
     private sealed record CandidateSelection(InstanceOutcome Outcome, WindowCandidate? Candidate, int? NativeErrorCode = null);
