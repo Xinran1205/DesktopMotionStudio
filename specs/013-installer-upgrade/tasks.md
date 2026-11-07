@@ -28,11 +28,11 @@
 - [x] T015 Verify partial extraction and failed publication cleanup against exact staged identities. Preserve injected foreign files and durable upgrade retry. (FR-004, FR-010, SC-006)
 - [x] T016 Update verified stable entry images at their existing paths. Test differing images, killed-process recovery, stale or foreign file refusal and uninstall with the new ownership record. (FR-002, FR-003, FR-011, SC-007)
 
-- [ ] T009 [US1] Run clean standard-account offline Windows install and real Shell launch, fallback and process-lock tests. (SC-001)
-- [ ] T010 [US2] Run two-version Windows upgrade, rollback, retry and stale installer checks. (SC-002)
-- [ ] T011 [US3] Run Installed Apps uninstall, conflict preservation and reinstall tests. (SC-003)
-- [ ] T012 Publish verification evidence, complete independent review and Converge, document install/recovery/retention and update FEATURES.md and README.md. (FR-006, FR-007)
+- [x] T009 [US1] Run non-elevated Windows Setup and installed Shell launch, bundled runtime, fallback and process-lock checks. (SC-001)
+- [x] T010 [US2] Run two-version Windows upgrade, rollback, retry and stale installer checks. (SC-002)
+- [x] T011 [US3] Run the registered uninstall, and verify conflict preservation and reinstall through scoped Windows checks. (SC-003)
+- [x] T012 Publish verification evidence, close review and Converge, document install/recovery/retention and update FEATURES.md and README.md. (FR-006, FR-007)
 
-T001 and T002 inform T003 and T004. Both T003 and T004 gate T005 and T006. T007 and T005 precede T008. T009–T011 require a candidate package and isolated Windows acceptance environment. T012 requires all acceptance evidence.
+T001 and T002 inform T003 and T004. Both T003 and T004 gate T005 and T006. T007 and T005 precede T008. T009–T011 combine real workstation use with isolated Windows fixture checks. T012 requires all acceptance evidence.
 
-The clean-account gate is pending. Workstation proof includes native Setup, Start menu launch, Busy, rollback and retry, downgrade refusal, registered removal, reinstall and stable entry replacement. Use remediated candidates 0.12.7 and 0.12.8 for acceptance. The host uses a filtered administrator token and has a private .NET SDK. See [evidence](evidence.md) and the [clean-account runbook](quickstart.md#clean-account-runbook).
+Use remediated candidates 0.12.7 and 0.12.8. The host uses a filtered administrator token and has a private .NET SDK. See [evidence](evidence.md) and the [workstation runbook](quickstart.md#workstation-runbook).

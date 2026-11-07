@@ -1,6 +1,6 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F12 实现完成，待干净账户验收
+## 当前断点 — F12 本机验收完成，下一项 F15
 
 当前分支 `codex/f12-installer-upgrade`，以 F11 完成提交 `0e4dcc9` 为基础。[F12 清单](../specs/013-installer-upgrade/tasks.md)的 T001–T008 已完成。自包含 Setup 0.12.3 和 0.12.4 已生成，两份实际负载在隔离 Windows 注册范围内通过安装、回滚、升级、卸载、重装。全量 Core 522 通过，Studio 67 通过。详情见 [F12 证据](../specs/013-installer-upgrade/evidence.md)。
 
@@ -8,7 +8,9 @@
 
 整体审查后的增量已修复启动所有权恢复、升级期间启动、受验证的暂存清理、旧版本回收和稳定入口更新。历史介质位于 `artifacts/f12-offline-acceptance-20261107`，修复后的介质位于 `artifacts/f12-offline-remediated-20261107`。
 
-下一步在干净、离线 Windows 11 x64 标准用户环境执行 T009–T011，再完成 T012 的独立审查和收敛。之后实施已补入交付顺序的 [F15 测试启动](../specs/016-test-launch/spec.md)，再交付 F13 和 F14。见 [F12 验证指南](../specs/013-installer-upgrade/quickstart.md#clean-account-runbook)。
+用户已改用本机验收。0.12.8 真实安装、开始菜单启动、已安装 Launcher 的 Shell 启动、渲染故障降级和注册卸载通过。0.12.7 → 0.12.8 隔离流程通过回滚、升级、保留数据和重装。T009–T012 已关闭。实际会话是联网的 Windows 11 Home x64 非提升账户，其他账户和设备属于额外兼容性覆盖。见 [F12 验证证据](../specs/013-installer-upgrade/evidence.md#final-workstation-acceptance--spec-050)。
+
+下一项是已排入交付顺序的 [F15 测试启动](../specs/016-test-launch/spec.md)，然后交付 F13 和 F14。
 
 ## F11 已完成
 

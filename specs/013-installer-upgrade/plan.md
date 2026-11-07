@@ -15,7 +15,7 @@ Pinned .NET SDK 10.0.403, existing WPF/WinForms apps and Windows 11 x64. Indepen
 | Ownership | Validate the installation namespace and owned file list. Delete desktop entries only through F10 verified handles. No wildcard removal. |
 | Boundaries | Setup owns payload staging, selector and registration. A stable shim starts the selected installed generation. A small uninstall helper invokes Core ownership cleanup. |
 | Compatibility | One supported installed product family, ordered versions, unchanged profile2/IPC2. Reject unsupported selector schemas and file/process conflicts. |
-| Small increments and quality | Verify bundled runtimes and the selector's interruption cases before product install, cleanup and clean-account acceptance. |
+| Small increments and quality | Verify bundled runtimes, installed Shell launch and isolated interruption and ownership cases on Windows. |
 | Dependencies and Git | Build from the pinned SDK and BCL. Commit each verified increment. |
 
 ## Phase 0 — Research and gate
@@ -42,4 +42,4 @@ Record the old and new stable entry image digests in the upgrade intent. Publish
 
 ## Phase 3 — Convergence
 
-Run build, static checks, regression, package layout and native lifecycle checks. Run real install, Shell launch, fault/rollback, upgrade, uninstall and reinstall in a disposable Windows 11 x64 VM with a standard account, no preinstalled product runtime and detached networking. Record this host's isolated non-elevated evidence separately. Close independent review and verify every FR, AC and SC.
+Run build, static checks, regression, package layout and native lifecycle checks. Verify the real current-user Setup, Start menu, installed Launcher, renderer fallback and registered uninstall in an ordinary non-elevated Windows 11 x64 session. Use isolated published-payload tests for fault/rollback, retained data, reinstall and desktop ownership conflicts. Record the session, runtime and network conditions. Close review and verify every FR, AC and SC. Additional compatibility results can be attached later.

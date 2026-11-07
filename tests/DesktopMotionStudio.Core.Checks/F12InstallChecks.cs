@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.Versioning;
 using DesktopMotionStudio.Core.Distribution;
 using DesktopMotionStudio.Core.Shortcuts;
+using DesktopMotionStudio.Core.State;
 using Microsoft.Win32;
 
 internal static class F12InstallChecks
@@ -25,8 +26,14 @@ internal static class F12InstallChecks
         {
             InstallCoordinator setup = new(Path.Combine(directory, "Programs"), Path.Combine(directory, "Menu"), new InstallRegistration(registry));
             string root = InstallRoot(directory);
-            string profile = Path.Combine(directory, "profile.json");
-            File.WriteAllText(profile, "retained profile");
+            string profile = Path.Combine(directory, "user-data", "studio-state.json");
+            var repository = new StudioStateRepository(profile);
+            var preference = new StudioSettings("dark", true);
+            if (repository.Save(StudioState.Empty) != RepositoryError.None ||
+                !repository.Update(current => current with { Settings = preference }).IsSuccess)
+                throw new InvalidOperationException("Could not prepare the retained test profile and backup.");
+            byte[] profileBytes = File.ReadAllBytes(profile);
+            byte[] backupBytes = File.ReadAllBytes(profile + ".bak");
             Check("real package A installs", InstallBuilt(first) == InstallOutcome.Installed && RegistrationMatches(directory, registry, versionA));
             string shortcut = CreateManagedEntry(directory);
             string active = Path.Combine(root, InstalledEntry.Active);
@@ -47,12 +54,18 @@ internal static class F12InstallChecks
                     File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))) &&
                 File.ReadAllBytes(Path.Combine(root, InstalledLayout.StudioName)).SequenceEqual(
                     File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))));
+            Check("real upgrade preserves profile and backup bytes", ProfileUnchanged());
             UninstallResult result = Uninstall(directory, registry);
             Check("real payload files, registration and owned links are removed", !result.Busy && result.PreservedProgramItems == 0 &&
                 result.Shortcuts.Removed == 1 && !Directory.Exists(root) && !File.Exists(shortcut) &&
                 !File.Exists(MenuLink(directory)) && !new InstallRegistration(registry).Exists());
-            Check("real reinstall leaves retained profile readable", InstallBuilt(second) == InstallOutcome.Installed &&
-                File.ReadAllText(profile) == "retained profile");
+            Check("real reinstall loads the retained settings and keeps the profile and backup exact",
+                InstallBuilt(second) == InstallOutcome.Installed && repository.Load().State?.Settings == preference &&
+                ProfileUnchanged());
+
+            bool ProfileUnchanged() =>
+                File.ReadAllBytes(profile).SequenceEqual(profileBytes) &&
+                File.ReadAllBytes(profile + ".bak").SequenceEqual(backupBytes);
 
             InstallOutcome InstallBuilt(string path, Action<InstallStep>? checkpoint = null)
             {

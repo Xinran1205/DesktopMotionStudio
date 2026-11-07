@@ -1,5 +1,7 @@
 # F12 Verification Evidence
 
+The historical clean-account gate below was superseded by the user-approved workstation acceptance in spec 0.5.0. The final evidence for that scope is in the last section.
+
 **Date** 2026-11-06 · **Host** Windows 11 Home x64 build 26200, non-elevated filtered administrator token, NTFS · **SDK** 10.0.403
 
 ## T001 — Native MSI evaluation
@@ -114,3 +116,17 @@ On the ordinary Windows workstation, real Setup installed 0.12.5 and upgraded to
 The final 0.12.7 and 0.12.8 candidates add the Launcher directory preflight check. The 0.12.4 → 0.12.8 and 0.12.7 → 0.12.8 published payloads each passed six isolated Windows lifecycle checks, including rollback, stale package refusal, stable path and new entry hashes, preserved links, removal and reinstall. Both final Setup builds verified the embedded archive, inventory and entry bytes, and their self-contained apphosts reached argument validation with the external runtime path absent. Final Release regression passed 540 Core, 67 Studio and 10 MotionHost checks with zero failures. The full run skipped optional MSIX activation because `DMS_F05_TEST_AUMID` was unset. The same compiled check passed separately with the installed Paint AUMID, observed `WindowReady` and closed the test process.
 
 Use `artifacts/f12-offline-remediated-20261107` for the clean-account run. Its manifest covers eleven files and has SHA256 `F73B403190A4BE9CEC4782DCD465983E54B77DCCE5D575B9F628BE48AD6AA3B8`. Windows PowerShell 5.1 verified the package hashes and refused the workstation as a clean guest. Raw logs and the native removal postcondition are under `artifacts/review-20261107`. T009–T012 remain open.
+
+## Final workstation acceptance — spec 0.5.0
+
+The exact 0.12.8 Setup ran non-elevated on Windows 11 Home x64 build 26200. The workstation had a filtered administrator account, an external SDK and networking available. The candidate was read from local disk. The native start-menu entry opened Studio, and its process loaded `coreclr.dll` from the installed generation. The test pointed external runtime lookup to an absent path.
+
+| Requirement | Evidence |
+|---|---|
+| T009 / SC-001 | The installed stable Launcher was invoked through a real local Shell Link with the managed binding argument after Studio closed. One test target opened with `WindowReady / HandedOff`. Temporarily moving aside the test installation's renderer produced `WindowReady / RendererUnavailable`. The exact renderer bytes were restored. The earlier native busy test and current Setup checks cover occupied processes. |
+| T010 / SC-002 | The workstation previously demonstrated real rollback and a real stable-entry upgrade. The exact 0.12.7 → 0.12.8 published payloads passed seven isolated lifecycle checks with actual Windows registration and a forced failure after selector retirement. Retry and stale package refusal passed. Existing link, profile and backup bytes stayed exact. |
+| T011 / SC-003 | Invoking the registered 0.12.8 uninstall removed program, Start menu and uninstall slots. The test profile, backup, diagnostics and out-of-scope local link kept their bytes. The current published-payload fixture reinstalled and loaded the retained settings through the production state repository. Separate owned, conflicting and redirected cases passed. |
+
+The final targeted Windows runs passed seven lifecycle, eight cleanup, 25 uninstall, 48 Setup and 13 entry checks, with no failures. The earlier full regression covered 540 Core, 67 Studio and 10 MotionHost checks and a separate real Paint MSIX test. The test used its own target, profile and local link. No files were written to the OneDrive Desktop. After verifying the expected retained files, the fixture was archived byte-for-byte and the product slots were restored to their empty state. See `artifacts/f12-workstation-acceptance-20261107` for the run results, test data and logs.
+
+This closes the revised workstation acceptance scope. A clean standard account, an offline operating system and other display configurations are additional coverage. The workstation exercised the registered command directly. The Settings navigation itself was outside the run.

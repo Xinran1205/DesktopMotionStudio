@@ -18,3 +18,7 @@ Independent reviewers checked install, upgrade, program ownership, the native sc
 ## Remediation verification, 2026-11-07
 
 The follow-up review checked launch/Setup lock ordering, recovery after the old entry file is retired, the installed Launcher directory's identity, and use of the new image digest for detached removal. The fixture verifies that a byte-identical shim in a replaced directory cannot pass upgrade preflight. The competing-file test verifies that a file arriving in a stable path survives both the original attempt and a retry. The independent release review and clean-profile convergence remain open in T012.
+
+## Workstation convergence, 2026-11-07
+
+Spec 0.5.0 supersedes the previous clean-profile gate. The final review combines the earlier independent installer review with the targeted source and evidence recheck. The Setup cancellation branch precedes opening package resources and registry writes. The installed run covers the real application boundary and app-local runtime. Published-payload fixtures cover rollback, subsequent ownership and retained data. All 11 functional requirements and seven success criteria have a task and an evidence path. Convergence found no remaining required work under the revised F12 scope. A separate clean-account run and public release checks remain additional coverage.

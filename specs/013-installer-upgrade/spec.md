@@ -2,7 +2,7 @@
 
 **Feature Branch** `codex/f12-installer-upgrade`
 
-**Created** 2026-11-03 · **Updated** 2026-11-07 · **Status** Clean-account acceptance pending
+**Created** 2026-11-03 · **Updated** 2026-11-07 · **Status** Accepted on Windows workstation
 
 **Input** PRD V1.0 发行与恢复，TDD V1.0 §9，F02 配置、F10 入口所有权和 F11 诊断合同。
 
@@ -12,7 +12,7 @@
 
 普通用户从本地安装包安装 Studio，在 Windows 已安装应用中找到它，并打开 Studio。用户创建受管桌面入口后，即使 Studio 已关闭也能使用。
 
-**Independent Test** 在干净的非管理员 Windows 11 x64 账户离线安装，无预装 .NET Desktop runtime。打开 Studio，建立隔离目标的绑定，通过 Windows Shell 启动。
+**Independent Test** 在 Windows 11 x64 普通交互会话中，以非提升权限从本地候选包安装。验证开始菜单和已安装 Launcher 的 Shell 启动，使用独立目标和本地测试快捷方式，记录随包运行时与原生降级结果。
 
 1. **AC-01** 安装无需管理员权限、网络或预装项目运行时。安装成功后有当前用户范围内的 Windows 卸载入口和可打开的 Studio 入口。
 2. **AC-02** 实际安装包含 Studio、Launcher、MotionHost 和兼容的内置作品。关闭 Studio 后，安装版 Launcher 通过受管入口调度一个目标，正常播放，或在渲染不可用时走原生降级。
@@ -32,7 +32,7 @@
 
 用户在 Windows 已安装应用中卸载。明确获知哪些数据保留，以及有哪些快捷方式需手工处理。
 
-**Independent Test** 在隔离账户制造完好、被修改、被替换、被移动和缺失的受管入口，并放置无关同名文件。卸载后按身份和字节核对，再安装验证保留的配置。
+**Independent Test** 执行当前用户注册的卸载命令，验证程序、开始菜单和卸载注册移除。通过隔离目录模拟完好、修改、替换、移动和缺失的受管入口，逐一核对身份和字节。重装验证保留的配置。
 
 1. **AC-07** 卸载移除当前用户的程序注册和安装包拥有的程序文件。通过 F10 所有权验证删除当前 Desktop 中仍属于 Studio 的入口，且只清理可证明属于本产品的临时文件。
 2. **AC-08** 修改、替换、移走、重定向或无法验证的入口一律保留。部分清理、占用或不支持的目录必须可识别，并告知用户剩余入口可能需要手工处理。第三方文件和注册保持完整。
@@ -69,7 +69,7 @@
 
 ## Success Criteria
 
-- **SC-001** 干净非管理员 Windows 11 x64 账户完成离线安装和真实 Shell 入口使用，证明运行时随包可用。
+- **SC-001** Windows 11 x64 非提升会话从本地包完成安装，开始菜单可打开 Studio，已安装 Launcher 经 Shell 入口调度隔离目标。验证随包运行时及渲染失败后的原生启动。
 - **SC-002** 两个可区分版本完成真实失败回滚、重试、成功升级和降级拒绝。保留 Launcher 路径、旧入口、用户数据及相关文件字节证据。
 - **SC-003** 普通卸载及重装通过实际验证。已确认所有权的文件被移除，冲突、重定向与无关对象保留，配置仍能重开。
 - **SC-004** 另一个执行者持有升级事务期间，隔离的已安装入口启动一次已提交版本。卸载意图发布后，入口不再启动；同一入口的正常并发启动可等待短暂的程序发布边界。
@@ -83,6 +83,7 @@
 - 首个可安装版本使用固定的当前用户安装位置。已发布相邻包的产品升级属于承诺，临时开发发布目录不参与安装升级。
 - 默认保留用户数据。删除数据属于用户对具体保留项的显式操作，普通卸载不提供递归清除选项。
 - 正式签名与授权发行内容由后续发布门禁验证。未签名的隔离验证包应明示其性质。
+- V1 使用本机验收。真实安装和 Shell 路径使用空的产品位置与独立测试数据，故障和所有权冲突使用隔离目录。支持目标仍为 Windows 11 x64 普通用户离线安装。本轮记录实际令牌、已装运行时和联网状态，干净标准账户属于额外兼容性覆盖。
 
 ## Change History
 
@@ -93,3 +94,4 @@
 | 0.3.0 | 2026-11-06 | Implement the Setup lifecycle, verify two published payloads and retain the clean-account acceptance gate. |
 | 0.3.1 | 2026-11-07 | Record native workstation Setup and rollback evidence. Add the offline guest preflight and reproducible acceptance steps. |
 | 0.4.0 | 2026-11-07 | Refine launch availability, owned stage cleanup, version retention and serviceability of stable program entries after review. |
+| 0.5.0 | 2026-11-07 | Adopt user-approved workstation acceptance with an actual installed launch and isolated rollback and ownership tests. |

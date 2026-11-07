@@ -1,6 +1,6 @@
 # Desktop Motion Studio
 
-Windows 11 x64 desktop application for binding built-in launch animations to local apps. The development build is verified through F11. F12 self-contained Windows Setup candidates are awaiting clean-account acceptance.
+Windows 11 x64 desktop application for binding built-in launch animations to local apps. The self-contained Windows Setup has passed workstation acceptance through F12. The current candidates are unsigned development builds.
 
 ## Development status
 
@@ -8,7 +8,7 @@ The original [PRD](Desktop_Motion_Studio_PRD_V1.0.md) and [technical design](Des
 
 Spec Kit 1.2.3 is initialized with Codex skills in `.agents/skills/` and PowerShell scripts in `.specify/scripts/powershell/`. On a machine with the CLI installed, `specify version` checks the installation. See the [official installation guide](https://github.com/github/spec-kit/blob/main/docs/installation.md) for setting up another machine.
 
-F00–F11 are verified. The Studio development build provides **My applications** for local EXE/LNK and discovered packaged entries, legacy state migration with a backup, scene previews and binding. Managed desktop entries run independently through the bundled Launcher. Settings and local diagnostics are available. Installer and licensed scene delivery are separate features.
+F00–F12 are verified under their documented scope. Studio provides **My applications** for local EXE/LNK and discovered packaged entries, legacy state migration with a backup, scene previews and binding. Managed desktop entries run independently through the bundled Launcher. Settings and local diagnostics are available. Licensed release scenes are pending.
 
 ```powershell
 dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
@@ -55,4 +55,6 @@ See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and
 
 `installer/Build-Setup.ps1` produces an unsigned, self-contained Windows x64 Setup and a SHA256 file. Validation candidates install for the current user under LocalAppData and preserve the separate user-data directory during upgrades and uninstall. Upgrades keep the registered entry paths and existing link bytes, update both verified entry binaries, and keep the active and immediately previous program generations for recovery. If an upgrade is interrupted during entry replacement, rerun the same Setup package.
 
-Standard-account offline and Installed Apps acceptance are tracked in the [F12 validation guide](specs/013-installer-upgrade/quickstart.md). Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix. The planned [Studio test launch](specs/016-test-launch/spec.md) precedes the licensed launch works.
+Run the verified Setup, then open **Desktop Motion Studio** from Start. Run a newer Setup to upgrade. Use **Settings → Apps → Installed apps** to uninstall. Preferences, backups and local diagnostics are retained under `%LOCALAPPDATA%\DesktopMotionStudio`.
+
+The [F12 validation guide](specs/013-installer-upgrade/quickstart.md) describes workstation testing and additional compatibility coverage. Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix. The planned [Studio test launch](specs/016-test-launch/spec.md) precedes the licensed launch works.
