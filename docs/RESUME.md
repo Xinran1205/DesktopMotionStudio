@@ -1,10 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F15 已验收，先体验 0.15.0
+## 当前断点 — 下一阶段已规划，F13 小样待实施
 
 「我的应用」已支持 **测试启动**（Alt+T）。未安装发布版与 0.15.0 本机安装版均验证了首次启动、已有窗口复用、渲染故障降级、配置保留，以及与受管快捷方式一致的启动结果。见 [使用指南](USER_GUIDE.zh-CN.md) 和 [F15 证据](../specs/016-test-launch/evidence.md)。本地安装候选包位于 `artifacts/f15-20261107/candidate/setup`。
 
-用户先熟悉当前版本。后续逐套开发风格各异的作品，已记录二次元、科技、搞笑和炫酷等方向。
+已确认首套原创作品「零界」走纯科技方向。下一阶段先做 [F13 的双画幅与交接小样](../specs/014-first-licensed-scene/tasks.md)，收敛 F13 后再做 [F16 首页主路径与图标](../specs/017-studio-home-polish/tasks.md)，最后进行一次本机候选包验收。开发顺序与测试边界见 [下一阶段路线](NEXT_STAGE.zh-CN.md)。截至规划记录，应用仍以已验收的 0.15.0 为基线。
 
 ### 后续测试按改动范围选择
 
@@ -23,7 +23,7 @@
 
 用户已改用本机验收。0.12.8 真实安装、开始菜单启动、已安装 Launcher 的 Shell 启动、渲染故障降级和注册卸载通过。0.12.7 → 0.12.8 隔离流程通过回滚、升级、保留数据和重装。T009–T012 已关闭。实际会话是联网的 Windows 11 Home x64 非提升账户，其他账户和设备属于额外兼容性覆盖。见 [F12 验证证据](../specs/013-installer-upgrade/evidence.md#final-workstation-acceptance--spec-050)。
 
-下一项是已排入交付顺序的 [F15 测试启动](../specs/016-test-launch/spec.md)，然后交付 F13 和 F14。
+F12 之后交付了 [F15 测试启动](../specs/016-test-launch/spec.md)。后续顺序以本页当前断点为准。
 
 ## F11 已完成
 
