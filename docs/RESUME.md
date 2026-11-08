@@ -2,7 +2,9 @@
 
 ## 当前断点 — F21 正式视频播放已验收
 
-0.20.0 候选包已验证 Studio 视频预览、测试启动和真实桌面快捷方式。10 秒视频在窗口退场后才放行冷启动，带 AAC 素材已通过实际声音与静音测试。候选包位于 `artifacts/f21/release-0.20.0/setup`。接下来是 [F22 本地 MP4 导入](../specs/023-local-mp4-import/spec.md)。[F21 验收证据](../specs/022-mp4-playback/evidence.md)
+0.20.0 候选包已验证 Studio 视频预览、测试启动和真实桌面快捷方式。10 秒视频在窗口退场后才放行冷启动，带 AAC 素材已通过实际声音与静音测试。候选包位于 `artifacts/f21/release-0.20.0/setup`。[F21 验收证据](../specs/022-mp4-playback/evidence.md)
+
+Spec Kit 当前指向 F22。本地 MP4 导入已完成规格、方案、数据模型和任务拆解，下一步先验证中断导入的安全发布和隐藏解码。[F22 任务](../specs/023-local-mp4-import/tasks.md)
 
 ## 已安装版本 — 0.19.0
 
