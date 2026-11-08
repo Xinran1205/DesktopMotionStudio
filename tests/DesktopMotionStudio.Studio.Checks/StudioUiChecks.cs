@@ -215,7 +215,7 @@ internal static class StudioUiChecks
     internal static nint FindOwnedMotionWindow(string executable, string title)
     {
         nint result = 0;
-        foreach (Process candidate in Process.GetProcessesByName("DesktopMotionStudio.MotionHost"))
+        foreach (Process candidate in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(executable)))
         {
             using (candidate)
             {

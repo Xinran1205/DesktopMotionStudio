@@ -26,7 +26,7 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 17 | Studio / F18 Motion display area | Choose the recommended, compact, large, or full-screen animation area | F09, F11, F13, F17 | [Spec](specs/019-motion-display/spec.md) · [Evidence](specs/019-motion-display/evidence.md) |
 | 18 | Launch / F19 Motion before launch | Finish or skip an enabled animation before dispatching a cold target | F05, F13, F15, F18 | [Spec](specs/020-motion-before-launch/spec.md) · [Evidence](specs/020-motion-before-launch/evidence.md) |
 | 19 | Renderer / F20 Local MP4 feasibility | Real native playback, first frame, fixed fades and ordering in an isolated probe | F18, F19 | [Verified probe](specs/021-mp4-feasibility/evidence.md) |
-| 20 | Renderer / F21 Production MP4 playback | A packaged video session with the existing preview and launch experience | F20 | [Spec](specs/022-mp4-playback/spec.md) |
+| 20 | Renderer / F21 Production MP4 playback | A packaged video session with the existing preview and launch experience | F20 | [Verified on Windows](specs/022-mp4-playback/evidence.md) |
 | 21 | Studio / F22 Local MP4 import | Local video library, validation, persistence and three playback options | F21 | [Spec](specs/023-local-mp4-import/spec.md) |
 | 22 | Content / F23 First curated MP4 work | An original six-second performance and verified release assets | F21, F22 | [Spec](specs/024-first-mp4-work/spec.md) |
 | 23 | Studio / F24 AI motion creation guide | Copyable production prompts and verified MP4 export guidance | F22, F23 | [Spec](specs/025-ai-motion-guide/spec.md) |

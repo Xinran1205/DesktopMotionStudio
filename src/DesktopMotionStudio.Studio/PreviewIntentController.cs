@@ -31,7 +31,7 @@ internal sealed class PreviewIntentController(PreviewCoordinator coordinator, Fu
             if (_closed) return new(request, sceneId, PreviewOutcome.OwnerClosed);
             if (version != _version) return new(request, sceneId, PreviewOutcome.Superseded);
             if (item?.IsPlayable != true) return new(request, sceneId, PreviewOutcome.Unavailable);
-            playback = coordinator.PlayAsync(new(request, item.Playback!, item.Catalog.Manifest!.DisplayMode));
+            playback = coordinator.PlayAsync(new(request, item.Playback, item.Catalog.Manifest!.DisplayMode, item.Video));
         }
         return await playback.ConfigureAwait(false);
     }

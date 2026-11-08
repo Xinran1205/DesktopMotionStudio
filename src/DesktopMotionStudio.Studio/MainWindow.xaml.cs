@@ -10,6 +10,7 @@ using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Preview;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.Diagnostics;
+using DesktopMotionStudio.Core.Video;
 using System.IO;
 
 namespace DesktopMotionStudio.Studio;
@@ -60,8 +61,11 @@ public partial class MainWindow : Window
         DiagnosticsButton.Visibility = diagnostics is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
-        _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
-            Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display)));
+        string tools = Path.Combine(AppContext.BaseDirectory, "MotionHost");
+        var nativePreviews = new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
+            Path.Combine(tools, "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display));
+        var videoPreviews = new VideoPlaybackSessionFactory(Path.Combine(tools, VideoPlaybackRequest.WorkerName), display);
+        _previews = new(previewFactory ?? new VideoAwarePreviewFactory(nativePreviews, videoPreviews, store));
         _intents = new(_previews, _workspace.FindPlayable);
         _presenter = new(_previews, this, PreviewStatusText, StopPreviewButton);
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));

@@ -88,7 +88,7 @@ public partial class DiagnosticsWindow : Window
         if (app is null) return (ProductText.Get("TheSelectedAppIsNoLongerAvailable"), false);
         ShortcutResult entry = _shortcuts.Inspect(binding.BindingId);
         bool eligible = entry.Status is ShortcutStatus.Missing or ShortcutStatus.RepairRequired or ShortcutStatus.OutOfScope &&
-            _requests.Resolve(binding.BindingId).Playback is not null;
+            _requests.Resolve(binding.BindingId).PlaybackStatus == ManagedPlaybackStatus.Ready;
         return ($"{app.DisplayName} · {MainWindow.ShortcutText(entry.Status)}", eligible);
     }
 

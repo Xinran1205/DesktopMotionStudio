@@ -1,0 +1,6 @@
+{
+  "public": true,
+  "comInterop": {
+    "preserveSigMethods": ["IMFMediaEngine.OnVideoStreamTick"]
+  }
+}

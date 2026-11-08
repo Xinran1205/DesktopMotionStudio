@@ -1,3 +1,5 @@
+using DesktopMotionStudio.Core.Video;
+
 namespace DesktopMotionStudio.Core.Scenes;
 
 public enum SceneLibraryError { None, Unavailable, TooManyScenes }
@@ -9,8 +11,10 @@ public sealed record SceneLibraryItem(
     SceneAssetError CoverError)
 {
     public string DisplayName => Catalog.Manifest?.Name ?? Catalog.DirectoryName;
-    public bool IsPlayable => Catalog.IsAvailable && Playback is { IsValid: true } definition && PlaybackError == SceneDataError.None &&
-        definition.SceneId == Catalog.Manifest!.SceneId && definition.SceneVersion == Catalog.Manifest.SceneVersion;
+    public VideoClip? Video { get; init; }
+    public bool IsPlayable => Catalog.IsAvailable && PlaybackError == SceneDataError.None &&
+        (Video is { IsValid: true } clip && clip.SceneId == Catalog.Manifest!.SceneId ||
+        Playback is { IsValid: true } definition && definition.SceneId == Catalog.Manifest!.SceneId && definition.SceneVersion == Catalog.Manifest.SceneVersion);
 }
 
 public sealed class SceneLibrary
@@ -35,11 +39,17 @@ public sealed class SceneLibrary
         SceneAssetReadResult presentationBytes = ReadFile(item.DirectoryPath, "scene.presentation.json", ScenePresentationReader.MaximumBytes);
         SceneDataReadResult<ScenePresentation> presentation = presentationBytes.Error == SceneAssetError.None
             ? ScenePresentationReader.Read(presentationBytes.Bytes!, manifest) : new(null, Map(presentationBytes.Error));
+        SceneAssetError coverError = presentation.Value?.Cover is string cover
+            ? SceneAssetResolver.ProbeFile(item.DirectoryPath, cover, MaximumCoverBytes) : SceneAssetError.Missing;
+        if (VideoSceneReader.UsesVideo(manifest))
+        {
+            var video = VideoSceneReader.Read(item);
+            return new(item, presentation.Value, presentation.Error, null, video.Error, coverError) { Video = video.Value };
+        }
+
         SceneAssetReadResult playbackBytes = ReadFile(item.DirectoryPath, "scene.playback.json", ScenePlaybackReader.MaximumBytes);
         SceneDataReadResult<ScenePlaybackDefinition> playback = playbackBytes.Error == SceneAssetError.None
             ? ScenePlaybackReader.Read(playbackBytes.Bytes!, manifest) : new(null, Map(playbackBytes.Error));
-        SceneAssetError coverError = presentation.Value?.Cover is string cover
-            ? SceneAssetResolver.ProbeFile(item.DirectoryPath, cover, MaximumCoverBytes) : SceneAssetError.Missing;
         return new(item, presentation.Value, presentation.Error, playback.Value, playback.Error, coverError);
     }
 

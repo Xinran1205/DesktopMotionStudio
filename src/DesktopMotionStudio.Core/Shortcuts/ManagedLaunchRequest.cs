@@ -5,6 +5,7 @@ using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Core.Shortcuts;
 
@@ -19,7 +20,10 @@ public sealed record ManagedLaunchPlan(
     ScenePlaybackDefinition? Playback = null,
     RepositoryError StorageError = RepositoryError.None,
     string? DisplayName = null,
-    ManagedPlaybackStatus PlaybackStatus = ManagedPlaybackStatus.Unavailable);
+    ManagedPlaybackStatus PlaybackStatus = ManagedPlaybackStatus.Unavailable)
+{
+    public VideoClip? Video { get; init; }
+}
 
 public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalogRoot)
 {
@@ -28,7 +32,8 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
     [
         "DesktopMotionStudio.Launcher.exe",
         "DesktopMotionStudio.Studio.exe",
-        "DesktopMotionStudio.MotionHost.exe"
+        "DesktopMotionStudio.MotionHost.exe",
+        VideoPlaybackRequest.WorkerName
     ];
 
     public static string? EncodeBindingId(string? id)
@@ -86,6 +91,14 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
         SceneCatalogItem? item = new BuiltInSceneCatalog().Scan(catalogRoot).Items.FirstOrDefault(candidate =>
             candidate.IsAvailable && string.Equals(candidate.Manifest?.SceneId, binding.SceneId, StringComparison.OrdinalIgnoreCase));
         if (item?.Manifest is not SceneManifest manifest) return native;
+
+        if (VideoSceneReader.UsesVideo(manifest))
+        {
+            var video = VideoSceneReader.Read(item);
+            return video is { Error: SceneDataError.None, Value: { } clip }
+                ? native with { Scene = manifest, Video = clip with { Sound = clip.Sound && !state.Settings.Muted }, PlaybackStatus = ManagedPlaybackStatus.Ready }
+                : native;
+        }
 
         SceneAssetReadResult read = SceneAssetResolver.ReadFile(item.DirectoryPath, "scene.playback.json", ScenePlaybackReader.MaximumBytes);
         if (read.Error != SceneAssetError.None) return native;

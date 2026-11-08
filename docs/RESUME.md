@@ -1,8 +1,8 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F20 MP4 样机已验收
+## 当前断点 — F21 正式视频播放已验收
 
-独立样机已在 Windows 验证 6 秒和 10 秒 H.264 视频、横竖画面适配、固定淡入淡出、Esc 与失败放行。下一阶段是 [F21 正式视频播放](../specs/022-mp4-playback/plan.md)。[F20 验收证据](../specs/021-mp4-feasibility/evidence.md)
+0.20.0 候选包已验证 Studio 视频预览、测试启动和真实桌面快捷方式。10 秒视频在窗口退场后才放行冷启动，带 AAC 素材已通过实际声音与静音测试。候选包位于 `artifacts/f21/release-0.20.0/setup`。接下来是 [F22 本地 MP4 导入](../specs/023-local-mp4-import/spec.md)。[F21 验收证据](../specs/022-mp4-playback/evidence.md)
 
 ## 已安装版本 — 0.19.0
 

@@ -7,10 +7,10 @@
 
 ## Requirements
 
-- Accept locally packaged H.264 MP4 with AAC or no audio. Keep distinct video metadata and IPC versioning. Preview uses the same player as launch, with no target authority.
-- Preserve aspect ratio with complete display or centered fill. Preserve global display-area choices, fixed 200 ms fades, default silence and global mute. A full 10 seconds of content fits its own budget, separate from initial decode and cleanup.
+- Accept locally packaged H.264 MP4 with one video track and optionally one AAC track. Keep distinct video metadata and IPC versioning. Preview uses the same player as launch, with no target authority.
+- Preserve aspect ratio with complete display or centered fill. Preserve global display-area choices, fixed 200 ms visual fades, default silence and global mute. Play once for the shorter of the configured duration and source duration. Support a configured duration of 1 to 10 seconds. A full 10 seconds of content fits its own budget, separate from initial decode and cleanup.
 - Launch the cold target once after normal exit, skip or failure. A missing decoder, media or renderer still allows native launch. Respect Windows reduced-motion settings and existing-window reuse.
-- The initial guaranteed source profile is 8-bit SDR H.264, 30 fps, up to 1920×1080 or 1080×1920, with AAC or no audio. Validate media type and first frame. Report unsupported rotation, color or timing metadata if the chosen renderer cannot present it correctly.
+- The initial guaranteed source profile is 8-bit SDR H.264, up to 30 fps, up to 1920×1080 or 1080×1920, with square pixels, baked-in orientation and a maximum file size of 64 MiB. Validate the MP4 signature, track types and first frame. Reject unsupported rotation, color or timing metadata. With Windows animations off, show a silent still for roughly 350 ms before closing.
 - Require a local, validated asset plus display, duration and mute settings. Report structured completion, skip, timeout and failure. Avoid sending target commands or profile access to the player.
 - Keep the code-work manifest, IPC v5 and native request route intact. Design the video session independently and reuse the existing application launch gate at the orchestration boundary. Prevent the video worker from becoming an allowed target executable.
 

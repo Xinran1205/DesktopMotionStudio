@@ -191,10 +191,11 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
             VerifyUnlocked(generation, null, InstalledLayout.StudioName);
             VerifyUnlocked(generation, "Launcher", InstalledLayout.LauncherName);
             VerifyUnlocked(generation, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+            VerifyUnlocked(generation, "MotionHost", Video.VideoPlaybackRequest.WorkerName, optional: true);
         }
         catch (Win32Exception ex) when (allowMissing && WindowsFileScope.IsMissing(ex)) { }
 
-        void VerifyUnlocked(WindowsFileScope scope, string? folder, string name)
+        void VerifyUnlocked(WindowsFileScope scope, string? folder, string name, bool optional = false)
         {
             try
             {
@@ -203,7 +204,7 @@ internal sealed class InstallUpgrade(WindowsFileScope root, InstallRegistration 
                 if (!WindowsFileScope.ReadInfo(file).IsSingleRegularFile)
                     throw new InvalidDataException("An installed program file is not a regular file.");
             }
-            catch (Win32Exception ex) when (allowMissing && WindowsFileScope.IsMissing(ex)) { }
+            catch (Win32Exception ex) when ((allowMissing || optional) && WindowsFileScope.IsMissing(ex)) { }
         }
     }
 

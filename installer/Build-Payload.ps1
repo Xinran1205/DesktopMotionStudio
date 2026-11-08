@@ -23,9 +23,13 @@ $frameworks = [ordered]@{}
 Push-Location -LiteralPath $repo
 try {
     $dotnet = (Get-Command dotnet -CommandType Application | Select-Object -First 1).Source
-    foreach ($component in 'Studio', 'Launcher', 'MotionHost') {
+    foreach ($component in 'Studio', 'Launcher', 'MotionHost', 'VideoHost') {
         $project = "DesktopMotionStudio.$component"
-        $destination = if ($component -eq 'Studio') { $payload } else { Join-Path $payload $component }
+        $destination = switch ($component) {
+            'Studio' { $payload }
+            'VideoHost' { Join-Path $output 'video-worker' }
+            default { Join-Path $payload $component }
+        }
         & $dotnet publish (Join-Path $repo "src/$project/$project.csproj") -c Release -r $rid --self-contained true `
             --artifacts-path $build -o $destination "-p:Version=$Version" "-p:RuntimeFrameworkVersion=$runtimeVersion" `
             -p:StageBundledTools=false -p:DebugType=None -p:DebugSymbols=false
@@ -44,6 +48,23 @@ try {
             throw "Incorrect bundled runtime for $component."
         }
         $frameworks[$component] = $included
+    }
+
+    # The independent worker shares the WinForms runtime next to MotionHost.
+    $videoWorker = Join-Path $output 'video-worker'
+    $hostDirectory = Join-Path $payload 'MotionHost'
+    $videoFiles = @('exe', 'dll', 'deps.json', 'runtimeconfig.json') | ForEach-Object { "DesktopMotionStudio.VideoHost.$_" }
+    foreach ($file in $videoFiles) {
+        Copy-Item -LiteralPath (Join-Path $videoWorker $file) -Destination $hostDirectory
+    }
+    foreach ($file in Get-ChildItem -LiteralPath $videoWorker -File -Recurse) {
+        $relative = [IO.Path]::GetRelativePath($videoWorker, $file.FullName)
+        if ($videoFiles -contains $relative) { continue }
+        $shared = Join-Path $hostDirectory $relative
+        if (!(Test-Path -LiteralPath $shared -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $file.FullName).Hash -ne (Get-FileHash -LiteralPath $shared).Hash) {
+            throw "VideoHost dependency differs from the bundled MotionHost runtime ($relative)."
+        }
     }
 
     $assets = Get-Content -LiteralPath (Join-Path $build 'obj/DesktopMotionStudio.Studio/project.assets.json') -Raw | ConvertFrom-Json

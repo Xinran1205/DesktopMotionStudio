@@ -117,6 +117,14 @@ internal static class F18DisplayChecks
         Invoke(home, "预览当前绑定作品");
         nint stage = 0;
         Require(Program.WaitFor(() => (stage = FindOwnedMotionWindow(host, "Desktop Motion Studio — Preview")) != 0), "Preview did not open.");
+        Rect bounds = VerifyStageBounds(stage, full);
+        Keys(stage, 0x1B);
+        Require(Program.WaitFor(() => FindOwnedMotionWindow(host, "Desktop Motion Studio — Preview") == 0), "Esc did not close preview.");
+        return bounds;
+    }
+
+    internal static Rect VerifyStageBounds(nint stage, bool full)
+    {
         Rect bounds = AutomationElement.FromHandle(stage).Current.BoundingRectangle;
         var monitor = new MonitorInformation { Size = Marshal.SizeOf<MonitorInformation>() };
         Require(GetMonitorInfoW(MonitorFromWindow(stage, 2), ref monitor), "Could not read monitor bounds.");
@@ -127,8 +135,6 @@ internal static class F18DisplayChecks
                 Math.Abs(bounds.Left + bounds.Width / 2 - (monitor.Work.Left + monitor.Work.Right) / 2d) <= 1 &&
                 Math.Abs(bounds.Top + bounds.Height / 2 - (monitor.Work.Top + monitor.Work.Bottom) / 2d) <= 1,
                 "The animation is not centered inside the monitor work area.");
-        Keys(stage, 0x1B);
-        Require(Program.WaitFor(() => FindOwnedMotionWindow(host, "Desktop Motion Studio — Preview") == 0), "Esc did not close preview.");
         return bounds;
     }
 

@@ -95,21 +95,21 @@ public sealed class PreviewCoordinator : IAsyncDisposable
             case Play play:
                 if (Volatile.Read(ref _closed) != 0) { FinishQueued(play, PreviewOutcome.OwnerClosed); break; }
                 if (play.Ticket != Volatile.Read(ref _latest)) { FinishQueued(play, PreviewOutcome.Superseded); break; }
-                Publish(new(play.Ticket, play.Request.RequestId, play.Request.Playback.SceneId, PreviewPhase.Starting));
+                Publish(new(play.Ticket, play.Request.RequestId, play.Request.SceneId, PreviewPhase.Starting));
                 if (_active is not null) await FinishActiveAsync(PreviewOutcome.Superseded).ConfigureAwait(false);
                 if (_cleanupBlocked)
                 {
-                    Publish(new(play.Ticket, play.Request.RequestId, play.Request.Playback.SceneId, PreviewPhase.Failed, PreviewError.CleanupFailed));
+                    Publish(new(play.Ticket, play.Request.RequestId, play.Request.SceneId, PreviewPhase.Failed, PreviewError.CleanupFailed));
                     FinishQueued(play, PreviewOutcome.Failed, PreviewError.CleanupFailed);
                     break;
                 }
                 if (Volatile.Read(ref _closed) != 0) { FinishQueued(play, PreviewOutcome.OwnerClosed); break; }
                 if (play.Ticket != Volatile.Read(ref _latest)) { FinishQueued(play, PreviewOutcome.Superseded); break; }
-                if (play.Token.IsCancellationRequested) { Publish(new(play.Ticket, play.Request.RequestId, play.Request.Playback.SceneId, PreviewPhase.Stopped)); FinishQueued(play, PreviewOutcome.Stopped); break; }
+                if (play.Token.IsCancellationRequested) { Publish(new(play.Ticket, play.Request.RequestId, play.Request.SceneId, PreviewPhase.Stopped)); FinishQueued(play, PreviewOutcome.Stopped); break; }
                 try { _active = new Active(play, _factory.Start(play.Request)); }
                 catch (Exception)
                 {
-                    Publish(new(play.Ticket, play.Request.RequestId, play.Request.Playback.SceneId, PreviewPhase.Failed, PreviewError.StartFailed));
+                    Publish(new(play.Ticket, play.Request.RequestId, play.Request.SceneId, PreviewPhase.Failed, PreviewError.StartFailed));
                     FinishQueued(play, PreviewOutcome.Failed, PreviewError.StartFailed);
                 }
                 break;
@@ -119,7 +119,7 @@ public sealed class PreviewCoordinator : IAsyncDisposable
             case Stop stop:
                 if (_active is not null && _active.Play.Ticket <= stop.Ticket)
                 {
-                    Publish(new(stop.Ticket, _active.Play.Request.RequestId, _active.Play.Request.Playback.SceneId, PreviewPhase.Stopping));
+                    Publish(new(stop.Ticket, _active.Play.Request.RequestId, _active.Play.Request.SceneId, PreviewPhase.Stopping));
                     await FinishActiveAsync(PreviewOutcome.Stopped).ConfigureAwait(false);
                 }
                 Publish(new(stop.Ticket, Current.RequestId, Current.SceneId, _cleanupBlocked ? PreviewPhase.Failed : PreviewPhase.Stopped, _cleanupBlocked ? PreviewError.CleanupFailed : PreviewError.None));
@@ -148,8 +148,11 @@ public sealed class PreviewCoordinator : IAsyncDisposable
                 await FinishActiveAsync(PreviewOutcome.Failed, PreviewError.HostFailed, active.Session.FailureReason ?? MotionHostError.RendererFailed).ConfigureAwait(false);
             else
             {
-                active.Playing = true; active.SetDeadline(TimeSpan.FromSeconds(10));
-                Publish(new(active.Play.Ticket, active.Play.Request.RequestId, active.Play.Request.Playback.SceneId, PreviewPhase.Playing));
+                active.Playing = true;
+                active.SetDeadline(active.Play.Request.Video is { } clip
+                    ? TimeSpan.FromMilliseconds(clip.DurationMilliseconds + 1500)
+                    : TimeSpan.FromSeconds(10));
+                Publish(new(active.Play.Ticket, active.Play.Request.RequestId, active.Play.Request.SceneId, PreviewPhase.Playing));
             }
             return;
         }
@@ -179,7 +182,7 @@ public sealed class PreviewCoordinator : IAsyncDisposable
             PreviewOutcome.OwnerClosed => PreviewPhase.Closed,
             _ => PreviewPhase.Failed
         };
-        Publish(new(active.Play.Ticket, active.Play.Request.RequestId, active.Play.Request.Playback.SceneId, phase, error, hostError));
+        Publish(new(active.Play.Ticket, active.Play.Request.RequestId, active.Play.Request.SceneId, phase, error, hostError));
         active.Play.Result.TrySetResult(Result(active.Play.Request, outcome, error, hostError));
     }
 
@@ -195,7 +198,7 @@ public sealed class PreviewCoordinator : IAsyncDisposable
     }
 
     private static PreviewResult Result(PreviewRequest request, PreviewOutcome outcome, PreviewError error = PreviewError.None, MotionHostError? hostError = null) =>
-        new(request.RequestId, request.Playback?.SceneId, outcome, error, hostError);
+        new(request.RequestId, request.SceneId, outcome, error, hostError);
 
     private static void FinishQueued(Play play, PreviewOutcome outcome, PreviewError error = PreviewError.None)
     {

@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
     <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="../DesktopMotionStudio.VideoHost/DesktopMotionStudio.VideoHost.csproj" ReferenceOutputAssembly="false" Private="false" />
     <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Resource Include="../Branding/DesktopMotionStudio.ico" Link="Branding/DesktopMotionStudio.ico" />
@@ -24,9 +25,16 @@
     <MSBuild Projects="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
       <Output TaskParameter="TargetOutputs" ItemName="_MotionHostTarget" />
     </MSBuild>
-    <PropertyGroup><_MotionHostDirectory>@(_MotionHostTarget->'%(RootDir)%(Directory)')</_MotionHostDirectory></PropertyGroup>
+    <MSBuild Projects="../DesktopMotionStudio.VideoHost/DesktopMotionStudio.VideoHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_VideoHostTarget" />
+    </MSBuild>
+    <PropertyGroup>
+      <_MotionHostDirectory>@(_MotionHostTarget->'%(RootDir)%(Directory)')</_MotionHostDirectory>
+      <_VideoHostDirectory>@(_VideoHostTarget->'%(RootDir)%(Directory)')</_VideoHostDirectory>
+    </PropertyGroup>
     <ItemGroup>
       <_BundledMotionHostFile Include="$(_MotionHostDirectory)*" Exclude="$(_MotionHostDirectory)*.pdb" />
+      <_BundledMotionHostFile Include="$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.exe;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.dll;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.deps.json;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.runtimeconfig.json" />
       <Content Include="@(_BundledMotionHostFile)">
         <Link>MotionHost/%(_BundledMotionHostFile.Filename)%(_BundledMotionHostFile.Extension)</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

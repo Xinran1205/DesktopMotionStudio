@@ -21,6 +21,12 @@ internal static class Program
         if (args is ["--f17-language-ui"]) return F17LanguageChecks.Run();
         if (args is ["--f18-display-ui"]) return F18DisplayChecks.Run();
         if (args is ["--f19-playback-order", var oldRenderer]) return F19PlaybackChecks.Run(oldRenderer);
+        if (args is ["--f21-video", var fixtures]) return F21VideoChecks.Run(fixtures);
+        if (args is ["--f21-video-timeouts", var media]) return F21VideoChecks.CheckTimeouts(media);
+        if (args is ["--f21-reduced-motion", var reducedMedia]) return F21VideoChecks.CheckReducedMotion(reducedMedia);
+        if (args.Length is 4 or 6 && args[0] == "--pipe") return F21VideoChecks.RunStalledWorker(args);
+        if (args is ["--f21-launch-ui", var videoTarget, var videoFixtures])
+            return F10UiChecks.RunTechLaunch(videoTarget, videoFixtures: videoFixtures);
         if (args is ["--f11-launch-ui"]) return F10UiChecks.Run(diagnostics: true);
         if (args is ["--f11-ui"]) return F10UiChecks.Run(diagnostics: true, settingsAndRecovery: true);
         if (args is ["--f15-native", var fixture, var pid, var executable] && int.TryParse(pid, out int ownedPid))

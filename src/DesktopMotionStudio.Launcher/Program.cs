@@ -7,6 +7,7 @@ using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Launcher;
 
@@ -72,7 +73,13 @@ internal static class Program
 
             InstanceResult result;
             MotionHostLifecycleResult? animated = null;
-            if (plan.Scene is not null && plan.Playback is not null)
+            if (plan.Scene is not null && plan.Video is { } clip)
+            {
+                var videos = new VideoPlaybackSessionFactory(Path.Combine(bundle, "MotionHost", VideoPlaybackRequest.WorkerName), display);
+                animated = videos.OpenAfterPlaybackAsync(instances, plan.AppId, plan.Target, clip, plan.Scene.DisplayMode).GetAwaiter().GetResult();
+                result = animated.TargetResult;
+            }
+            else if (plan.Scene is not null && plan.Playback is not null)
             {
                 var hosts = new WindowsMotionHostProcessFactory(
                     Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display);

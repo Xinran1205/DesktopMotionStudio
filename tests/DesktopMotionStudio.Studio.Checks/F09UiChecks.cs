@@ -254,10 +254,10 @@ internal static class F09UiChecks
         }
     }
 
-    private static void Invoke(AutomationElement root, string name) => ((InvokePattern)Find(root, name).GetCurrentPattern(InvokePattern.Pattern)).Invoke();
-    private static int ListCount(AutomationElement root, string name) => Find(root, name).FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem)).Count;
+    internal static void Invoke(AutomationElement root, string name) => ((InvokePattern)Find(root, name).GetCurrentPattern(InvokePattern.Pattern)).Invoke();
+    internal static int ListCount(AutomationElement root, string name) => Find(root, name).FindAll(TreeScope.Children, new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ListItem)).Count;
     private static string? Selection(AutomationElement root, string name) => ((SelectionPattern)Find(root, name).GetCurrentPattern(SelectionPattern.Pattern)).Current.GetSelection().FirstOrDefault()?.Current.Name;
-    private static void Select(AutomationElement root, string list, string name)
+    internal static void Select(AutomationElement root, string list, string name)
     {
         AutomationElement item = Find(root, list).FindFirst(TreeScope.Children, new PropertyCondition(AutomationElement.NameProperty, name)) ?? throw new InvalidOperationException($"List item absent: {name}");
         ((SelectionItemPattern)item.GetCurrentPattern(SelectionItemPattern.Pattern)).Select();

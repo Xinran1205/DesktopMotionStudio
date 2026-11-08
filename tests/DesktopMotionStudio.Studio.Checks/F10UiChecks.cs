@@ -7,13 +7,14 @@ using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Diagnostics;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 using DesktopMotionStudio.Studio;
 using ManagedShortcutStatus = DesktopMotionStudio.Core.Shortcuts.ShortcutStatus;
 using static StudioUiChecks;
 
 internal static class F10UiChecks
 {
-    internal static int RunTechLaunch(string delayedTarget, bool legacy = false)
+    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null)
     {
         if (!File.Exists(delayedTarget)) return 2;
         string studio = RequiredPath("DMS_F08_STUDIO_PATH");
@@ -27,7 +28,8 @@ internal static class F10UiChecks
         string delayCopy = Path.Combine(root, "Delayed", Path.GetFileName(delayedTarget));
         string otherCopy = Path.Combine(root, "Other", Path.GetFileName(otherTarget));
         string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
-        string sceneId = legacy ? "studio-pulse" : "zero-boundary";
+        bool video = videoFixtures is not null;
+        string sceneId = video ? F21VideoChecks.SceneId : legacy ? "studio-pulse" : "zero-boundary";
         const string expectedCold = "Completed";
         int failures = 0;
         void Check(string name, bool passed) => Program.Record("F13 launch UI " + name, passed, ref failures);
@@ -54,6 +56,8 @@ internal static class F10UiChecks
             byte[] original = File.ReadAllBytes(profile), backup = File.ReadAllBytes(profile + ".bak");
             Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", profile);
             string catalog = Path.Combine(bundle, "Scenes");
+            if (videoFixtures is not null) F21VideoChecks.AddScene(catalog, videoFixtures);
+            string videoWorker = Path.Combine(bundle, "MotionHost", VideoPlaybackRequest.WorkerName);
             var shortcuts = new ManagedShortcutService(store, catalog, Path.Combine(root, "receipts"), isolatedLauncher, () => desktop);
             var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             StudioTheme.Apply(application, "dark");
@@ -80,8 +84,14 @@ internal static class F10UiChecks
                             usedKeyboard = false;
                             Invoke(element, "测试启动");
                         }
+                        if (video)
+                        {
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, F21VideoChecks.LaunchTitle) != 0),
+                                "The actual Test launch video did not show.");
+                            Check("the delayed target is absent while the video is visible", OwnedTargets(delayCopy) == 0);
+                        }
                         Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus") == "已打开目标应用。",
-                            TimeSpan.FromSeconds(15)), "Test Launch did not open its delayed target.");
+                            TimeSpan.FromSeconds(video ? 18 : 15)), "Test Launch did not open its delayed target.");
                         LaunchTrace cold = ReadTrace(profile);
                         Check($"{(usedKeyboard ? "Alt+T" : "Accessible Test launch")} for {sceneId} reports {expectedCold} and one real delayed target", cold is
                             { Instance: "WindowReady", HostError: null, TargetPid: int pid } && cold.Scene == sceneId && cold.Host == expectedCold &&
@@ -99,10 +109,32 @@ internal static class F10UiChecks
             }, deadline: TimeSpan.FromSeconds(28));
             ShortcutResult link = shortcuts.Create("f13-shell");
             Require(link is { Status: ManagedShortcutStatus.Created, Path: not null }, "Could not create isolated Shell Link.");
-            LaunchTrace shell = Activate(link.Path!, profile, otherCopy);
+            LaunchTrace shell = Activate(link.Path!, profile, otherCopy, video ? videoWorker : null);
             Check("the managed Windows shortcut opens a different real target with the same work",
                 shell is { Instance: "WindowReady", Host: "Completed", HostError: null } && shell.Scene == sceneId);
-            if (!legacy)
+            if (video)
+            {
+                string held = videoWorker + ".f21-probe";
+                File.Move(videoWorker, held);
+                try
+                {
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("missing video player releases native launch exactly once",
+                        fallback.Scene == sceneId && fallback is { Instance: "WindowReady", Host: "Failed", HostError: "StartFailed" });
+                }
+                finally { File.Move(held, videoWorker); }
+
+                string asset = Path.Combine(catalog, sceneId, "clip.mp4");
+                File.Copy(Path.Combine(videoFixtures!, "malformed.mp4"), asset, overwrite: true);
+                LaunchTrace invalid = Activate(link.Path!, profile, otherCopy);
+                Check("malformed video releases native launch exactly once",
+                    invalid.Scene == sceneId && invalid is { Instance: "WindowReady", Host: "Failed", HostError: "UnsupportedPlayback" });
+                File.Delete(asset);
+                LaunchTrace missing = Activate(link.Path!, profile, otherCopy);
+                Check("missing video asset preserves the shortcut and launches natively",
+                    missing is { Scene: null, Instance: "WindowReady", Host: null });
+            }
+            else if (!legacy)
             {
                 string renderer = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
                 string held = renderer + ".f13-probe";
@@ -385,7 +417,7 @@ internal static class F10UiChecks
         finally { if (!process.HasExited) { process.Kill(); process.WaitForExit(5000); } }
     }
 
-    private static LaunchTrace Activate(string link, string state, string target)
+    private static LaunchTrace Activate(string link, string state, string target, string? videoWorker = null)
     {
         string tracePath = state + ".launch-trace";
         File.Delete(tracePath);
@@ -394,13 +426,22 @@ internal static class F10UiChecks
         using Process launcher = Process.Start(start) ?? throw new InvalidOperationException("Shell did not return the Launcher process.");
         try
         {
-            Require(launcher.WaitForExit(10000) && launcher.ExitCode == 0, "Fixture Launcher failed or timed out.");
+            if (videoWorker is not null)
+            {
+                Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, F21VideoChecks.LaunchTitle) != 0),
+                    "The actual shortcut video did not show.");
+                Require(OwnedTargets(target) == 0, "The shortcut target started during video playback.");
+            }
+            Require(launcher.WaitForExit(videoWorker is null ? 10000 : 16000) && launcher.ExitCode == 0,
+                "Fixture Launcher failed or timed out.");
             LaunchTrace result = ReadTrace(state);
             Console.WriteLine($"  Launcher PID={launcher.Id}, target PID={result.TargetPid}, HWND=0x{result.Window:X}, scene={result.Scene}, target={result.Instance}, host={result.Host}/{result.HostError}");
             Require(result.TargetPid is int pid && IsTarget(pid, target) && OwnedTargets(target) == 1,
                 "Expected exactly one verified target process.");
             string host = Path.Combine(Path.GetDirectoryName(state)!, "Bundle", "MotionHost", "DesktopMotionStudio.MotionHost.exe");
             Require(Program.WaitFor(() => OwnedTargets(host) == 0, TimeSpan.FromSeconds(2)), "Owned renderer did not exit.");
+            if (videoWorker is not null)
+                Require(OwnedTargets(videoWorker) == 0, "Owned video worker did not exit.");
             Require(SameState(state, bytes, backup), "Launcher changed state or backup.");
             return result;
         }

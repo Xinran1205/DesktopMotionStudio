@@ -119,7 +119,8 @@ public sealed class ManagedShortcutService(
 
         plan ??= _requests.Resolve(bindingId);
         if (plan.Status == ManagedLaunchStatus.StorageError) return new(Map(plan.StorageError), path);
-        if (plan.Status != ManagedLaunchStatus.Ready || plan.Playback is null) return new(ShortcutStatus.Ineligible, path);
+        if (plan.Status != ManagedLaunchStatus.Ready || plan.PlaybackStatus != ManagedPlaybackStatus.Ready)
+            return new(ShortcutStatus.Ineligible, path);
         ShortcutProof stagedProof;
         using (var stage = scope.Stage(name, launcherPath, bindingId, (plan.Target as ExecutableTarget)?.Path))
         {
@@ -131,7 +132,7 @@ public sealed class ManagedShortcutService(
             RepositoryResult locked = state.Update(snapshot =>
             {
                 ManagedLaunchPlan latest = _requests.Resolve(bindingId, snapshot);
-                if (latest.Status != ManagedLaunchStatus.Ready || latest.Playback is null ||
+                if (latest.Status != ManagedLaunchStatus.Ready || latest.PlaybackStatus != ManagedPlaybackStatus.Ready ||
                     !string.Equals(latest.AppId, plan.AppId, StringComparison.OrdinalIgnoreCase))
                     return snapshot;
                 ShortcutReceiptStatus saved = transaction!.Save(new(1, bindingId, observed.Proof ?? current, stagedProof));

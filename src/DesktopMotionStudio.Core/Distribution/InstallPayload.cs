@@ -23,6 +23,13 @@ internal sealed class InstallPayload
         "hostfxr.dll", "Launcher/hostfxr.dll", "MotionHost/hostfxr.dll",
         "coreclr.dll", "Launcher/coreclr.dll", "MotionHost/coreclr.dll"
     ];
+    private static readonly string[] VideoWorkerFiles =
+    [
+        "MotionHost/" + Video.VideoPlaybackRequest.WorkerName,
+        "MotionHost/DesktopMotionStudio.VideoHost.dll",
+        "MotionHost/DesktopMotionStudio.VideoHost.deps.json",
+        "MotionHost/DesktopMotionStudio.VideoHost.runtimeconfig.json"
+    ];
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -104,7 +111,8 @@ internal sealed class InstallPayload
                 throw new InvalidDataException("Invalid or duplicate installer file.");
             bytes += file.Bytes;
         }
-        if (bytes > MaxExpandedBytes || RequiredFiles.Any(name => !byPath.ContainsKey(name)))
+        if (bytes > MaxExpandedBytes || RequiredFiles.Any(name => !byPath.ContainsKey(name)) ||
+            (VideoWorkerFiles.Any(byPath.ContainsKey) && !VideoWorkerFiles.All(byPath.ContainsKey)))
             throw new InvalidDataException("The installer inventory is incomplete or too large.");
         return byPath;
     }

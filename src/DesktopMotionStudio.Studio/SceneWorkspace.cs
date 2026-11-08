@@ -2,6 +2,7 @@ using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Bindings;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -18,6 +19,7 @@ internal sealed class SceneWorkspace(string root)
     private static bool CurrentPlayback(SceneCatalogItem item)
     {
         if (item.Manifest is null) return false;
+        if (VideoSceneReader.UsesVideo(item.Manifest)) return VideoSceneReader.Read(item).Error == SceneDataError.None;
         SceneAssetReadResult read = SceneAssetResolver.ReadFile(item.DirectoryPath, "scene.playback.json", ScenePlaybackReader.MaximumBytes);
         return read.Error == SceneAssetError.None && ScenePlaybackReader.Read(read.Bytes!, item.Manifest).Error == SceneDataError.None;
     }

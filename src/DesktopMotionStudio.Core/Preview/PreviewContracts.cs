@@ -1,11 +1,14 @@
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Scenes;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Core.Preview;
 
-public sealed record PreviewRequest(Guid RequestId, ScenePlaybackDefinition Playback, SceneDisplayMode DisplayMode)
+public sealed record PreviewRequest(Guid RequestId, ScenePlaybackDefinition? Playback, SceneDisplayMode DisplayMode, VideoClip? Video = null)
 {
-    public bool IsValid => RequestId != Guid.Empty && Playback is { IsValid: true } && DisplayMode is SceneDisplayMode.Centered or SceneDisplayMode.Full;
+    public string? SceneId => Playback?.SceneId ?? Video?.SceneId;
+    public bool IsValid => RequestId != Guid.Empty && (DisplayMode is SceneDisplayMode.Centered or SceneDisplayMode.Full) &&
+        (Video is null ? Playback is { IsValid: true } : Playback is null && Video.IsValid);
 }
 
 public enum PreviewOutcome { Completed, Skipped, Stopped, Superseded, Unavailable, Failed, OwnerClosed }
@@ -33,9 +36,9 @@ public sealed class MotionHostPreviewSessionFactory(IMotionHostSessionFactory ho
     public IPreviewSession Start(PreviewRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (!request.IsValid) throw new ArgumentException("Invalid preview request.", nameof(request));
-        var start = new MotionHostStartRequest(request.RequestId, request.Playback.SceneId, request.Playback.SceneVersion,
-            request.DisplayMode, request.Playback.DurationMilliseconds + 500, MotionHostMode.Preview, request.Playback);
+        if (!request.IsValid || request.Playback is not { } playback) throw new ArgumentException("Invalid preview request.", nameof(request));
+        var start = new MotionHostStartRequest(request.RequestId, playback.SceneId, playback.SceneVersion,
+            request.DisplayMode, playback.DurationMilliseconds + 500, MotionHostMode.Preview, playback);
         return new Session(_hostFactory.Start(start));
     }
 
