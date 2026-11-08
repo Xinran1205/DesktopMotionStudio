@@ -41,6 +41,27 @@ internal static class Program
         first.Size = new Size(1, 1);
         int tinyFailures = 0; first.RenderFailed += (_, _) => tinyFailures++;
         Check("tiny viewport draws safely", Fingerprint(first, 1500).Length == 64 && tinyFailures == 0);
+        ScenePlaybackDefinition tech = definition with
+        {
+            SceneId = "zero-boundary", RuntimeId = "tech-frame", DurationMilliseconds = 2000, Accent = "#70DCFD",
+            Keyframes = ImmutableArray.Create(new SceneKeyframe(0, 1, 1, 0), new SceneKeyframe(2000, 1, 1, 0))
+        };
+        Check("F13 tech-frame is a supported production definition", tech.IsValid);
+        if (!tech.IsValid) return 1;
+        foreach (Size size in new[] { new Size(1120, 630), new Size(1600, 900), new Size(1280, 400) })
+        {
+            using var stage = new SceneSurface(tech, false) { Size = size };
+            using var still = new SceneSurface(tech, true) { Size = size };
+            using var orbit = new SceneSurface(definition, false) { Size = size };
+            int faults = 0;
+            stage.RenderFailed += (_, _) => faults++;
+            still.RenderFailed += (_, _) => faults++;
+            string[] frames = new[] { 240, 1100, 1700 }.Select(time => Fingerprint(stage, time)).ToArray();
+            Check($"F13 shows three distinct authored beats at {size}", frames.Distinct().Count() == 3 &&
+                frames[1] != Fingerprint(orbit, 1100));
+            Check($"F13 static path uses the same composition at {size}", Fingerprint(still, 200) == Fingerprint(still, 1600));
+            Check($"F13 painting succeeds at {size}", faults == 0);
+        }
         return failures == 0 ? 0 : 1;
     }
 

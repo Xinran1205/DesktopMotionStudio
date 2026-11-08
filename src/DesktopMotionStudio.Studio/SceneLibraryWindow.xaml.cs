@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using DesktopMotionStudio.Core.Preview;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
@@ -112,6 +113,11 @@ public partial class SceneLibraryWindow : Window
         if (_closed || _closing || !_intents.IsCurrent(result)) return;
         if (result.Outcome == PreviewOutcome.Unavailable)
         { AvailabilityText.Text = "作品暂不可用，请刷新后重新选择。"; PreviewButton.IsEnabled = BindButton.IsEnabled = false; }
+        else if (PreviewButton.IsEnabled)
+        {
+            FocusManager.SetFocusedElement(this, PreviewButton);
+            if (IsActive) PreviewButton.Focus();
+        }
     }
 
     private async void OnBind(object sender, RoutedEventArgs e)

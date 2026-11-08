@@ -22,6 +22,8 @@ internal sealed class MotionHostWindow : Form
     private readonly bool _animationsEnabled;
     private readonly System.Windows.Forms.Timer _watchdogTimer;
     private readonly System.Windows.Forms.Timer _fadeTimer;
+    private Button? _stageExitButton;
+    private Point _initialCursor;
     private Font? _headingFont;
     private Font? _detailFont;
     private long _visibleTimestamp;
@@ -37,7 +39,10 @@ internal sealed class MotionHostWindow : Form
         if (!start.IsValid)
             throw new ArgumentException("MotionHost display request is invalid.", nameof(start));
 
-        Screen screen = Screen.PrimaryScreen ?? throw new InvalidOperationException("No primary display is available.");
+        bool techFrame = start.Playback?.IsTechFrame == true;
+        Screen screen = techFrame
+            ? Screen.FromPoint(Cursor.Position)
+            : Screen.PrimaryScreen ?? throw new InvalidOperationException("No primary display is available.");
         _animationsEnabled = animationsEnabled ?? SystemAnimationsEnabled();
         Text = start.Mode == MotionHostMode.Preview ? "Desktop Motion Studio — Preview" : "Desktop Motion Studio — Launch";
         FormBorderStyle = FormBorderStyle.None;
@@ -51,7 +56,7 @@ internal sealed class MotionHostWindow : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         Bounds = start.DisplayMode == SceneDisplayMode.Full
             ? screen.Bounds
-            : CenteredBounds(screen.WorkingArea);
+            : CenteredBounds(screen.WorkingArea, techFrame);
 
         _card = new Panel
         {
@@ -64,7 +69,8 @@ internal sealed class MotionHostWindow : Form
             _surface = new SceneSurface(start.Playback, !_animationsEnabled) { Dock = DockStyle.Fill };
             _surface.RenderFailed += (_, _) => RequestImmediateExit(MotionHostExitReason.Failed);
             Controls.Add(_surface);
-            BuildPlaybackFooter();
+            if (techFrame) BuildStageExitButton();
+            else BuildPlaybackFooter();
         }
         else { Controls.Add(_card); BuildCard(); }
 
@@ -77,6 +83,7 @@ internal sealed class MotionHostWindow : Form
         FormClosing += OnFormClosing;
         Shown += (_, _) =>
         {
+            _initialCursor = Cursor.Position;
             _visibleTimestamp = Stopwatch.GetTimestamp();
             _watchdogTimer.Start();
         };
@@ -197,6 +204,51 @@ internal sealed class MotionHostWindow : Form
         ActiveControl = stop;
     }
 
+    private void BuildStageExitButton()
+    {
+        bool preview = _start.Mode == MotionHostMode.Preview;
+        AccessibleDescription = preview ? "按 Esc 停止预览，或按 Tab 显示停止按钮。" : "按 Esc 跳过动效，或按 Tab 显示跳过按钮。";
+        int Scale(int size) => Math.Max(1, (int)Math.Round(size * DeviceDpi / 96d));
+        Size size = new(Scale(88), Scale(34));
+        _stageExitButton = new Button
+        {
+            Text = preview ? "停止" : "跳过",
+            AccessibleName = preview ? "停止预览" : "跳过动效",
+            AccessibleRole = AccessibleRole.PushButton,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+            Size = size,
+            Location = new Point(Math.Max(0, ClientSize.Width - size.Width - Scale(12)), Scale(12)),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.FromArgb(28, 39, 52),
+            ForeColor = Color.White,
+            TabStop = true,
+            Visible = false
+        };
+        _stageExitButton.Click += (_, _) => CloseWithReason(MotionHostExitReason.SkipRequested);
+        Controls.Add(_stageExitButton);
+        _stageExitButton.BringToFront();
+        _surface!.MouseMove += (_, _) =>
+        {
+            if (_visibleTimestamp != 0 && Cursor.Position != _initialCursor) _stageExitButton.Show();
+        };
+    }
+
+    protected override bool ProcessCmdKey(ref Message message, Keys keyData)
+    {
+        if (keyData == Keys.Escape)
+        {
+            CloseWithReason(MotionHostExitReason.SkipRequested);
+            return true;
+        }
+        if (keyData is Keys.Tab or (Keys.Shift | Keys.Tab) && _stageExitButton is { Visible: false } button)
+        {
+            button.Show();
+            button.Focus();
+            return true;
+        }
+        return base.ProcessCmdKey(ref message, keyData);
+    }
+
     private void LayoutCard() => _card.Location = new Point(
         Math.Max(0, (ClientSize.Width - _card.Width) / 2),
         Math.Max(0, (ClientSize.Height - _card.Height) / 2));
@@ -288,10 +340,16 @@ internal sealed class MotionHostWindow : Form
         action();
     }
 
-    private static Rectangle CenteredBounds(Rectangle workArea)
+    private static Rectangle CenteredBounds(Rectangle workArea, bool largeFrame)
     {
         int width = Math.Min(760, workArea.Width);
         int height = Math.Min(420, workArea.Height);
+        if (largeFrame)
+        {
+            width = Math.Min(1120, (int)(workArea.Width * .82));
+            height = Math.Max(1, Math.Min(width * 9 / 16, (int)(workArea.Height * .84)));
+            width = Math.Max(1, height * 16 / 9);
+        }
         return new Rectangle(
             workArea.Left + (workArea.Width - width) / 2,
             workArea.Top + (workArea.Height - height) / 2,

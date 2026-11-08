@@ -12,9 +12,9 @@
 
 ## Phase 3 — US1 完整预览（P1）
 
-- [ ] T003 [US1] 在 `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs` 和 `tests/DesktopMotionStudio.MotionHost.Checks/Program.cs` 添加新旧运行时、未知版本拒绝、三个分镜与两种画幅的检查（FR-001、FR-002、FR-004）。
-- [ ] T004 [US1] 在 `src/DesktopMotionStudio.Studio/Scenes/zero-boundary/` 添加约 2000 毫秒作品、原创新封面与来源。扩展 `src/DesktopMotionStudio.Core/Scenes/ScenePlaybackDefinition.cs` 白名单及 `src/DesktopMotionStudio.MotionHost/SceneSurface.cs` 的分发，保留 `vector-orbit` v1（FR-001、FR-002、FR-007）。
-- [ ] T005 [US1] 在 `src/DesktopMotionStudio.MotionHost/MotionHostWindow.cs` 实现新作品的无常驻文字舞台、指针和键盘退出、静态／极简画面。让 `src/DesktopMotionStudio.Studio/SceneUiText.cs` 和 `PreviewPresenter.cs` 呈现模拟交接说明，结束时恢复到预览触发处。验证同一画面源与单屏取景（FR-002、FR-003、FR-004、FR-006，SC-001）。
+- [x] T003 [US1] 在 `tests/DesktopMotionStudio.Core.Checks/F09Checks.cs` 和 `tests/DesktopMotionStudio.MotionHost.Checks/Program.cs` 添加新旧运行时、未知版本拒绝、三个分镜与两种画幅的检查（FR-001、FR-002、FR-004）。
+- [x] T004 [US1] 在 `src/DesktopMotionStudio.Studio/Scenes/zero-boundary/` 添加约 2000 毫秒作品、原创新封面与来源。扩展 `src/DesktopMotionStudio.Core/Scenes/ScenePlaybackDefinition.cs` 白名单及 `src/DesktopMotionStudio.MotionHost/SceneSurface.cs` 的分发，保留 `vector-orbit` v1（FR-001、FR-002、FR-007）。
+- [x] T005 [US1] 在 `src/DesktopMotionStudio.MotionHost/MotionHostWindow.cs` 实现新作品的无常驻文字舞台、指针和键盘退出、静态／极简画面。复用 `src/DesktopMotionStudio.Studio/SceneUiText.cs` 和 `PreviewPresenter.cs` 的模拟交接说明，结束时恢复到预览触发处。验证同一画面源与单屏取景（FR-002、FR-003、FR-004、FR-006，SC-001）。
 
 ## Phase 4 — US2 启动与交接（P1）
 

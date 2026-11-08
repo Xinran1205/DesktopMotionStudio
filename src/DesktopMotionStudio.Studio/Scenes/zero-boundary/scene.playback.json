@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "zero-boundary",
+  "sceneVersion": "1.0.0",
+  "runtimeId": "tech-frame",
+  "runtimeVersion": 1,
+  "durationMilliseconds": 2000,
+  "accent": "#70DCFD",
+  "glyph": "Z",
+  "keyframes": [
+    { "atMilliseconds": 0, "scale": 1, "opacity": 1, "rotationDegrees": 0 },
+    { "atMilliseconds": 2000, "scale": 1, "opacity": 1, "rotationDegrees": 0 }
+  ]
+}

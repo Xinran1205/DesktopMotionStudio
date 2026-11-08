@@ -7,4 +7,7 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../src/DesktopMotionStudio.MotionHost/TechFramePainter.cs" Link="TechFramePainter.cs" />
+  </ItemGroup>
 </Project>

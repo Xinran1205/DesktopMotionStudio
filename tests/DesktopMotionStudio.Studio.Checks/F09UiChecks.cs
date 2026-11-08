@@ -7,6 +7,100 @@ using static StudioUiChecks;
 
 internal static class F09UiChecks
 {
+    internal static int RunTechPreview()
+    {
+        string studio = Environment.GetEnvironmentVariable("DMS_F08_STUDIO_PATH") ?? "";
+        string target = Environment.GetEnvironmentVariable("DMS_F06_TARGET_PATH") ?? "";
+        if (!File.Exists(studio) || !File.Exists(target)) return 2;
+        string bundle = Path.GetDirectoryName(studio)!;
+        string hostPath = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+        var directory = Directory.CreateTempSubdirectory("dms-f13-preview-");
+        string profile = Path.Combine(directory.FullName, "profile.json");
+        var store = new StudioStateRepository(profile);
+        int failures = 0, targetCount = CountTargets(target);
+        Process? process = null;
+        void Check(string name, bool passed) => Program.Record("F13 UI " + name, passed, ref failures);
+        try
+        {
+            Require(store.Save(StudioState.Empty with { Settings = new("dark", false) }) == RepositoryError.None, "Fixture setup failed");
+            byte[] original = File.ReadAllBytes(profile);
+            process = Start(studio, profile, Path.Combine(bundle, "Scenes"));
+            nint home = Window(process, "Desktop Motion Studio");
+            Invoke(AutomationElement.FromHandle(home), "打开动效作品库");
+            nint libraryWindow = Window(process, "动效作品库");
+            var library = AutomationElement.FromHandle(libraryWindow);
+            Require(Program.WaitFor(() => ListCount(library, "完整动效作品") >= 2), "Shipped scenes did not load");
+            Select(library, "完整动效作品", "零界");
+            AutomationElement preview = Find(library, "预览作品");
+            foreach (string interaction in new[] { "natural", "Escape", "Tab+Enter", "pointer" })
+            {
+                Require(Program.WaitFor(() => preview.Current.IsEnabled), "Preview action unavailable");
+                ((InvokePattern)preview.GetCurrentPattern(InvokePattern.Pattern)).Invoke();
+                nint stage = 0;
+                Require(Program.WaitFor(() =>
+                {
+                    foreach (Process candidate in Process.GetProcessesByName("DesktopMotionStudio.MotionHost"))
+                    {
+                        using (candidate)
+                        {
+                            try
+                            {
+                                if (candidate.MainModule?.FileName == hostPath)
+                                    stage = FindWindow(candidate.Id, "Desktop Motion Studio — Preview");
+                            }
+                            catch (InvalidOperationException) { }
+                        }
+                        if (stage != 0) return true;
+                    }
+                    return false;
+                }), "New work did not show");
+                var stageElement = AutomationElement.FromHandle(stage);
+                var visibleCaption = stageElement.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "预览模拟交接"));
+                Check($"{interaction} preview has no legacy caption on stage", visibleCaption is null);
+                if (interaction == "natural")
+                    Check("Studio explains the target-free preview outside the stage", Program.WaitFor(() =>
+                        library.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "正在预览 · 模拟交接，不会启动应用。")) is not null,
+                        TimeSpan.FromMilliseconds(500)));
+                if (interaction == "Escape") Keys(stage, 0x1B);
+                if (interaction == "Tab+Enter")
+                {
+                    Keys(stage, 0x09);
+                    var exit = Find(stageElement, "停止预览");
+                    Check("Tab reveals a focusable exit control", !exit.Current.IsOffscreen && exit.Current.HasKeyboardFocus);
+                    Keys(stage, 0x0D);
+                }
+                if (interaction == "pointer")
+                {
+                    var originalPointer = Pointer();
+                    try
+                    {
+                        var stageBounds = stageElement.Current.BoundingRectangle;
+                        PointAt((int)(stageBounds.Left + stageBounds.Width / 3), (int)(stageBounds.Top + stageBounds.Height / 2));
+                        var exitName = new PropertyCondition(AutomationElement.NameProperty, "停止预览");
+                        Require(Program.WaitFor(() => stageElement.FindFirst(TreeScope.Descendants, exitName) is { Current.IsOffscreen: false },
+                            TimeSpan.FromMilliseconds(500)), "Pointer activity did not reveal the exit control");
+                        var exitBounds = Find(stageElement, "停止预览").Current.BoundingRectangle;
+                        PointAt((int)(exitBounds.Left + exitBounds.Width / 2), (int)(exitBounds.Top + exitBounds.Height / 2));
+                        ClickOwnedWindow(stage);
+                    }
+                    finally { PointAt(originalPointer.X, originalPointer.Y); }
+                }
+                string expected = interaction == "natural" ? "预览已完成。" : "预览已跳过。";
+                Require(Program.WaitFor(() => library.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, expected)) is not null),
+                    "Studio did not report the expected end of preview");
+                Check($"{interaction} restores the preview action in Studio", preview.Current.IsEnabled);
+            }
+            Check("preview leaves target and profile untouched", CountTargets(target) == targetCount && File.ReadAllBytes(profile).SequenceEqual(original));
+        }
+        catch (Exception ex) { Console.WriteLine($"FAIL F13 preview UI: {ex.GetType().Name}: {ex.Message}"); failures++; }
+        finally
+        {
+            if (process is not null) Stop(process);
+            directory.Delete(recursive: true);
+        }
+        return failures == 0 ? 0 : 1;
+    }
+
     internal static int Run()
     {
         string? studio = Environment.GetEnvironmentVariable("DMS_F08_STUDIO_PATH"), target = Environment.GetEnvironmentVariable("DMS_F06_TARGET_PATH");

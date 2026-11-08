@@ -13,6 +13,7 @@ internal static class Program
         if (args is ["--discovery-worker"]) return DiscoveryWorker.Run();
         if (args is ["--ui"]) return StudioUiChecks.Run();
         if (args is ["--f09-ui"]) return F09UiChecks.Run();
+        if (args is ["--f13-preview-ui"]) return F09UiChecks.RunTechPreview();
         if (args is ["--f10-ui"]) return F10UiChecks.Run();
         if (args is ["--f11-launch-ui"]) return F10UiChecks.Run(diagnostics: true);
         if (args is ["--f11-ui"]) return F10UiChecks.Run(diagnostics: true, settingsAndRecovery: true);

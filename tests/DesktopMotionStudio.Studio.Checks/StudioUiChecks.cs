@@ -232,10 +232,28 @@ internal static class StudioUiChecks
         Require(SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>()) == inputs.Length, "Keyboard input was not injected.");
     }
 
+    internal static (int X, int Y) Pointer()
+    {
+        Require(GetCursorPos(out NativePoint point), "Could not read the test pointer position.");
+        return (point.X, point.Y);
+    }
+
+    internal static void PointAt(int x, int y) => Require(SetCursorPos(x, y), "Could not move the test pointer.");
+
+    internal static void ClickOwnedWindow(nint window)
+    {
+        Require(GetCursorPos(out NativePoint point), "Could not read the test pointer position.");
+        nint hit = WindowFromPoint(point);
+        Require(hit == window || IsChild(window, hit), "Pointer is outside the owned test window.");
+        Input[] inputs = [new() { Data = new() { Mouse = new() { Flags = 2 } } }, new() { Data = new() { Mouse = new() { Flags = 4 } } }];
+        Require(SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>()) == inputs.Length, "Mouse input was not injected.");
+    }
+
     [StructLayout(LayoutKind.Sequential)] private struct Input { public uint Type; public InputUnion Data; }
     [StructLayout(LayoutKind.Explicit)] private struct InputUnion { [FieldOffset(0)] public KeyboardInput Keyboard; [FieldOffset(0)] public MouseInput Mouse; }
     [StructLayout(LayoutKind.Sequential)] private struct KeyboardInput { public ushort Key, Scan; public uint Flags, Time; public nint Extra; }
     [StructLayout(LayoutKind.Sequential)] private struct MouseInput { public int X, Y; public uint Data, Flags, Time; public nint Extra; }
+    [StructLayout(LayoutKind.Sequential)] private readonly record struct NativePoint(int X, int Y);
     private delegate bool WindowCallback(nint window, nint parameter);
     [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, nint parameter);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out uint pid);
@@ -245,4 +263,8 @@ internal static class StudioUiChecks
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(nint window);
     [DllImport("user32.dll")] internal static extern nint GetForegroundWindow();
     [DllImport("user32.dll", SetLastError = true)] private static extern uint SendInput(uint count, Input[] inputs, int size);
+    [DllImport("user32.dll")] private static extern bool GetCursorPos(out NativePoint point);
+    [DllImport("user32.dll")] private static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] private static extern nint WindowFromPoint(NativePoint point);
+    [DllImport("user32.dll")] private static extern bool IsChild(nint parent, nint candidate);
 }

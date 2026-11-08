@@ -55,6 +55,8 @@ if (args is ["--f12-uninstall-worker", var removeFixture, var removeInterrupt]) 
 if (args is ["--f12-built-lifecycle", var packageA, var packageB]) return F12InstallChecks.RunBuiltLifecycle(packageA, packageB);
 if (args.Length == 2 && args[0] == "--f09-catalog-check")
     return F09Checks.VerifyShippedCatalog(args[1]);
+if (args is ["--f13-catalog-check", var sceneRoot])
+    return F09Checks.VerifyShippedCatalog(sceneRoot, requireTech: true);
 
 var cases = new (string Name, string Json, SceneManifestError Expected)[]
 {

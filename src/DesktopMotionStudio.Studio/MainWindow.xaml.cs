@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Bindings;
 using DesktopMotionStudio.Core.Launch;
@@ -281,5 +282,10 @@ public partial class MainWindow : Window
         PreviewResult result = await _intents.PlayAsync(id);
         if (_closed || _closing || !_intents.IsCurrent(result)) return;
         if (result.Outcome == PreviewOutcome.Unavailable) { PreviewStatusText.Text = "作品暂不可用，绑定已保留。请刷新后重试。"; PreviewBoundButton.IsEnabled = false; }
+        else if (Selected?.Binding.Binding?.SceneId == id && PreviewBoundButton.IsEnabled)
+        {
+            FocusManager.SetFocusedElement(this, PreviewBoundButton);
+            if (IsActive) PreviewBoundButton.Focus();
+        }
     }
 }

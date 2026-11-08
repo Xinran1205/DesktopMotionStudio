@@ -9,6 +9,7 @@ internal sealed class SceneSurface : Control
     private readonly bool _reducedMotion;
     private readonly Color _accent;
     private SceneFrame _frame;
+    private double _progress;
     internal event EventHandler? RenderFailed;
 
     internal SceneSurface(ScenePlaybackDefinition definition, bool reducedMotion)
@@ -24,13 +25,22 @@ internal sealed class SceneSurface : Control
 
     internal void Present(TimeSpan elapsed)
     {
-        _frame = _timeline.Evaluate(elapsed, _reducedMotion);
+        if (_timeline.Definition.IsTechFrame)
+            _progress = elapsed.TotalMilliseconds / _timeline.Definition.DurationMilliseconds;
+        else
+            _frame = _timeline.Evaluate(elapsed, _reducedMotion);
         Invalidate();
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        try { PaintScene(e.Graphics, ClientRectangle); }
+        try
+        {
+            if (_timeline.Definition.IsTechFrame)
+                TechFramePainter.Paint(e.Graphics, ClientRectangle, _progress, _accent, _reducedMotion);
+            else
+                PaintScene(e.Graphics, ClientRectangle);
+        }
         catch (Exception) { RenderFailed?.Invoke(this, EventArgs.Empty); }
     }
 

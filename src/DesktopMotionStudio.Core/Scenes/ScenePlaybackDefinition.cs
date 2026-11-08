@@ -21,6 +21,9 @@ public sealed record ScenePlaybackDefinition(
     [property: JsonRequired] string Glyph,
     [property: JsonRequired] ImmutableArray<SceneKeyframe> Keyframes)
 {
+    public const string TechFrameRuntimeId = "tech-frame";
+
+    [JsonIgnore] public bool IsTechFrame => RuntimeId == TechFrameRuntimeId && RuntimeVersion == 1;
     [JsonIgnore] public bool IsValid => ScenePlaybackReader.Validate(this) == SceneDataError.None;
 }
 
@@ -30,6 +33,7 @@ public static class ScenePlaybackReader
     public const int MaximumSnapshotBytes = 4 * 1024;
     internal static readonly HashSet<string> Fields = new(StringComparer.Ordinal) { "schemaVersion", "sceneId", "sceneVersion", "runtimeId", "runtimeVersion", "durationMilliseconds", "accent", "glyph", "keyframes" };
     internal static readonly HashSet<string> KeyframeFields = new(StringComparer.Ordinal) { "atMilliseconds", "scale", "opacity", "rotationDegrees" };
+    internal static bool SupportsRuntime(string? id) => id is "vector-orbit" or ScenePlaybackDefinition.TechFrameRuntimeId;
     public static SceneDataReadResult<ScenePlaybackDefinition> Read(ReadOnlySpan<byte> bytes, SceneManifest expected)
     {
         ArgumentNullException.ThrowIfNull(expected);
@@ -44,9 +48,10 @@ public static class ScenePlaybackReader
     {
         if (data is null || data.SchemaVersion < 1) return SceneDataError.InvalidDefinition;
         if (data.SchemaVersion > 1) return SceneDataError.UnsupportedSchema;
-        if (data.RuntimeId != "vector-orbit" || data.RuntimeVersion != 1) return SceneDataError.UnsupportedRuntime;
+        if (!SupportsRuntime(data.RuntimeId) || data.RuntimeVersion != 1) return SceneDataError.UnsupportedRuntime;
         if (!SceneManifestReader.IsValidSceneId(data.SceneId) || !SceneManifestReader.IsValidSceneVersion(data.SceneVersion) ||
-            data.DurationMilliseconds is < 1000 or > 8000 || data.Accent is null || data.Accent.Length != 7 || data.Accent[0] != '#' ||
+            data.DurationMilliseconds < 1000 || data.DurationMilliseconds > (data.IsTechFrame ? 2200 : 8000) ||
+            data.Accent is null || data.Accent.Length != 7 || data.Accent[0] != '#' ||
             data.Accent.Skip(1).Any(c => !Uri.IsHexDigit(c)) || !SceneDataJson.IsGlyph(data.Glyph) ||
             data.Keyframes.IsDefault || data.Keyframes.Length is < 2 or > 8) return SceneDataError.InvalidDefinition;
         int previous = -1;

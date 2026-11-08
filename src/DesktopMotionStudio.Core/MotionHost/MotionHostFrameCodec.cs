@@ -107,7 +107,7 @@ public static class MotionHostFrameCodec
         if (playback.ValueKind != JsonValueKind.Object) return false;
         if (playback.TryGetProperty("schemaVersion", out JsonElement schema) && schema.ValueKind == JsonValueKind.Number && schema.TryGetInt32(out int playbackSchema) && playbackSchema > 1)
             throw new MotionHostProtocolException(MotionHostError.UnsupportedPlayback);
-        if (playback.TryGetProperty("runtimeId", out JsonElement runtime) && runtime.ValueKind == JsonValueKind.String && runtime.GetString() != "vector-orbit" ||
+        if (playback.TryGetProperty("runtimeId", out JsonElement runtime) && runtime.ValueKind == JsonValueKind.String && !ScenePlaybackReader.SupportsRuntime(runtime.GetString()) ||
             playback.TryGetProperty("runtimeVersion", out JsonElement runtimeVersion) && runtimeVersion.ValueKind == JsonValueKind.Number && runtimeVersion.TryGetInt32(out int runtimeNumber) && runtimeNumber != 1)
             throw new MotionHostProtocolException(MotionHostError.UnsupportedPlayback);
         if (!SceneDataJson.HasOnlyMembers(playback, ScenePlaybackReader.Fields)) return false;

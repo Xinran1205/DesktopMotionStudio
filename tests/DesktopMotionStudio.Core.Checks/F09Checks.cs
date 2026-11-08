@@ -24,13 +24,22 @@ internal static class F09Checks
         return failures + F09BindingChecks.Run();
     }
 
-    internal static int VerifyShippedCatalog(string root)
+    internal static int VerifyShippedCatalog(string root, bool requireTech = false)
     {
         int failures = 0;
         SceneLibrarySnapshot result = new SceneLibrary().Scan(root);
         SceneLibraryItem? work = result.Items.SingleOrDefault(item => item.Catalog.Manifest?.SceneId == "studio-pulse");
         Check("F09 shipped development data has validated identity and required playback", result.Error == SceneLibraryError.None && work is { IsPlayable: true, Playback.RuntimeId: "vector-orbit", Playback.DurationMilliseconds: 5000 } && work.Catalog.Manifest!.SceneVersion == "0.1.0", ref failures);
         Check("F09 shipped work is labelled as development content", work?.Presentation?.Theme.Contains("开发", StringComparison.Ordinal) == true && work.Catalog.Manifest!.Name.Contains("开发", StringComparison.Ordinal), ref failures);
+        if (requireTech)
+        {
+            SceneLibraryItem? tech = result.Items.SingleOrDefault(item => item.Catalog.Manifest?.SceneId == "zero-boundary");
+            Check("F13 shipped catalog includes playable 零界, cover, and attribution",
+                tech is { IsPlayable: true, DisplayName: "零界", Playback.IsTechFrame: true, Playback.DurationMilliseconds: 2000,
+                    CoverError: SceneAssetError.None } &&
+                tech.Catalog.Manifest!.DisplayMode == SceneDisplayMode.Centered &&
+                File.Exists(Path.Combine(tech.Catalog.DirectoryPath, "ATTRIBUTION.md")), ref failures);
+        }
         return failures;
     }
 
@@ -55,6 +64,16 @@ internal static class F09Checks
         var presentation = ScenePresentationReader.Read(Bytes(PresentationJson), manifest);
         var playback = ScenePlaybackReader.Read(Bytes(PlaybackJson), manifest);
         Check("F09 sidecars retain separate versions and matching scene identity", presentation.Value?.Theme == "Neutral" && playback.Value is { IsValid: true, RuntimeId: "vector-orbit" }, ref failures);
+        string tech = PlaybackJson.Replace("vector-orbit", "tech-frame").Replace("3000", "2000");
+        Check("F13 tech-frame v1 opens without changing the legacy vector definition",
+            ScenePlaybackReader.Read(Bytes(tech), manifest).Value is { IsValid: true, RuntimeId: "tech-frame" } &&
+            playback.Value is { IsValid: true, RuntimeId: "vector-orbit" }, ref failures);
+        Check("F13 unknown tech-frame versions are rejected",
+            ScenePlaybackReader.Read(Bytes(tech.Replace("\"runtimeVersion\":1", "\"runtimeVersion\":2")), manifest).Error == SceneDataError.UnsupportedRuntime,
+            ref failures);
+        Check("F13 finite tech-frame budget rejects longer content",
+            ScenePlaybackReader.Read(Bytes(tech.Replace("2000", "2500")), manifest).Error == SceneDataError.InvalidDefinition,
+            ref failures);
         foreach ((string name, string json, SceneDataError error) in new[]
         {
             ("future before unknown shape", "{\"schemaVersion\":2,\"unknown\":{}}", SceneDataError.UnsupportedSchema),
