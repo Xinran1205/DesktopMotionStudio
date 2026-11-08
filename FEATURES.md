@@ -1,6 +1,6 @@
 # Feature inventory and delivery order
 
-**Status:** Incremental implementation · **Version:** 1.0.35 · **Date:** 2026-11-08
+**Status:** Incremental implementation · **Version:** 1.0.38 · **Date:** 2026-11-08
 
 The repository began with requirements documents only. F00–F12 are complete under the recorded acceptance scope. Dependencies below define the delivery order.
 
@@ -25,7 +25,12 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 16 | Studio / F17 Bilingual client | English and Simplified Chinese for product text and built-in works, plus paired GitHub READMEs | F11, F13, F16 | [Spec](specs/018-bilingual-client/spec.md) · [Evidence](specs/018-bilingual-client/evidence.md) |
 | 17 | Studio / F18 Motion display area | Choose the recommended, compact, large, or full-screen animation area | F09, F11, F13, F17 | [Spec](specs/019-motion-display/spec.md) · [Evidence](specs/019-motion-display/evidence.md) |
 | 18 | Launch / F19 Motion before launch | Finish or skip an enabled animation before dispatching a cold target | F05, F13, F15, F18 | [Spec](specs/020-motion-before-launch/spec.md) · [Evidence](specs/020-motion-before-launch/evidence.md) |
-| 19 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 · after display and launch refinements | Spec baseline |
+| 19 | Renderer / F20 Local MP4 feasibility | Real native playback, first frame, fixed fades and ordering in an isolated probe | F18, F19 | [Verified probe](specs/021-mp4-feasibility/evidence.md) |
+| 20 | Renderer / F21 Production MP4 playback | A packaged video session with the existing preview and launch experience | F20 | [Spec](specs/022-mp4-playback/spec.md) |
+| 21 | Studio / F22 Local MP4 import | Local video library, validation, persistence and three playback options | F21 | [Spec](specs/023-local-mp4-import/spec.md) |
+| 22 | Content / F23 First curated MP4 work | An original six-second performance and verified release assets | F21, F22 | [Spec](specs/024-first-mp4-work/spec.md) |
+| 23 | Studio / F24 AI motion creation guide | Copyable production prompts and verified MP4 export guidance | F22, F23 | [Spec](specs/025-ai-motion-guide/spec.md) |
+| Later | Content / F14 Second licensed scene | A visually distinct work using rights-cleared licensed content | F13, F23 and rights clearance | [Spec baseline](specs/015-second-licensed-scene/spec.md) |
 
 ## Selection for first feature
 
@@ -35,7 +40,7 @@ The F IDs here are engineering feature IDs and do not map one-to-one to the PRD 
 
 Develop the built-in works one at a time with distinct styles. User-requested directions include anime, technology, comedy and cinematic spectacle. The development bundle currently contains Studio Pulse.
 
-See the [next-stage delivery roadmap](docs/NEXT_STAGE.zh-CN.md) for F13, F16 and workstation release acceptance.
+See the [MP4 workflow](docs/MP4_WORKFLOW.zh-CN.md) for the current stage and the [prior roadmap](docs/NEXT_STAGE.zh-CN.md) for the code works and workstation release acceptance.
 
 ## Decomposition note
 
@@ -78,3 +83,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.35 | 2026-11-08 | Complete F16 and verify the combined 0.16.0 local candidate, including isolated upgrade and real Windows UI. |
 | 1.0.36 | 2026-11-08 | Add English-first GitHub documentation and optional English Studio UI, with separate language storage and preserved user names. |
 | 1.0.37 | 2026-11-08 | Add user-selected animation placement and play bound motion before a cold application launch. |
+| 1.0.38 | 2026-11-08 | Preserve the two code works and define the MP4 playback, import, curated work and AI authoring stages. |

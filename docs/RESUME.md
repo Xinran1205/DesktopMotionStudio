@@ -1,6 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — 0.19.0 显示区域与启动顺序已验收
+## 当前断点 — F20 MP4 样机已验收
+
+独立样机已在 Windows 验证 6 秒和 10 秒 H.264 视频、横竖画面适配、固定淡入淡出、Esc 与失败放行。下一阶段是 [F21 正式视频播放](../specs/022-mp4-playback/plan.md)。[F20 验收证据](../specs/021-mp4-feasibility/evidence.md)
+
+## 已安装版本 — 0.19.0
 
 0.19.0 提供作品推荐、居中小窗、居中大画幅和当前屏幕全屏四档。冷启动在动效退场后开始，Esc 会跳过动效并放行启动。最新候选安装包在 `artifacts/f19/verified-0.19.0/setup`。见 [使用指南](USER_GUIDE.zh-CN.md)、[F18 验收](../specs/019-motion-display/evidence.md)和 [F19 验收](../specs/020-motion-before-launch/evidence.md)。
 
@@ -8,7 +12,7 @@
 
 0.16.0 的首套原创「零界」、新版首页和产品图标仍见 [F13 证据](../specs/014-first-licensed-scene/evidence.md)和 [F16 证据](../specs/017-studio-home-polish/evidence.md)。
 
-按已定路线，下一套作品从 [F14 基础规格](../specs/015-second-licensed-scene/spec.md) 独立推进。首套的全屏对比已留证，当前发布默认使用作品推荐画幅。开发顺序与测试边界见 [阶段路线](NEXT_STAGE.zh-CN.md)。
+后续优先开发 MP4。现有「零界」和 Studio Pulse 继续走原生路径。视频真机样机、正式播放、本地导入、原创精品和 AI 制作帮助分阶段交付。具体入口见 [MP4 产品与制作流程](MP4_WORKFLOW.zh-CN.md)。
 
 ### 后续测试按改动范围选择
 
