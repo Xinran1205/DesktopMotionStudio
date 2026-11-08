@@ -142,6 +142,8 @@ public partial class MainWindow : Window
         TargetKindText.Text = UiText.Kind(row?.Profile.Target?.Kind);
         TargetText.Text = row?.Profile.Target?.Identifier ?? row?.Profile.LaunchTarget ?? "选择一个应用查看配置";
         TargetStatusText.Text = row?.TargetStatus ?? string.Empty;
+        TargetStatusText.Visibility = row?.TargetAvailable == false ? Visibility.Visible : Visibility.Collapsed;
+        Artwork.Visibility = row?.TargetAvailable == false ? Visibility.Collapsed : Visibility.Visible;
         BindingText.Text = row?.Binding.Status switch
         {
             BindingResolutionStatus.Ready => row.Scene,

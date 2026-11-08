@@ -8,6 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
     <ApplicationManifest>../DesktopMotionStudio.Studio/app.manifest</ApplicationManifest>
+    <ApplicationIcon>../Branding/DesktopMotionStudio.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />

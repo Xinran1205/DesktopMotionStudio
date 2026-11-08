@@ -10,12 +10,15 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>../Branding/DesktopMotionStudio.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
     <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" Private="false" />
     <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Resource Include="../Branding/DesktopMotionStudio.ico" Link="Branding/DesktopMotionStudio.ico" />
+    <Resource Include="../Branding/BrandMark.png" Link="Branding/BrandMark.png" />
   </ItemGroup>
   <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true' And '$(StageBundledTools)' != 'false'">
     <MSBuild Projects="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">

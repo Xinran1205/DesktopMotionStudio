@@ -61,7 +61,7 @@ internal static class F10UiChecks
             {
                 Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
             });
-            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher));
+            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher)) { Topmost = true };
             F09WindowChecks.Pump(async () =>
             {
                 home.Show();
@@ -73,11 +73,22 @@ internal static class F10UiChecks
                         nint handle = Window(current, "Desktop Motion Studio");
                         var element = AutomationElement.FromHandle(handle);
                         Require(Program.WaitFor(() => Enabled(element, "测试启动")), "Real test action is unavailable.");
-                        Invoke(element, "测试启动");
+                        var pointer = Pointer();
+                        try
+                        {
+                            if (GetForegroundWindow() != handle)
+                            {
+                                Rect title = Find(element, "当前应用").Current.BoundingRectangle;
+                                PointAt((int)(title.Left + title.Width / 2), (int)(title.Top + title.Height / 2));
+                                ClickOwnedWindow(handle);
+                            }
+                            Keys(handle, 0x12, 0x54);
+                        }
+                        finally { PointAt(pointer.X, pointer.Y); }
                         Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus") == "已打开目标应用。",
                             TimeSpan.FromSeconds(6)), "Test Launch did not open its delayed target.");
                         LaunchTrace cold = ReadTrace(profile);
-                        Check($"test launch of {sceneId} reports {expectedCold} and one real delayed target", cold is
+                        Check($"Alt+T for {sceneId} reports {expectedCold} and one real delayed target", cold is
                             { Instance: "WindowReady", HostError: null, TargetPid: int pid } && cold.Scene == sceneId && cold.Host == expectedCold &&
                             IsTarget(pid, delayCopy) && OwnedTargets(delayCopy) == 1);
                         Invoke(element, "测试启动");

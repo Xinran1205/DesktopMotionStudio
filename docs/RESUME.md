@@ -1,10 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F13 已验收，进入 F16 首页与图标
+## 当前断点 — 0.16.0 候选包已验收
 
-「我的应用」已支持 **测试启动**（Alt+T）。未安装发布版与 0.15.0 本机安装版均验证了首次启动、已有窗口复用、渲染故障降级、配置保留，以及与受管快捷方式一致的启动结果。见 [使用指南](USER_GUIDE.zh-CN.md) 和 [F15 证据](../specs/016-test-launch/evidence.md)。本地安装候选包位于 `artifacts/f15-20261107/candidate/setup`。
+0.16.0 包含首套原创「零界」、新版首页和产品图标。最新候选安装包在 `artifacts/f16/final-0.16.0/setup`。已完成本机真实界面、启动与隔离升级验收，详见 [使用指南](USER_GUIDE.zh-CN.md)、[F13 证据](../specs/014-first-licensed-scene/evidence.md) 和 [F16 证据](../specs/017-studio-home-polish/evidence.md)。
 
-首套原创纯科技作品「零界」已在发布目录完成真实预览、试启动和受管入口验收。开发包位于 `artifacts/f13/launch`，详情见 [F13 验证证据](../specs/014-first-licensed-scene/evidence.md)。接着实施 [F16 首页主路径与图标](../specs/017-studio-home-polish/tasks.md)，再做一次本机安装候选包验收。开发顺序与测试边界见 [下一阶段路线](NEXT_STAGE.zh-CN.md)。
+按已定路线，下一套作品从 [F14 基础规格](../specs/015-second-licensed-scene/spec.md) 独立推进。首套的全屏对比已留证，当前发布默认使用作品推荐画幅。开发顺序与测试边界见 [阶段路线](NEXT_STAGE.zh-CN.md)。
 
 ### 后续测试按改动范围选择
 

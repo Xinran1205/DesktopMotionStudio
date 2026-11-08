@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
+using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Distribution;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
@@ -12,11 +14,11 @@ internal static class F12InstallChecks
     internal static int Run() => OperatingSystem.IsWindows() ? RunWindows() : 0;
     internal static int RunRemoval() => OperatingSystem.IsWindows() ? RunRemovalWindows() : 0;
 
-    internal static int RunBuiltLifecycle(string first, string second) =>
-        OperatingSystem.IsWindows() ? RunBuiltLifecycleWindows(first, second) : 2;
+    internal static int RunBuiltLifecycle(string first, string second, bool checkBranding = false) =>
+        OperatingSystem.IsWindows() ? RunBuiltLifecycleWindows(first, second, checkBranding) : 2;
 
     [SupportedOSPlatform("windows")]
-    private static int RunBuiltLifecycleWindows(string first, string second)
+    private static int RunBuiltLifecycleWindows(string first, string second, bool checkBranding)
     {
         int failures = 0;
         void Check(string name, bool result) => F09Checks.Check("F12 built " + name, result, ref failures);
@@ -29,13 +31,19 @@ internal static class F12InstallChecks
             string profile = Path.Combine(directory, "user-data", "studio-state.json");
             var repository = new StudioStateRepository(profile);
             var preference = new StudioSettings("dark", true);
-            if (repository.Save(StudioState.Empty) != RepositoryError.None ||
+            string iconTarget = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+            StudioState retained = checkBranding ? StudioState.Empty with
+            {
+                Applications = [new("retained-app", "Retained application", iconTarget, new(ApplicationTargetKind.Executable, iconTarget, []))],
+                Bindings = [new("test", "retained-app", "studio-pulse", true)]
+            } : StudioState.Empty;
+            if (repository.Save(retained) != RepositoryError.None ||
                 !repository.Update(current => current with { Settings = preference }).IsSuccess)
                 throw new InvalidOperationException("Could not prepare the retained test profile and backup.");
             byte[] profileBytes = File.ReadAllBytes(profile);
             byte[] backupBytes = File.ReadAllBytes(profile + ".bak");
             Check("real package A installs", InstallBuilt(first) == InstallOutcome.Installed && RegistrationMatches(directory, registry, versionA));
-            string shortcut = CreateManagedEntry(directory);
+            string shortcut = CreateManagedEntry(directory, checkBranding ? iconTarget : null);
             string active = Path.Combine(root, InstalledEntry.Active);
             byte[] previous = File.ReadAllBytes(active);
             byte[] entry = File.ReadAllBytes(InstalledLayout.LauncherPath(root));
@@ -55,6 +63,17 @@ internal static class F12InstallChecks
                 File.ReadAllBytes(Path.Combine(root, InstalledLayout.StudioName)).SequenceEqual(
                     File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))));
             Check("real upgrade preserves profile and backup bytes", ProfileUnchanged());
+            if (checkBranding)
+            {
+                string stableStudio = Path.Combine(root, InstalledLayout.StudioName);
+                using RegistryKey? app = registry.OpenSubKey("DesktopMotionStudio");
+                Check("upgraded Start menu and Installed Apps resolve the same branded stable Studio image",
+                    app?.GetValue("DisplayIcon") as string == stableStudio && ShortcutIcon(MenuLink(directory)) == stableStudio &&
+                    File.ReadAllBytes(stableStudio).SequenceEqual(File.ReadAllBytes(Path.Combine(second, "entry", "DesktopMotionStudio.Entry.exe"))));
+                Check("upgraded managed shortcut retains the target application icon and the original binding",
+                    ShortcutIcon(shortcut) == iconTarget &&
+                    repository.Load().State?.Bindings.SingleOrDefault() is { BindingId: "test", SceneId: "studio-pulse", Enabled: true });
+            }
             UninstallResult result = Uninstall(directory, registry);
             Check("real payload files, registration and owned links are removed", !result.Busy && result.PreservedProgramItems == 0 &&
                 result.Shortcuts.Removed == 1 && !Directory.Exists(root) && !File.Exists(shortcut) &&
@@ -200,11 +219,11 @@ internal static class F12InstallChecks
     }
 
     [SupportedOSPlatform("windows")]
-    private static string CreateManagedEntry(string fixture)
+    private static string CreateManagedEntry(string fixture, string? icon = null)
     {
         string desktop = Directory.CreateDirectory(Path.Combine(fixture, "Desktop")).FullName;
         using var platform = WindowsShortcutPlatform.Open(desktop);
-        using var stage = platform.Stage("managed.lnk", InstalledLayout.LauncherPath(InstallRoot(fixture)), "test", null);
+        using var stage = platform.Stage("managed.lnk", InstalledLayout.LauncherPath(InstallRoot(fixture)), "test", icon);
         var store = new ShortcutReceiptStore(Path.Combine(fixture, "receipts"));
         if (store.Begin("test", out var transaction) != ShortcutReceiptStatus.Ok)
             throw new IOException("Could not create managed shortcut receipt.");
@@ -212,6 +231,23 @@ internal static class F12InstallChecks
             if (transaction!.Save(new(1, "test", stage.Proof)) != ShortcutReceiptStatus.Ok) throw new IOException("Receipt rejected.");
         stage.Publish();
         return stage.Proof.Path;
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static string? ShortcutIcon(string path)
+    {
+        object shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")!)!;
+        try
+        {
+            object link = ((dynamic)shell).CreateShortcut(path);
+            try
+            {
+                string location = ((dynamic)link).IconLocation;
+                return location.EndsWith(",0", StringComparison.Ordinal) ? location[..^2] : null;
+            }
+            finally { Marshal.FinalReleaseComObject(link); }
+        }
+        finally { Marshal.FinalReleaseComObject(shell); }
     }
 
     [SupportedOSPlatform("windows")]
