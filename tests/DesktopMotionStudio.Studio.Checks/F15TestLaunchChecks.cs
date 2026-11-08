@@ -65,6 +65,8 @@ internal static class F15TestLaunchChecks
         var action = (Button)window.FindName("TestLaunchButton");
         var message = (TextBlock)window.FindName("TestLaunchStatusText");
         var list = (ListBox)window.FindName("ApplicationList");
+        var choose = (Button)window.FindName("ReplaceButton");
+        var add = (Button)window.FindName("AddButton");
         bool closed = false;
         window.Closed += (_, _) => closed = true;
         try
@@ -72,6 +74,8 @@ internal static class F15TestLaunchChecks
             await window.RefreshAsync("a");
             results.Add(("exposes the home action, keyboard mnemonic and status",
                 action.IsEnabled && Equals(action.Content, "测试启动(_T)")));
+            results.Add(("F16 ready home emphasizes Test Launch alone",
+                action.Tag is true && choose.Tag is not true && add.Tag is not true));
             action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             action.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             results.Add(("dispatches exactly one canonical request while waiting",
@@ -93,6 +97,8 @@ internal static class F15TestLaunchChecks
 
             list.SelectedIndex = 2;
             bool unbound = !action.IsEnabled && message.Text.Contains("绑定", StringComparison.Ordinal);
+            results.Add(("F16 unbound selection emphasizes Choose Motion alone",
+                choose.Tag is true && action.Tag is not true && add.Tag is not true));
             list.SelectedIndex = 3;
             results.Add(("unbound or missing targets have actionable status", unbound && !action.IsEnabled &&
                 message.Text.Contains("确认启动入口", StringComparison.Ordinal)));
@@ -113,6 +119,17 @@ internal static class F15TestLaunchChecks
             if (!closed) window.Close();
             await UntilAsync(() => closed);
         }
+
+        var empty = new MainWindow(new StudioStateRepository(Path.Combine(root, "empty.json")), scenes, testLaunch: client);
+        try
+        {
+            await empty.RefreshAsync();
+            results.Add(("F16 empty home emphasizes Add alone",
+                ((Button)empty.FindName("AddButton")).Tag is true &&
+                ((Button)empty.FindName("ReplaceButton")).Tag is not true &&
+                ((Button)empty.FindName("TestLaunchButton")).Tag is not true));
+        }
+        finally { empty.Close(); }
 
         var missing = new TestLaunchClient(unavailable);
         results.Add(("reports a missing component", (await missing.LaunchAsync("valid", default)).Status == TestLaunchClientStatus.ComponentUnavailable));

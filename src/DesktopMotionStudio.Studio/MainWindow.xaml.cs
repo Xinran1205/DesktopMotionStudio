@@ -100,7 +100,7 @@ public partial class MainWindow : Window
             _readable = loaded.result.IsSuccess;
             _rows = loaded.rows;
             Filter(selectId);
-            CountText.Text = $"{_rows.Length} 个已添加应用 · 选择应用查看详情";
+            CountText.Text = $"{_rows.Length} 个已添加应用";
             StatusText.Text = loaded.result.IsSuccess
                 ? _rows.Any(row => row.Profile.Target is null) ? "部分旧配置需要确认启动入口，原始内容已保留。" : "已读取此设备上的应用配置。"
                 : UiText.Storage(loaded.result.Error);
@@ -130,6 +130,14 @@ public partial class MainWindow : Window
     {
         _intents?.CancelPending();
         ApplicationRow? row = Selected;
+        DetailsPanel.Visibility = row is null ? Visibility.Collapsed : Visibility.Visible;
+        SelectionPrompt.Visibility = row is null ? Visibility.Visible : Visibility.Collapsed;
+        ClearSearchButton.Visibility = row is null && _rows.Length > 0 && SearchBox.Text.Trim().Length > 0
+            ? Visibility.Visible : Visibility.Collapsed;
+        SelectionPromptTitle.Text = !_readable ? "暂时无法读取应用" : _rows.Length == 0 ? "先添加一个应用" : "没有匹配的应用";
+        SelectionPromptText.Text = !_readable ? "可尝试刷新配置，或在本地诊断查看状态。"
+            : _rows.Length == 0 ? "添加后可选择动效、预览，再尝试真实启动。" : "清除搜索后可重新选择应用。";
+        SelectedAppText.Text = row?.Name ?? string.Empty;
         NameBox.Text = row?.Name ?? string.Empty;
         TargetKindText.Text = UiText.Kind(row?.Profile.Target?.Kind);
         TargetText.Text = row?.Profile.Target?.Identifier ?? row?.Profile.LaunchTarget ?? "选择一个应用查看配置";
@@ -144,6 +152,8 @@ public partial class MainWindow : Window
             _ => "未绑定动效"
         };
         BoundSceneNameText.Text = row?.Work?.DisplayName ?? row?.Binding.Binding?.SceneId ?? "未绑定作品";
+        ReplaceButton.Content = row?.Binding.Binding is null ? "选择动效(_B)" : "替换动效(_B)";
+        BoundFallback.Text = row?.Binding.Binding is null ? "选择作品后显示封面" : "暂无作品封面";
         if (row?.Binding.Binding is not null && row.Work?.IsPlayable != true && row.Binding.Status == BindingResolutionStatus.Disabled)
             BindingText.Text += "\n作品暂不可用，绑定已保留。";
         BoundCover.Source = null; BoundFallback.Visibility = Visibility.Visible;
@@ -169,6 +179,19 @@ public partial class MainWindow : Window
         PreviewBoundButton.IsEnabled = !_busy && !_closing && Selected?.Work?.IsPlayable == true;
         ReplaceButton.IsEnabled = !_busy && !_closing && Selected is not null;
         TestLaunchButton.IsEnabled = CanTestLaunch;
+        Button? primary = _readable ? Selected switch
+        {
+            null => _rows.Length == 0 ? AddButton : ClearSearchButton,
+            { TargetAvailable: false } => RepairButton,
+            { Binding.Binding: null } => ReplaceButton,
+            _ => _testLaunch is null ? PreviewBoundButton : TestLaunchButton
+        } : null;
+        AddButton.Tag = primary == AddButton;
+        ClearSearchButton.Tag = primary == ClearSearchButton;
+        RepairButton.Tag = primary == RepairButton;
+        ReplaceButton.Tag = primary == ReplaceButton;
+        PreviewBoundButton.Tag = primary == PreviewBoundButton;
+        TestLaunchButton.Tag = primary == TestLaunchButton;
         UpdateShortcutButtons();
     }
 
@@ -245,7 +268,17 @@ public partial class MainWindow : Window
     }
 
     private void OnSearch(object sender, TextChangedEventArgs e) { if (ApplicationList is not null) Filter(); }
-    private void OnSelection(object sender, SelectionChangedEventArgs e) { if (NameBox is not null) UpdateDetails(); }
+    private void OnClearSearch(object sender, RoutedEventArgs e)
+    {
+        SearchBox.Clear();
+        SearchBox.Focus();
+    }
+    private void OnSelection(object sender, SelectionChangedEventArgs e)
+    {
+        if (NameBox is null) return;
+        DetailsScroll.ScrollToTop();
+        UpdateDetails();
+    }
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
 
     private async Task OpenLibraryAsync(bool forSelected)

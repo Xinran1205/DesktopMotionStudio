@@ -4,16 +4,16 @@
 
 ## Phase 1 — Setup
 
-- [ ] T001 在 `specs/017-studio-home-polish/evidence.md` 记录 F13 交付、现有首页和 0.15.0 安装路径。准备测试配置、两套作品封面和新旧候选安装验证环境。
+- [x] T001 在 `specs/017-studio-home-polish/evidence.md` 记录 F13 交付、现有首页和 0.15.0 安装路径。准备测试配置、两套作品封面和新旧候选安装验证环境。
 
 ## Phase 2 — Foundational
 
-- [ ] T002 在 `specs/017-studio-home-polish/design/` 产出最小窗口下的空、未绑定、已绑定首页稿，以及 16 像素图标方案。核对文字、焦点顺序和设置／诊断／入口管理的位置（FR-001、FR-002、FR-004、FR-005）。
+- [x] T002 在 `specs/017-studio-home-polish/design/` 产出最小窗口下的空、未绑定、已绑定首页稿，以及 16 像素图标方案。核对文字、焦点顺序和设置／诊断／入口管理的位置（FR-001、FR-002、FR-004、FR-005）。
 
 ## Phase 3 — US1 首页常用路径（P1）
 
-- [ ] T003 [US1] 在 `tests/DesktopMotionStudio.Studio.Checks/F15TestLaunchChecks.cs` 与 `F09ViewChecks.cs` 覆盖主操作和当前作品状态、预览无分派、选择切换及测试启动无入口副作用（FR-001、FR-003）。
-- [ ] T004 [US1] 在 `src/DesktopMotionStudio.Studio/MainWindow.xaml`、`MainWindow.xaml.cs` 和 `Styles.xaml` 重排应用、封面、绑定与试启动层级，沿用现有处理程序。走一遍隔离首页预览与受控真实试启动（FR-001、FR-002、FR-003，SC-001）。
+- [x] T003 [US1] 在 `tests/DesktopMotionStudio.Studio.Checks/F15TestLaunchChecks.cs` 与现有 F09 检查覆盖主操作和当前作品状态、预览无分派、选择切换及测试启动无入口副作用（FR-001、FR-003）。
+- [x] T004 [US1] 在 `src/DesktopMotionStudio.Studio/MainWindow.xaml`、`MainWindow.xaml.cs` 和 `Styles.xaml` 重排应用、封面、绑定与试启动层级，沿用现有处理程序。走一遍隔离首页预览与受控真实试启动（FR-001、FR-002、FR-003，SC-001）。
 
 ## Phase 4 — US2 状态、键盘与主题（P1）
 
