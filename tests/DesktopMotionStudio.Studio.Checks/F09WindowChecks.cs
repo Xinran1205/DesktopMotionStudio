@@ -125,11 +125,11 @@ internal static class F09WindowChecks
         }
     }
 
-    internal static void Pump(Func<Task> action)
+    internal static void Pump(Func<Task> action, TimeSpan? deadline = null)
     {
         Exception? failure = null;
         var frame = new DispatcherFrame();
-        var timeout = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+        var timeout = new DispatcherTimer { Interval = deadline ?? TimeSpan.FromSeconds(8) };
         timeout.Tick += (_, _) => { failure = new TimeoutException("View check exceeded its deadline"); frame.Continue = false; };
         Dispatcher.CurrentDispatcher.BeginInvoke(async () => { try { await action(); } catch (Exception ex) { failure = ex; } finally { frame.Continue = false; } });
         timeout.Start(); Dispatcher.PushFrame(frame); timeout.Stop();

@@ -1,8 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — 0.17.0 双语候选包已验收
+## 当前断点 — 0.19.0 显示区域与启动顺序已验收
 
-0.17.0 加入英文默认 README 和客户端中英文切换。最新候选安装包在 `artifacts/f17/candidate-0.17.0/setup`。已验证本机双向切换、真实预览、配置保留和隔离升级。见 [使用指南](USER_GUIDE.zh-CN.md)和 [F17 验收记录](../specs/018-bilingual-client/evidence.md)。
+0.19.0 提供作品推荐、居中小窗、居中大画幅和当前屏幕全屏四档。冷启动在动效退场后开始，Esc 会跳过动效并放行启动。最新候选安装包在 `artifacts/f19/verified-0.19.0/setup`。见 [使用指南](USER_GUIDE.zh-CN.md)、[F18 验收](../specs/019-motion-display/evidence.md)和 [F19 验收](../specs/020-motion-before-launch/evidence.md)。
+
+0.17.0 加入英文默认 README 和客户端中英文切换。见 [F17 验收记录](../specs/018-bilingual-client/evidence.md)。
 
 0.16.0 的首套原创「零界」、新版首页和产品图标仍见 [F13 证据](../specs/014-first-licensed-scene/evidence.md)和 [F16 证据](../specs/017-studio-home-polish/evidence.md)。
 

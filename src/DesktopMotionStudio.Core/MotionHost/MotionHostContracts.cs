@@ -36,7 +36,7 @@ public enum MotionHostError
 }
 
 public enum MotionHostOutcome { NotStarted, HandedOff, Skipped, TimedOut, Failed, Exited, Completed }
-public enum MotionHostMode { Launch, Preview }
+public enum MotionHostMode { Launch, Preview, PreLaunch }
 
 public sealed class MotionHostProtocolException(MotionHostError error) : IOException("MotionHost protocol request failed validation.")
 {
@@ -89,7 +89,7 @@ public sealed record MotionHostFrame(
     MotionHostError? Error = null,
     int? NativeErrorCode = null)
 {
-    public const int CurrentProtocolVersion = 4;
+    public const int CurrentProtocolVersion = 5;
 }
 
 public interface IMotionHostSession : IAsyncDisposable
@@ -169,7 +169,7 @@ public static class MotionHostFrameValidator
             next = MotionHostProtocolState.Closed;
             return true;
         }
-        if (mode == MotionHostMode.Preview && kind == MotionHostMessageKind.Handoff) return false;
+        if (mode != MotionHostMode.Launch && kind == MotionHostMessageKind.Handoff) return false;
 
         if (finiteLaunch && mode == MotionHostMode.Launch && sender == MotionHostPeer.Host &&
             (current == MotionHostProtocolState.Closing &&

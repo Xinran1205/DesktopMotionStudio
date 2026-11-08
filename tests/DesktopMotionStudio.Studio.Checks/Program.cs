@@ -20,6 +20,7 @@ internal static class Program
         if (args is ["--f16-home-layout", var layoutOutput]) return F16HomeChecks.Run(layoutOutput);
         if (args is ["--f17-language-ui"]) return F17LanguageChecks.Run();
         if (args is ["--f18-display-ui"]) return F18DisplayChecks.Run();
+        if (args is ["--f19-playback-order", var oldRenderer]) return F19PlaybackChecks.Run(oldRenderer);
         if (args is ["--f11-launch-ui"]) return F10UiChecks.Run(diagnostics: true);
         if (args is ["--f11-ui"]) return F10UiChecks.Run(diagnostics: true, settingsAndRecovery: true);
         if (args is ["--f15-native", var fixture, var pid, var executable] && int.TryParse(pid, out int ownedPid))

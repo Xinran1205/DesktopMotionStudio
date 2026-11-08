@@ -106,7 +106,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
         public async Task<MotionHostOutcome> HandoffAsync(CancellationToken cancellationToken = default)
         {
-            if (_request.Mode == MotionHostMode.Preview) throw new InvalidOperationException("Preview has no target handoff authority.");
+            if (_request.Mode != MotionHostMode.Launch) throw new InvalidOperationException("This playback mode has no target handoff authority.");
             cancellationToken.ThrowIfCancellationRequested();
             lock (_stateLock)
             {

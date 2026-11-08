@@ -241,7 +241,14 @@ internal static class F09Checks
         var request = new MotionHostStartRequest(id, manifest.SceneId, manifest.SceneVersion, manifest.DisplayMode, 10_000, MotionHostMode.Preview, definition);
         MotionHostFrame frame = request.ToStartFrame();
         MotionHostFrame decoded = MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(frame));
-        Check("F18 IPC v4 retains explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 4 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        Check("F19 IPC v5 retains explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 5 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        var preLaunch = request with { Mode = MotionHostMode.PreLaunch };
+        Check("F19 pre-launch requires playback and has no target handoff authority",
+            MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(preLaunch.ToStartFrame())).Start?.Mode == MotionHostMode.PreLaunch &&
+            !(preLaunch with { Playback = null }).IsValid &&
+            !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Launcher, MotionHostMessageKind.Handoff, out _, MotionHostMode.PreLaunch) &&
+            MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Host, MotionHostMessageKind.Completed, out var end, MotionHostMode.PreLaunch) &&
+            end == MotionHostProtocolState.Closed, ref failures);
         foreach (SceneDisplayMode placement in new[] { SceneDisplayMode.CompactCentered, SceneDisplayMode.LargeCentered, SceneDisplayMode.PointerScreenFull })
         {
             var placed = request with { DisplayMode = placement };

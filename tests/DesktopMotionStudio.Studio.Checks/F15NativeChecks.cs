@@ -71,8 +71,8 @@ internal static class F15NativeChecks
             Require(Program.WaitFor(() => ReadStatus(home) == "已打开目标应用。", Wait), "Studio did not report cold launch.");
             launchedTarget = TargetProcess(target);
             int originalPid = launchedTarget.Id;
-            Check(keyboard ? "Alt+T opens one target and hands off" : "accessible action opens one target and hands off",
-                cold is (DiagnosticResultCode.WindowReady, DiagnosticResultCode.HandedOff, DiagnosticFallback.None));
+            Check(keyboard ? "Alt+T opens one target after playback" : "accessible action opens one target after playback",
+                cold is (DiagnosticResultCode.WindowReady, DiagnosticResultCode.Completed, DiagnosticFallback.None));
 
             Guid beforeWarm = LastRequest(logs);
             ((InvokePattern)action.GetCurrentPattern(InvokePattern.Pattern)).Invoke();

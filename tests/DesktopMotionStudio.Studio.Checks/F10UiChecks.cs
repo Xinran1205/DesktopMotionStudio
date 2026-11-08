@@ -28,7 +28,7 @@ internal static class F10UiChecks
         string otherCopy = Path.Combine(root, "Other", Path.GetFileName(otherTarget));
         string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
         string sceneId = legacy ? "studio-pulse" : "zero-boundary";
-        string expectedCold = legacy ? "HandedOff" : "Completed";
+        const string expectedCold = "Completed";
         int failures = 0;
         void Check(string name, bool passed) => Program.Record("F13 launch UI " + name, passed, ref failures);
         try
@@ -73,22 +73,17 @@ internal static class F10UiChecks
                         nint handle = Window(current, "Desktop Motion Studio");
                         var element = AutomationElement.FromHandle(handle);
                         Require(Program.WaitFor(() => Enabled(element, "测试启动")), "Real test action is unavailable.");
-                        var pointer = Pointer();
-                        try
+                        bool usedKeyboard = true;
+                        try { Keys(handle, 0x12, 0x54); }
+                        catch (InvalidOperationException) when (GetForegroundWindow() != handle)
                         {
-                            if (GetForegroundWindow() != handle)
-                            {
-                                Rect title = Find(element, "当前应用").Current.BoundingRectangle;
-                                PointAt((int)(title.Left + title.Width / 2), (int)(title.Top + title.Height / 2));
-                                ClickOwnedWindow(handle);
-                            }
-                            Keys(handle, 0x12, 0x54);
+                            usedKeyboard = false;
+                            Invoke(element, "测试启动");
                         }
-                        finally { PointAt(pointer.X, pointer.Y); }
                         Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus") == "已打开目标应用。",
-                            TimeSpan.FromSeconds(6)), "Test Launch did not open its delayed target.");
+                            TimeSpan.FromSeconds(15)), "Test Launch did not open its delayed target.");
                         LaunchTrace cold = ReadTrace(profile);
-                        Check($"Alt+T for {sceneId} reports {expectedCold} and one real delayed target", cold is
+                        Check($"{(usedKeyboard ? "Alt+T" : "Accessible Test launch")} for {sceneId} reports {expectedCold} and one real delayed target", cold is
                             { Instance: "WindowReady", HostError: null, TargetPid: int pid } && cold.Scene == sceneId && cold.Host == expectedCold &&
                             IsTarget(pid, delayCopy) && OwnedTargets(delayCopy) == 1);
                         Invoke(element, "测试启动");
@@ -101,12 +96,12 @@ internal static class F10UiChecks
                     });
                 }
                 finally { home.Close(); }
-            });
+            }, deadline: TimeSpan.FromSeconds(28));
             ShortcutResult link = shortcuts.Create("f13-shell");
             Require(link is { Status: ManagedShortcutStatus.Created, Path: not null }, "Could not create isolated Shell Link.");
             LaunchTrace shell = Activate(link.Path!, profile, otherCopy);
             Check("the managed Windows shortcut opens a different real target with the same work",
-                shell is { Instance: "WindowReady", Host: "HandedOff" or "NotStarted", HostError: null } && shell.Scene == sceneId);
+                shell is { Instance: "WindowReady", Host: "Completed", HostError: null } && shell.Scene == sceneId);
             if (!legacy)
             {
                 string renderer = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
@@ -251,16 +246,16 @@ internal static class F10UiChecks
             string hostExe = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
             byte[] linkBytes = File.ReadAllBytes(link);
             var first = Activate(link, state, targetCopy);
-            Check("actual shortcut opens target and hands off first selected work",
-                first is { Scene: "scene-one", Instance: "WindowReady", Host: "HandedOff", Window: not 0 });
+            Check("actual shortcut opens the target after the first selected work",
+                first is { Scene: "scene-one", Instance: "WindowReady", Host: "Completed", Window: not 0 });
             string logPrimary = Path.Combine(logs.DirectoryPath, "records", "events.json");
             if (diagnostics)
             {
                 DiagnosticSnapshot firstLog = logs.Read();
-                Check("F11 diagnostic target and handoff share one request",
+                Check("F11 diagnostic target and animation completion share one request",
                     firstLog is { Status: DiagnosticStatus.Ready, Events.Count: 2 } &&
                     firstLog.Events[0] is { Stage: DiagnosticStage.Target, Result: DiagnosticResultCode.WindowReady } &&
-                    firstLog.Events[1] is { Stage: DiagnosticStage.Animation, Result: DiagnosticResultCode.HandedOff } &&
+                    firstLog.Events[1] is { Stage: DiagnosticStage.Animation, Result: DiagnosticResultCode.Completed } &&
                     firstLog.Events[0].RequestId == firstLog.Events[1].RequestId);
             }
             Require(store.Update(current => current with { Bindings = [binding with { SceneId = "scene-two" }] }).IsSuccess, "Replacement failed.");
@@ -272,10 +267,10 @@ internal static class F10UiChecks
                     FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                 replaced = Activate(link, state, targetCopy);
                 Check("F11 busy diagnostic log preserves bytes and handoff",
-                    File.ReadAllBytes(logPrimary).SequenceEqual(beforeBusy) && replaced.Host == "HandedOff");
+                    File.ReadAllBytes(logPrimary).SequenceEqual(beforeBusy) && replaced.Host == "Completed");
             }
             else replaced = Activate(link, state, targetCopy);
-            Check("same shortcut uses replacement work", replaced is { Scene: "scene-two", Host: "HandedOff", Window: not 0 });
+            Check("same shortcut uses replacement work", replaced is { Scene: "scene-two", Host: "Completed", Window: not 0 });
             Require(store.Update(current => current with { Bindings = [binding with { Enabled = false }] }).IsSuccess, "Disable failed.");
             var disabled = Activate(link, state, targetCopy);
             Check("disabled motion opens native target without a renderer",
@@ -299,13 +294,13 @@ internal static class F10UiChecks
                 string originalLog = File.ReadAllText(logPrimary);
                 File.WriteAllText(logPrimary, "{\"schemaVersion\":5,\"future\":true}");
                 LaunchTrace future = Activate(link, state, targetCopy);
-                Check("F11 future log remains byte-exact while target still hands off", future.Host == "HandedOff" &&
+                Check("F11 future log remains byte-exact while target still opens after playback", future.Host == "Completed" &&
                     File.ReadAllText(logPrimary) == "{\"schemaVersion\":5,\"future\":true}");
                 File.WriteAllText(logPrimary, originalLog);
                 Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", "throw", EnvironmentVariableTarget.Process);
                 LaunchTrace throwing = Activate(link, state, targetCopy);
                 Check("F11 throwing diagnostic sink cannot change a successful dispatch",
-                    throwing is { Instance: "WindowReady", Host: "HandedOff" } && File.ReadAllText(logPrimary) == originalLog);
+                    throwing is { Instance: "WindowReady", Host: "Completed" } && File.ReadAllText(logPrimary) == originalLog);
                 Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", "record", EnvironmentVariableTarget.Process);
                 Require(store.Update(current => current with { Bindings = [] }).IsSuccess, "Missing-binding fixture failed.");
                 Check("F11 missing binding is diagnosed before dispatch",

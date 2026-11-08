@@ -40,11 +40,23 @@ public sealed class ApplicationInstanceCoordinator
             throw new ArgumentOutOfRangeException(nameof(pollInterval));
     }
 
-    public async Task<InstanceResult> OpenAsync(
+    public Task<InstanceResult> OpenAsync(
         string appId,
         LaunchTarget target,
         CancellationToken cancellationToken = default,
-        Action? beforeDispatch = null)
+        Action? beforeDispatch = null) =>
+        OpenAsync(appId, target, cancellationToken, beforeDispatch is null ? null : () =>
+        {
+            beforeDispatch();
+            return Task.CompletedTask;
+        }, recheckAfterPreparation: false);
+
+    internal Task<InstanceResult> OpenAfterPreparationAsync(
+        string appId, LaunchTarget target, CancellationToken cancellationToken, Func<Task> beforeDispatch) =>
+        OpenAsync(appId, target, cancellationToken, beforeDispatch, recheckAfterPreparation: true);
+
+    private async Task<InstanceResult> OpenAsync(string appId, LaunchTarget target,
+        CancellationToken cancellationToken, Func<Task>? beforeDispatch, bool recheckAfterPreparation)
     {
         long requestedAt = _clock.Timestamp;
         if (!IsValidAppId(appId)) return new InstanceResult(InstanceOutcome.InvalidTarget);
@@ -55,12 +67,12 @@ public sealed class ApplicationInstanceCoordinator
         if (!Environment.UserInteractive || _platform.CurrentSessionId == 0)
             return new InstanceResult(InstanceOutcome.IdentityUnavailable);
 
-        return await Task.Run(() => OpenWithGate(appId, resolution.Target, requestedAt, cancellationToken, beforeDispatch))
+        return await Task.Run(() => OpenWithGate(appId, resolution.Target, requestedAt, cancellationToken, beforeDispatch, recheckAfterPreparation))
             .ConfigureAwait(false);
     }
 
     private InstanceResult OpenWithGate(string appId, ResolvedLaunchTarget target, long requestedAt,
-        CancellationToken cancellationToken, Action? beforeDispatch)
+        CancellationToken cancellationToken, Func<Task>? beforeDispatch, bool recheckAfterPreparation)
     {
         if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
         Mutex gate;
@@ -85,17 +97,13 @@ public sealed class ApplicationInstanceCoordinator
                 if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
                 // A mutex belongs to this worker thread. Keep it here while the asynchronous
                 // request completes on other threads, including after abandoned ownership.
-                return OpenInsideGateAsync(target, requestedAt, cancellationToken, beforeDispatch).GetAwaiter().GetResult();
+                return OpenInsideGateAsync(target, requestedAt, cancellationToken, beforeDispatch, recheckAfterPreparation).GetAwaiter().GetResult();
             }
             finally { gate.ReleaseMutex(); }
         }
     }
 
-    private async Task<InstanceResult> OpenInsideGateAsync(
-        ResolvedLaunchTarget target,
-        long requestedAt,
-        CancellationToken cancellationToken,
-        Action? beforeDispatch)
+    private InstanceResult? CheckExisting(ResolvedLaunchTarget target, long requestedAt)
     {
         ProcessScanResult processScan = _platform.FindMatchingProcesses(target.Identity);
         if (processScan.NativeErrorCode is not null && !processScan.IsComplete)
@@ -122,13 +130,28 @@ public sealed class ApplicationInstanceCoordinator
                 _clock.ElapsedSince(requestedAt), activation.NativeErrorCode);
         }
 
-        if (!processScan.IsComplete)
-            return new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: processScan.NativeErrorCode);
+        return processScan.IsComplete ? null : new InstanceResult(InstanceOutcome.IdentityUnavailable, NativeErrorCode: processScan.NativeErrorCode);
+    }
 
+    private async Task<InstanceResult> OpenInsideGateAsync(ResolvedLaunchTarget target, long requestedAt,
+        CancellationToken cancellationToken, Func<Task>? beforeDispatch, bool recheckAfterPreparation)
+    {
+        if (CheckExisting(target, requestedAt) is { } existing) return existing;
         int? preparationErrorCode = null;
-        try { beforeDispatch?.Invoke(); }
+        try
+        {
+            if (beforeDispatch is not null) await beforeDispatch().ConfigureAwait(false);
+        }
         catch (Exception ex) { preparationErrorCode = ex.HResult; }
 
+        if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
+        if (recheckAfterPreparation)
+        {
+            InstanceResult? openedDuringPreparation = CheckExisting(target, requestedAt);
+            if (cancellationToken.IsCancellationRequested) return new InstanceResult(InstanceOutcome.Canceled);
+            if (openedDuringPreparation is not null)
+                return openedDuringPreparation with { LaunchPreparationErrorCode = preparationErrorCode };
+        }
         LaunchResult launch = _launch(target);
         if (!launch.Succeeded)
             return new InstanceResult(InstanceOutcome.LaunchFailed, NativeErrorCode: launch.NativeErrorCode,

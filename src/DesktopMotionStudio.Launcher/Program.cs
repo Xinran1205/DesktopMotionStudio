@@ -77,7 +77,7 @@ internal static class Program
                 var hosts = new WindowsMotionHostProcessFactory(
                     Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display);
                 var lifecycle = new MotionHostLifecycleCoordinator(instances, hosts);
-                animated = lifecycle.OpenAsync(plan.AppId, plan.Target, plan.Scene, playback: plan.Playback).GetAwaiter().GetResult();
+                animated = lifecycle.OpenAfterPlaybackAsync(plan.AppId, plan.Target, plan.Scene, plan.Playback).GetAwaiter().GetResult();
                 result = animated.TargetResult;
             }
             else

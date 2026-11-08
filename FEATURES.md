@@ -23,7 +23,9 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 14 | Content / F13 零界 and launch performance | First original pure-tech work with full preview, short real-window handoff and two composition prototypes | F03, F05, F06, F07, F09, F10, F15 | Complete in published Windows bundle · [evidence](specs/014-first-licensed-scene/evidence.md) |
 | 15 | Studio / F16 Home and product icon | Polish the application-to-test-launch path and integrate one Windows product icon | F08–F13, F15 | Complete · 0.16.0 local candidate · [evidence](specs/017-studio-home-polish/evidence.md) |
 | 16 | Studio / F17 Bilingual client | English and Simplified Chinese for product text and built-in works, plus paired GitHub READMEs | F11, F13, F16 | [Spec](specs/018-bilingual-client/spec.md) · [Evidence](specs/018-bilingual-client/evidence.md) |
-| 17 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 · scheduled after F16 | Spec baseline |
+| 17 | Studio / F18 Motion display area | Choose the recommended, compact, large, or full-screen animation area | F09, F11, F13, F17 | [Spec](specs/019-motion-display/spec.md) · [Evidence](specs/019-motion-display/evidence.md) |
+| 18 | Launch / F19 Motion before launch | Finish or skip an enabled animation before dispatching a cold target | F05, F13, F15, F18 | [Spec](specs/020-motion-before-launch/spec.md) · [Evidence](specs/020-motion-before-launch/evidence.md) |
+| 19 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 · after display and launch refinements | Spec baseline |
 
 ## Selection for first feature
 
@@ -75,3 +77,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.34 | 2026-11-08 | Complete F13 with original art, finite launch playback, safe handoff and real Windows evidence. Advance to the F16 homepage and icon. |
 | 1.0.35 | 2026-11-08 | Complete F16 and verify the combined 0.16.0 local candidate, including isolated upgrade and real Windows UI. |
 | 1.0.36 | 2026-11-08 | Add English-first GitHub documentation and optional English Studio UI, with separate language storage and preserved user names. |
+| 1.0.37 | 2026-11-08 | Add user-selected animation placement and play bound motion before a cold application launch. |

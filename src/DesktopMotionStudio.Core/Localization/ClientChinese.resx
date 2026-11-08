@@ -367,6 +367,9 @@
   <data name="HostLaunchWindow" xml:space="preserve">
     <value>Desktop Motion Studio 启动动效</value>
   </data>
+  <data name="HostPreLaunchFooter" xml:space="preserve">
+    <value>动效结束后打开应用 · 可随时跳过</value>
+  </data>
   <data name="HostPreparing" xml:space="preserve">
     <value>正在打开应用</value>
   </data>

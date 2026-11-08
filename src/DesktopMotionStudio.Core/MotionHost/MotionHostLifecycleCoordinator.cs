@@ -18,6 +18,75 @@ public sealed class MotionHostLifecycleCoordinator
         _hostFactory = hostFactory ?? throw new ArgumentNullException(nameof(hostFactory));
     }
 
+    public async Task<MotionHostLifecycleResult> OpenAfterPlaybackAsync(
+        string appId, LaunchTarget target, SceneManifest? scene, ScenePlaybackDefinition? playback,
+        CancellationToken cancellationToken = default)
+    {
+        if (scene is null || !IsValidScene(scene) || playback is not { IsValid: true } ||
+            playback.SceneId != scene.SceneId || playback.SceneVersion != scene.SceneVersion)
+        {
+            InstanceResult fallback = await _instances.OpenAsync(appId, target, cancellationToken).ConfigureAwait(false);
+            return new(fallback, MotionHostOutcome.Failed, MotionHostError.InvalidMessage);
+        }
+
+        var request = new MotionHostStartRequest(Guid.NewGuid(), scene.SceneId, scene.SceneVersion, scene.DisplayMode,
+            playback.DurationMilliseconds + 500, MotionHostMode.PreLaunch, playback);
+        MotionHostOutcome outcome = MotionHostOutcome.NotStarted;
+        MotionHostError? error = null;
+        int? nativeError = null;
+
+        async Task PlayBeforeDispatchAsync()
+        {
+            IMotionHostSession? session = null;
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                session = _hostFactory.Start(request);
+                // The renderer's handshake deadlines total under three seconds before its visible watchdog begins.
+                TimeSpan budget = TimeSpan.FromMilliseconds(request.MaximumVisibleMilliseconds + 3000);
+                outcome = await session.Completion.WaitAsync(budget, cancellationToken).ConfigureAwait(false);
+                if (outcome is not (MotionHostOutcome.Completed or MotionHostOutcome.Skipped or MotionHostOutcome.TimedOut))
+                    outcome = MotionHostOutcome.Failed;
+                error = outcome switch
+                {
+                    MotionHostOutcome.TimedOut => MotionHostError.TimedOut,
+                    MotionHostOutcome.Failed => session.FailureReason ?? MotionHostError.RendererFailed,
+                    _ => null
+                };
+                nativeError = session.NativeErrorCode;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+            catch (TimeoutException)
+            {
+                outcome = MotionHostOutcome.TimedOut;
+                error = MotionHostError.TimedOut;
+            }
+            catch (Exception ex)
+            {
+                outcome = MotionHostOutcome.Failed;
+                error = session is null ? MotionHostError.StartFailed : MotionHostError.RendererFailed;
+                nativeError = ex.HResult;
+            }
+            finally
+            {
+                if (session is not null)
+                {
+                    // Dispose waits for the owned window to close before the gate can dispatch the target.
+                    try { await session.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false); }
+                    catch (Exception ex)
+                    {
+                        error ??= MotionHostError.RendererFailed;
+                        nativeError ??= ex.HResult;
+                    }
+                }
+            }
+        }
+
+        InstanceResult instance = await _instances.OpenAfterPreparationAsync(
+            appId, target, cancellationToken, PlayBeforeDispatchAsync).ConfigureAwait(false);
+        return new(instance, outcome, error, nativeError);
+    }
+
     public async Task<MotionHostLifecycleResult> OpenAsync(
         string appId,
         LaunchTarget target,

@@ -39,23 +39,8 @@ internal static class F09UiChecks
                 Require(Program.WaitFor(() => preview.Current.IsEnabled), "Preview action unavailable");
                 ((InvokePattern)preview.GetCurrentPattern(InvokePattern.Pattern)).Invoke();
                 nint stage = 0;
-                Require(Program.WaitFor(() =>
-                {
-                    foreach (Process candidate in Process.GetProcessesByName("DesktopMotionStudio.MotionHost"))
-                    {
-                        using (candidate)
-                        {
-                            try
-                            {
-                                if (candidate.MainModule?.FileName == hostPath)
-                                    stage = FindWindow(candidate.Id, "Desktop Motion Studio — Preview");
-                            }
-                            catch (InvalidOperationException) { }
-                        }
-                        if (stage != 0) return true;
-                    }
-                    return false;
-                }), "New work did not show");
+                Require(Program.WaitFor(() => (stage = FindOwnedMotionWindow(hostPath, "Desktop Motion Studio — Preview")) != 0),
+                    "New work did not show");
                 var stageElement = AutomationElement.FromHandle(stage);
                 var visibleCaption = stageElement.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "预览模拟交接"));
                 Check($"{interaction} preview uses its own stage presentation", (visibleCaption is not null) == (interaction == "legacy"));

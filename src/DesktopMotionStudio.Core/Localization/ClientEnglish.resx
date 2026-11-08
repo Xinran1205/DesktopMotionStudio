@@ -367,6 +367,9 @@ Confirm the launch entry first.</value>
   <data name="HostLaunchWindow" xml:space="preserve">
     <value>Desktop Motion Studio launch animation</value>
   </data>
+  <data name="HostPreLaunchFooter" xml:space="preserve">
+    <value>The app opens after the animation · You can skip at any time</value>
+  </data>
   <data name="HostPreparing" xml:space="preserve">
     <value>Preparing your application</value>
   </data>

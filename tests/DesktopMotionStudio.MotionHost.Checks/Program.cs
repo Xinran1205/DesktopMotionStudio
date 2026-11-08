@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Security.Cryptography;
 using DesktopMotionStudio.Core.Localization;
@@ -80,6 +81,15 @@ internal static class Program
             Rectangle large = MotionHostWindow.CenteredBounds(work, largeFrame: true);
             Check($"F18 explicit compact stays smaller and on-screen in {work.Size}",
                 work.Contains(compact) && work.Contains(large) && compact.Width < large.Width && compact.Height < large.Height);
+        }
+        foreach (var playback in new[] { definition, tech })
+        {
+            using var motion = new MotionHostWindow(new(playback.SceneId, playback.SceneVersion, SceneDisplayMode.Centered,
+                playback.DurationMilliseconds + 500, MotionHostMode.PreLaunch, playback), animationsEnabled: false);
+            var elapsed = Stopwatch.StartNew();
+            Application.Run(motion);
+            Check($"F19 reduced-motion {playback.RuntimeId} completes its shortened presentation",
+                motion.ExitReason == MotionHostExitReason.Completed && elapsed.ElapsedMilliseconds < 2000);
         }
         return failures == 0 ? 0 : 1;
     }

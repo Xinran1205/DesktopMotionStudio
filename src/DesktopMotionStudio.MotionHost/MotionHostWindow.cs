@@ -188,7 +188,8 @@ internal sealed class MotionHostWindow : Form
         var footer = new Panel { Dock = DockStyle.Bottom, Height = height, BackColor = Color.FromArgb(24, 35, 58) };
         var caption = new Label
         {
-            Text = ProductText.Get(preview ? "HostPreviewFooter" : "HostLaunchFooter"),
+            Text = ProductText.Get(preview ? "HostPreviewFooter" :
+                _start.Mode == MotionHostMode.PreLaunch ? "HostPreLaunchFooter" : "HostLaunchFooter"),
             ForeColor = Color.White,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
@@ -276,8 +277,9 @@ internal sealed class MotionHostWindow : Form
             CloseWithReason(MotionHostExitReason.TimedOut);
         else if (_start.Playback is { } playback)
         {
-            bool finite = _start.Mode == MotionHostMode.Preview || playback.IsTechFrame;
-            int duration = playback.IsTechFrame && !_animationsEnabled && _start.Mode == MotionHostMode.Launch
+            bool finite = _start.Mode != MotionHostMode.Launch || playback.IsTechFrame;
+            int duration = !_animationsEnabled && (_start.Mode == MotionHostMode.PreLaunch ||
+                playback.IsTechFrame && _start.Mode == MotionHostMode.Launch)
                 ? 350 : playback.DurationMilliseconds;
             if (finite && elapsed.TotalMilliseconds >= duration) BeginHandoff(MotionHostExitReason.Completed);
         }
