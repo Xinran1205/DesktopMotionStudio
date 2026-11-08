@@ -267,8 +267,13 @@ internal sealed class MotionHostWindow : Form
         _surface?.Present(elapsed);
         if (elapsed >= TimeSpan.FromMilliseconds(_start.MaximumVisibleMilliseconds))
             CloseWithReason(MotionHostExitReason.TimedOut);
-        else if (_start.Mode == MotionHostMode.Preview && _start.Playback is not null && elapsed.TotalMilliseconds >= _start.Playback.DurationMilliseconds)
-            BeginHandoff(MotionHostExitReason.Completed);
+        else if (_start.Playback is { } playback)
+        {
+            bool finite = _start.Mode == MotionHostMode.Preview || playback.IsTechFrame;
+            int duration = playback.IsTechFrame && !_animationsEnabled && _start.Mode == MotionHostMode.Launch
+                ? 350 : playback.DurationMilliseconds;
+            if (finite && elapsed.TotalMilliseconds >= duration) BeginHandoff(MotionHostExitReason.Completed);
+        }
     }
 
     private void BeginHandoff(MotionHostExitReason reason)

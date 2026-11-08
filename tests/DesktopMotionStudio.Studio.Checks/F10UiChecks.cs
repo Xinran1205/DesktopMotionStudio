@@ -1,14 +1,139 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Windows;
 using System.Windows.Automation;
 using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Diagnostics;
+using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Studio;
+using ManagedShortcutStatus = DesktopMotionStudio.Core.Shortcuts.ShortcutStatus;
 using static StudioUiChecks;
 
 internal static class F10UiChecks
 {
+    internal static int RunTechLaunch(string delayedTarget, bool legacy = false)
+    {
+        if (!File.Exists(delayedTarget)) return 2;
+        string studio = RequiredPath("DMS_F08_STUDIO_PATH");
+        string launcher = RequiredPath("DMS_F10_FIXTURE_LAUNCHER_PATH");
+        string otherTarget = RequiredPath("DMS_F06_TARGET_PATH");
+        var fixture = Directory.CreateTempSubdirectory("dms-f13-launch-");
+        string root = fixture.FullName;
+        string bundle = Path.Combine(root, "Bundle");
+        string profile = Path.Combine(root, "state.json");
+        string desktop = Directory.CreateDirectory(Path.Combine(root, "Desktop")).FullName;
+        string delayCopy = Path.Combine(root, "Delayed", Path.GetFileName(delayedTarget));
+        string otherCopy = Path.Combine(root, "Other", Path.GetFileName(otherTarget));
+        string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
+        string sceneId = legacy ? "studio-pulse" : "zero-boundary";
+        string expectedCold = legacy ? "HandedOff" : "Completed";
+        int failures = 0;
+        void Check(string name, bool passed) => Program.Record("F13 launch UI " + name, passed, ref failures);
+        try
+        {
+            CopyTree(Path.GetDirectoryName(studio)!, bundle);
+            string isolatedLauncher = Path.Combine(bundle, "Launcher", Path.GetFileName(launcher));
+            foreach (string name in new[] { "DesktopMotionStudio.Launcher.exe", "DesktopMotionStudio.Launcher.dll",
+                "DesktopMotionStudio.Launcher.deps.json", "DesktopMotionStudio.Launcher.runtimeconfig.json", "DesktopMotionStudio.Core.dll" })
+                File.Copy(Path.Combine(Path.GetDirectoryName(launcher)!, name), Path.Combine(bundle, "Launcher", name), overwrite: true);
+            CopyTree(Path.GetDirectoryName(delayedTarget)!, Path.GetDirectoryName(delayCopy)!);
+            CopyTree(Path.GetDirectoryName(otherTarget)!, Path.GetDirectoryName(otherCopy)!);
+            var store = new StudioStateRepository(profile);
+            var state = StudioState.Empty with
+            {
+                Applications =
+                [
+                    new("delay-app", "A Delayed fixture", delayCopy, new(ApplicationTargetKind.Executable, delayCopy, ["--target", "2750"])),
+                    new("other-app", "B Other fixture", otherCopy, new(ApplicationTargetKind.Executable, otherCopy, []))
+                ],
+                Bindings = [new("f13-test", "delay-app", sceneId, true), new("f13-shell", "other-app", sceneId, true)]
+            };
+            Require(store.Save(state) == RepositoryError.None && store.Save(state) == RepositoryError.None, "Isolated profiles could not be saved.");
+            byte[] original = File.ReadAllBytes(profile), backup = File.ReadAllBytes(profile + ".bak");
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", profile);
+            string catalog = Path.Combine(bundle, "Scenes");
+            var shortcuts = new ManagedShortcutService(store, catalog, Path.Combine(root, "receipts"), isolatedLauncher, () => desktop);
+            var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            StudioTheme.Apply(application, "dark");
+            application.Resources.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
+            });
+            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher));
+            F09WindowChecks.Pump(async () =>
+            {
+                home.Show();
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        using Process current = Process.GetCurrentProcess();
+                        nint handle = Window(current, "Desktop Motion Studio");
+                        var element = AutomationElement.FromHandle(handle);
+                        Require(Program.WaitFor(() => Enabled(element, "测试启动")), "Real test action is unavailable.");
+                        Invoke(element, "测试启动");
+                        Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus") == "已打开目标应用。",
+                            TimeSpan.FromSeconds(6)), "Test Launch did not open its delayed target.");
+                        LaunchTrace cold = ReadTrace(profile);
+                        Check($"test launch of {sceneId} reports {expectedCold} and one real delayed target", cold is
+                            { Instance: "WindowReady", HostError: null, TargetPid: int pid } && cold.Scene == sceneId && cold.Host == expectedCold &&
+                            IsTarget(pid, delayCopy) && OwnedTargets(delayCopy) == 1);
+                        Invoke(element, "测试启动");
+                        Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus").Contains("目标已运行", StringComparison.Ordinal)),
+                            "The warm test did not report existing target reuse.");
+                        LaunchTrace warm = ReadTrace(profile);
+                        Check("test launch reuses the existing target without creating a shortcut", warm.TargetPid == cold.TargetPid &&
+                            warm.Host == "NotStarted" && OwnedTargets(delayCopy) == 1 && !Directory.EnumerateFileSystemEntries(desktop).Any() &&
+                            SameState(profile, original, backup));
+                    });
+                }
+                finally { home.Close(); }
+            });
+            ShortcutResult link = shortcuts.Create("f13-shell");
+            Require(link is { Status: ManagedShortcutStatus.Created, Path: not null }, "Could not create isolated Shell Link.");
+            LaunchTrace shell = Activate(link.Path!, profile, otherCopy);
+            Check("the managed Windows shortcut opens a different real target with the same work",
+                shell is { Instance: "WindowReady", Host: "HandedOff" or "NotStarted", HostError: null } && shell.Scene == sceneId);
+            if (!legacy)
+            {
+                string renderer = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+                string held = renderer + ".f13-probe";
+                File.Move(renderer, held);
+                try
+                {
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("an unavailable renderer still lets the shortcut open its target once",
+                        fallback is { Scene: "zero-boundary", Instance: "WindowReady", Host: "Failed", HostError: "StartFailed" });
+                }
+                finally { File.Move(held, renderer); }
+
+                string playback = Path.Combine(catalog, "zero-boundary", "scene.playback.json");
+                byte[] originalPlayback = File.ReadAllBytes(playback);
+                try
+                {
+                    File.WriteAllText(playback, "{");
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("invalid work data preserves the shortcut and launches natively",
+                        fallback is { Scene: null, Instance: "WindowReady", Host: null });
+                }
+                finally { File.WriteAllBytes(playback, originalPlayback); }
+            }
+            Check("the temporary shortcut is removable and old state stays byte-identical",
+                shortcuts.Remove("f13-shell").Status == ManagedShortcutStatus.Removed && SameState(profile, original, backup));
+        }
+        catch (Exception ex) { Console.WriteLine($"FAIL F13 launch UI: {ex.GetType().Name}: {ex.Message}"); failures++; }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", previous);
+            StopOwnedTargets(delayCopy);
+            StopOwnedTargets(otherCopy);
+            fixture.Delete(recursive: true);
+        }
+        return failures == 0 ? 0 : 1;
+    }
+
     internal static int Run(bool diagnostics = false, bool settingsAndRecovery = false)
     {
         string studio = RequiredPath("DMS_F08_STUDIO_PATH");
@@ -264,8 +389,7 @@ internal static class F10UiChecks
         try
         {
             Require(launcher.WaitForExit(10000) && launcher.ExitCode == 0, "Fixture Launcher failed or timed out.");
-            var result = JsonSerializer.Deserialize<LaunchTrace>(File.ReadAllText(tracePath)) ??
-                throw new IOException("No launch trace.");
+            LaunchTrace result = ReadTrace(state);
             Console.WriteLine($"  Launcher PID={launcher.Id}, target PID={result.TargetPid}, HWND=0x{result.Window:X}, scene={result.Scene}, target={result.Instance}, host={result.Host}/{result.HostError}");
             Require(result.TargetPid is int pid && IsTarget(pid, target) && OwnedTargets(target) == 1,
                 "Expected exactly one verified target process.");
@@ -280,6 +404,9 @@ internal static class F10UiChecks
             StopOwnedTargets(target);
         }
     }
+
+    private static LaunchTrace ReadTrace(string state) =>
+        JsonSerializer.Deserialize<LaunchTrace>(File.ReadAllText(state + ".launch-trace")) ?? throw new IOException("No launch trace.");
 
     private static Process StartStudio(string executable, string state, string catalog, string desktop)
     {

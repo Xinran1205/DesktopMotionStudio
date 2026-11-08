@@ -205,7 +205,8 @@ internal sealed class HostProtocolClient : IAsyncDisposable
     {
         lock (_stateLock)
         {
-            if (!MotionHostFrameValidator.TryAdvance(_state, peer, kind, out MotionHostProtocolState next, _mode))
+            if (!MotionHostFrameValidator.TryAdvance(_state, peer, kind, out MotionHostProtocolState next, _mode,
+                _mode == MotionHostMode.Launch && StartPayload?.Playback?.IsTechFrame == true))
                 return false;
             _state = next;
             return true;

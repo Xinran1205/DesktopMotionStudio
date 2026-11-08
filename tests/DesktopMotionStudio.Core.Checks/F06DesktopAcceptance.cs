@@ -269,7 +269,7 @@ internal static class F06DesktopAcceptance
         }
     }
 
-    private static bool ActivateWindow(nint window)
+    internal static bool ActivateWindow(nint window)
     {
         _ = ShowWindow(window, 5);
         _ = SetForegroundWindow(window);
@@ -282,7 +282,7 @@ internal static class F06DesktopAcceptance
         return false;
     }
 
-    private static bool SendEscape()
+    internal static bool SendEscape()
     {
         Input[] inputs =
         [

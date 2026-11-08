@@ -13,6 +13,12 @@ internal static class F09Checks
     internal const string PresentationJson = """{"schemaVersion":1,"sceneId":"studio-pulse","sceneVersion":"1.0.0","description":"Original development work","style":"Orbit","theme":"Neutral","cover":"cover.png"}""";
     internal const string PlaybackJson = """{"schemaVersion":1,"sceneId":"studio-pulse","sceneVersion":"1.0.0","runtimeId":"vector-orbit","runtimeVersion":1,"durationMilliseconds":3000,"accent":"#618EFF","glyph":"M","keyframes":[{"atMilliseconds":0,"scale":0.55,"opacity":0,"rotationDegrees":-45},{"atMilliseconds":1500,"scale":1.15,"opacity":1,"rotationDegrees":180},{"atMilliseconds":3000,"scale":0.85,"opacity":0,"rotationDegrees":360}]}""";
 
+    internal static ScenePlaybackDefinition TechPlayback()
+    {
+        SceneManifest manifest = SceneManifestReader.Read(Bytes(ManifestJson)).Manifest!;
+        return ScenePlaybackReader.Read(Bytes(PlaybackJson.Replace("vector-orbit", "tech-frame").Replace("3000", "2000")), manifest).Value!;
+    }
+
     internal static int Run()
     {
         int failures = 0;
@@ -235,7 +241,7 @@ internal static class F09Checks
         var request = new MotionHostStartRequest(id, manifest.SceneId, manifest.SceneVersion, manifest.DisplayMode, 10_000, MotionHostMode.Preview, definition);
         MotionHostFrame frame = request.ToStartFrame();
         MotionHostFrame decoded = MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(frame));
-        Check("F09 IPC v2 roundtrips explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 2 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        Check("F13 IPC v3 retains explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 3 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
         Check("F09 preview requires playback, matching identity and watchdog headroom", !(request with { Playback = null }).IsValid && !(request with { SceneId = "wrong-scene" }).IsValid && !(request with { MaximumVisibleMilliseconds = 3000 }).IsValid, ref failures);
         Check("F09 lifecycle-only diagnostic launch stays valid", (request with { Mode = MotionHostMode.Launch, Playback = null }).IsValid, ref failures);
         string json = Encoding.UTF8.GetString(MotionHostFrameCodec.Encode(frame).AsSpan(MotionHostFrameCodec.HeaderSize));
@@ -260,7 +266,7 @@ internal static class F09Checks
             catch (InvalidDataException) { rejected = true; }
             Check($"F09 IPC rejects {name}", rejected, ref failures);
         }
-        foreach (int version in new[] { 1, 3 })
+        foreach (int version in new[] { 1, 2, 4 })
         {
             bool rejected = false;
             try { _ = MotionHostFrameCodec.Decode(RawFrame($"{{\"protocolVersion\":{version},\"unknownFutureShape\":{{}}}}")); }
@@ -284,6 +290,11 @@ internal static class F09Checks
         Check("F09 IPC completion rejects premature or parent-authored events",
             !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Starting, MotionHostPeer.Host, MotionHostMessageKind.Completed, out _, MotionHostMode.Preview) &&
             !MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Visible, MotionHostPeer.Launcher, MotionHostMessageKind.Completed, out _, MotionHostMode.Preview), ref failures);
+        Check("F13 finite launch accepts a terminal event crossing handoff or shutdown",
+            MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.HandoffRequested, MotionHostPeer.Host, MotionHostMessageKind.Completed, out var closed, finiteLaunch: true) &&
+            closed == MotionHostProtocolState.Closed &&
+            MotionHostFrameValidator.TryAdvance(MotionHostProtocolState.Closing, MotionHostPeer.Host, MotionHostMessageKind.SkipRequested, out _, finiteLaunch: true) &&
+            !MotionHostFrameValidator.TryAdvance(closed, MotionHostPeer.Host, MotionHostMessageKind.SkipRequested, out _, finiteLaunch: true), ref failures);
         bool oversize = false;
         try { _ = MotionHostFrameCodec.Decode(new byte[MotionHostFrameCodec.MaximumFrameBytes + MotionHostFrameCodec.HeaderSize + 1]); }
         catch (InvalidDataException) { oversize = true; }

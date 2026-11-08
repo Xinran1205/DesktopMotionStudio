@@ -18,6 +18,9 @@ if (args.Length == 2 && args[0] == "--f09-owned-parent") return F09OwnershipChec
 if (args.Length == 1 && args[0] == "--f09-unassigned-worker") { Thread.Sleep(Timeout.Infinite); return 0; }
 if (args.Length == 1 && args[0] == "--f09-ownership-checks") return F09OwnershipChecks.Run();
 if (args.Length == 1 && args[0] == "--f09-playback-process-checks") return F09PlaybackProcessChecks.Run();
+if (args is ["--f13-launch-process-checks", var legacyHost, var delayedTarget])
+    return F09PlaybackProcessChecks.RunFiniteLaunch(legacyHost, delayedTarget);
+if (args is ["--f13-reduced-motion-check"]) return F09PlaybackProcessChecks.RunReducedMotion();
 if (args.Length == 3 && args[0] == "--f06-disconnect-worker")
     return RunF06DisconnectWorker(args[1], args[2]);
 if (args.Length == 1 && args[0] == "--f06-desktop-acceptance")

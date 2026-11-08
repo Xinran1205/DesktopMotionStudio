@@ -84,6 +84,8 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
         public Task<MotionHostOutcome> Completion => _completion.Task;
         public int? HostProcessId => _process.Id;
 
+        private bool FiniteLaunch => _request.Mode == MotionHostMode.Launch && _request.Playback?.IsTechFrame == true;
+
         public MotionHostError? FailureReason
         {
             get { lock (_stateLock) return _failureReason; }
@@ -97,9 +99,13 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
         public async Task<MotionHostOutcome> HandoffAsync(CancellationToken cancellationToken = default)
         {
             if (_request.Mode == MotionHostMode.Preview) throw new InvalidOperationException("Preview has no target handoff authority.");
-            MotionHostOutcome? started;
-            try { started = await _started.Task.WaitAsync(cancellationToken).ConfigureAwait(false); }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (_stateLock)
+            {
+                if (FiniteLaunch && _state is MotionHostProtocolState.AwaitingReady or MotionHostProtocolState.AwaitingStart or MotionHostProtocolState.Starting)
+                    Complete(MotionHostOutcome.NotStarted);
+            }
+            MotionHostOutcome? started = await _started.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             if (started is MotionHostOutcome earlyOutcome) return earlyOutcome;
             if (_completion.Task.IsCompleted) return await _completion.Task.ConfigureAwait(false);
@@ -193,41 +199,35 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
                         ? await read.WaitAsync(TimeSpan.FromMilliseconds(750)).ConfigureAwait(false)
                         : await read.ConfigureAwait(false);
                     if (frame is null) throw new EndOfStreamException("MotionHost disconnected before completion.");
-                    if (!AcceptIncoming(frame, frame.Kind))
-                        throw new InvalidDataException("MotionHost sent an invalid protocol transition.");
-
-                    switch (frame.Kind)
+                    lock (_stateLock)
                     {
-                        case MotionHostMessageKind.Completed:
-                            MotionHostOutcome completedOutcome;
-                            lock (_stateLock) completedOutcome = _requestedOutcome ?? MotionHostOutcome.Completed;
-                            Complete(completedOutcome);
-                            return;
-                        case MotionHostMessageKind.Started:
-                            waitingForStarted = false;
-                            lock (_stateLock)
-                            {
-                                if (_terminalOutcome is null)
-                                {
-                                    _deadlineTask = EnforceDeadlineAsync();
-                                    _started.TrySetResult(null);
-                                }
-                            }
-                            break;
-                        case MotionHostMessageKind.SkipRequested:
-                            Complete(MotionHostOutcome.Skipped);
-                            return;
-                        case MotionHostMessageKind.TimedOut:
-                            Complete(MotionHostOutcome.TimedOut, MotionHostError.TimedOut);
-                            return;
-                        case MotionHostMessageKind.Failed:
-                            Complete(MotionHostOutcome.Failed, frame.Error ?? MotionHostError.RendererFailed, frame.NativeErrorCode);
-                            return;
-                        case MotionHostMessageKind.Finished:
-                            MotionHostOutcome finishedOutcome;
-                            lock (_stateLock) finishedOutcome = _terminalOutcome ?? _requestedOutcome ?? MotionHostOutcome.Exited;
-                            Complete(finishedOutcome);
-                            return;
+                        if (_terminalOutcome is not null) return;
+                        if (!AcceptIncoming(frame, frame.Kind))
+                            throw new InvalidDataException("MotionHost sent an invalid protocol transition.");
+
+                        switch (frame.Kind)
+                        {
+                            case MotionHostMessageKind.Completed:
+                                Complete(FiniteLaunch ? MotionHostOutcome.Completed : _requestedOutcome ?? MotionHostOutcome.Completed);
+                                return;
+                            case MotionHostMessageKind.Started:
+                                waitingForStarted = false;
+                                _deadlineTask = EnforceDeadlineAsync();
+                                _started.TrySetResult(null);
+                                break;
+                            case MotionHostMessageKind.SkipRequested:
+                                Complete(MotionHostOutcome.Skipped);
+                                return;
+                            case MotionHostMessageKind.TimedOut:
+                                Complete(MotionHostOutcome.TimedOut, MotionHostError.TimedOut);
+                                return;
+                            case MotionHostMessageKind.Failed:
+                                Complete(MotionHostOutcome.Failed, frame.Error ?? MotionHostError.RendererFailed, frame.NativeErrorCode);
+                                return;
+                            case MotionHostMessageKind.Finished:
+                                Complete(_requestedOutcome ?? MotionHostOutcome.Exited);
+                                return;
+                        }
                     }
                 }
             }
@@ -272,7 +272,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 
             lock (_stateLock)
             {
-                if (!MotionHostFrameValidator.TryAdvance(_state, MotionHostPeer.Host, frame.Kind, out MotionHostProtocolState next, _request.Mode))
+                if (!MotionHostFrameValidator.TryAdvance(_state, MotionHostPeer.Host, frame.Kind, out MotionHostProtocolState next, _request.Mode, FiniteLaunch))
                     return false;
                 _state = next;
                 return true;

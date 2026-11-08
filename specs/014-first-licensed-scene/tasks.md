@@ -18,14 +18,14 @@
 
 ## Phase 4 — US2 启动与交接（P1）
 
-- [ ] T006 [US2] 在 `tests/DesktopMotionStudio.Core.Checks/F06Checks.cs`、`F09PlaybackProcessChecks.cs` 与自有窗口夹具添加版本错配、早到、迟到、Skip／Completed／Handoff 竞态、故障降级与一次分派的覆盖（FR-005、FR-006、FR-007）。
-- [ ] T007 [US2] 按合同更新 `src/DesktopMotionStudio.Core/MotionHost/MotionHostContracts.cs`、`MotionHostFrameCodec.cs`、`WindowsMotionHostProcessFactory.cs` 与 `MotionHostLifecycleCoordinator.cs`，实现有限演出自然结束及目标先就绪时的关闭。匹配更新 `src/DesktopMotionStudio.MotionHost/HostProtocolClient.cs` 和 `MotionHostWindow.cs`（FR-003、FR-005、FR-006）。
-- [ ] T008 [US2] 核对 `src/DesktopMotionStudio.Launcher/Program.cs` 对 Completed、跳过、失败及超时的真实结果，验证 F15 试启动与受管入口共用分派、旧 Studio Pulse 继续可用（FR-005、FR-006、FR-007）。
-- [ ] T009 [US2] 执行 `specs/014-first-licensed-scene/quickstart.md` 的发布目录与本机验证。跨两个测试目标记录冷启动、暖复用、早／迟到、真实输入退出、失败与减少动态效果。比较旧配置与入口并留证（SC-002、SC-003、SC-004）。
+- [x] T006 [US2] 在 `tests/DesktopMotionStudio.Core.Checks/F06Checks.cs`、`F09PlaybackProcessChecks.cs` 与自有窗口夹具添加版本错配、早到、迟到、Skip／Completed／Handoff 竞态、故障降级与一次分派的覆盖（FR-005、FR-006、FR-007）。
+- [x] T007 [US2] 按合同更新 `src/DesktopMotionStudio.Core/MotionHost/MotionHostContracts.cs`、`MotionHostFrameCodec.cs` 与 `WindowsMotionHostProcessFactory.cs`，实现有限演出自然结束及目标先就绪时的关闭。沿用 `MotionHostLifecycleCoordinator.cs` 的独立目标分派。匹配更新 `src/DesktopMotionStudio.MotionHost/HostProtocolClient.cs` 和 `MotionHostWindow.cs`（FR-003、FR-005、FR-006）。
+- [x] T008 [US2] 核对 `src/DesktopMotionStudio.Launcher/Program.cs` 对 Completed、跳过、失败及超时的真实结果，验证 F15 试启动与受管入口共用分派、旧 Studio Pulse 继续可用（FR-005、FR-006、FR-007）。
+- [x] T009 [US2] 执行 `specs/014-first-licensed-scene/quickstart.md` 的发布目录与本机验证。跨两个测试目标记录冷启动、暖复用、早／迟到、真实输入退出、失败与减少动态效果。比较旧配置与入口并留证（SC-002、SC-003、SC-004）。
 
 ## Phase 5 — Review and Converge
 
-- [ ] T010 在 `specs/014-first-licensed-scene/review.md` 独立审查绘制、时序、版本、退出清理和素材来源。逐条收敛验收，登记实际覆盖、更新 `FEATURES.md`，提交后进入 F16。
+- [x] T010 在 `specs/014-first-licensed-scene/review.md` 独立于实现步骤复核绘制、时序、版本、退出清理和素材来源。逐条收敛验收，登记实际覆盖、更新 `FEATURES.md`，提交后进入 F16。
 
 ## Dependencies & Execution Order
 

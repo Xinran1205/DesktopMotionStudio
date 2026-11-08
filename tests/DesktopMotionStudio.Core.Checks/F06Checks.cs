@@ -354,9 +354,11 @@ internal static class F06Checks
         return failures;
     }
 
-    internal static int RunRealTargetHostIntegration(string hostPath, ScenePlaybackDefinition? playback = null)
+    internal static int RunRealTargetHostIntegration(string hostPath, ScenePlaybackDefinition? playback = null,
+        string? ownedTargetPath = null, string[]? arguments = null, MotionHostOutcome expected = MotionHostOutcome.HandedOff,
+        MotionHostError? expectedError = null)
     {
-        string? publishedTarget = Environment.GetEnvironmentVariable("DMS_F06_TARGET_PATH");
+        string? publishedTarget = ownedTargetPath ?? Environment.GetEnvironmentVariable("DMS_F06_TARGET_PATH");
         if (string.IsNullOrWhiteSpace(publishedTarget) || !File.Exists(publishedTarget))
         {
             Console.WriteLine("SKIP real target plus MotionHost integration (DMS_F06_TARGET_PATH is unset or unavailable)");
@@ -370,17 +372,23 @@ internal static class F06Checks
         string targetPath = Path.Combine(temporaryDirectory, Path.GetFileName(publishedTarget));
         var platform = new WindowsWindowPlatform();
         var launcher = new ApplicationLauncher();
-        var instances = new ApplicationInstanceCoordinator(platform, launcher.Launch);
+        int dispatches = 0;
+        var instances = new ApplicationInstanceCoordinator(platform, target =>
+        {
+            Interlocked.Increment(ref dispatches);
+            return launcher.Launch(target);
+        });
         var coordinator = new MotionHostLifecycleCoordinator(instances, new WindowsMotionHostProcessFactory(hostPath));
         Process? targetProcess = null;
         nint? targetWindow = null;
         int failures = 0;
         try
         {
-            var target = new ExecutableTarget(targetPath, [], temporaryDirectory);
+            var target = new ExecutableTarget(targetPath, arguments ?? [], temporaryDirectory);
             var scene = SceneManifestReader.Read(Encoding.UTF8.GetBytes(SceneJson)).Manifest!;
+            string appId = Guid.NewGuid().ToString("N");
             var elapsed = Stopwatch.StartNew();
-            MotionHostLifecycleResult result = coordinator.OpenAsync(Guid.NewGuid().ToString("N"), target, scene, playback: playback)
+            MotionHostLifecycleResult result = coordinator.OpenAsync(appId, target, scene, playback: playback)
                 .GetAwaiter().GetResult();
             targetWindow = result.TargetResult.WindowHandle;
             if (result.TargetResult.Process is ProcessStamp targetStamp && targetWindow is nint visibleTargetWindow)
@@ -392,10 +400,18 @@ internal static class F06Checks
             }
 
             bool readyAndHandedOff = result.TargetResult.Outcome == InstanceOutcome.WindowReady &&
-                result.TargetResult.WindowHandle is not null && result.HostOutcome == MotionHostOutcome.HandedOff &&
+                result.TargetResult.WindowHandle is not null && result.HostOutcome == expected && result.HostError == expectedError &&
                 targetProcess is not null && !targetProcess.HasExited;
-            Record("real target remains running through MotionHost handoff", readyAndHandedOff, ref failures);
-            if (playback is not null) Record("F09 real scene handoff follows target ready before full sequence ends", readyAndHandedOff && elapsed.ElapsedMilliseconds < playback.DurationMilliseconds, ref failures);
+            Record($"real target remains running after expected {expected}; observed {result.HostOutcome}/{result.HostError}", readyAndHandedOff, ref failures);
+            if (playback is not null && expected == MotionHostOutcome.HandedOff)
+                Record("real scene handoff follows target ready before full sequence ends", readyAndHandedOff && elapsed.ElapsedMilliseconds < playback.DurationMilliseconds, ref failures);
+            if (playback?.IsTechFrame == true && readyAndHandedOff)
+            {
+                MotionHostLifecycleResult warm = coordinator.OpenAsync(appId, target, scene, playback: playback).GetAwaiter().GetResult();
+                Record("F13 warm request preserves the same target and starts no overlay or extra process",
+                    warm.TargetResult.Outcome is InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied &&
+                    warm.TargetResult.Process == result.TargetResult.Process && warm.HostOutcome == MotionHostOutcome.NotStarted && dispatches == 1, ref failures);
+            }
         }
         catch (Exception ex)
         {

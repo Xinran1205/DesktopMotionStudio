@@ -116,6 +116,35 @@ internal static class F09OwnershipChecks
                 }
             }
             finally { if (!outside.HasExited) { outside.Kill(); outside.WaitForExit(1000); } }
+            foreach (string behavior in new[] { "starting", "complete-on-handoff", "skip-on-handoff" })
+            {
+                string marker = Path.Combine(directory, "f13-" + behavior + ".txt");
+                Environment.SetEnvironmentVariable("DMS_F09_HOST_FIXTURE", behavior);
+                Environment.SetEnvironmentVariable("DMS_F09_HOST_MARKER", marker);
+                ScenePlaybackDefinition playback = F09Checks.TechPlayback();
+                IMotionHostSession session = new WindowsMotionHostProcessFactory(Harness).Start(
+                    new(Guid.NewGuid(), playback.SceneId, playback.SceneVersion, SceneDisplayMode.Centered, Playback: playback));
+                try
+                {
+                    if (behavior == "starting")
+                    {
+                        if (!SpinWait.SpinUntil(() => File.Exists(marker) && new FileInfo(marker).Length > 0, 2000))
+                            throw new TimeoutException("Finite host did not receive Start.");
+                    }
+                    else if (session.Started.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult() is not null)
+                        throw new InvalidOperationException("Finite host did not reach Started.");
+                    MotionHostOutcome expected = behavior switch
+                    {
+                        "starting" => MotionHostOutcome.NotStarted,
+                        "complete-on-handoff" => MotionHostOutcome.Completed,
+                        _ => MotionHostOutcome.Skipped
+                    };
+                    MotionHostOutcome outcome = session.HandoffAsync().WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+                    Check($"F13 {behavior} preserves {expected}, observed {outcome}", outcome == expected && session.FailureReason is null &&
+                        Exited(File.ReadAllText(marker).Split(':')));
+                }
+                finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+            }
         }
         catch (Exception ex) { Console.WriteLine($"FAIL F09 ownership: {ex.GetType().Name}: {ex.Message}"); failures++; }
         finally
@@ -180,6 +209,13 @@ internal static class F09OwnershipChecks
         Mark();
         if (behavior == "starting") { Thread.Sleep(Timeout.Infinite); return 0; }
         MotionHostFrameCodec.WriteAsync(pipe, new(MotionHostFrame.CurrentProtocolVersion, request, MotionHostMessageKind.Started)).GetAwaiter().GetResult();
+        if (behavior is "complete-on-handoff" or "skip-on-handoff")
+        {
+            if (MotionHostFrameCodec.ReadAsync(pipe).GetAwaiter().GetResult()?.Kind != MotionHostMessageKind.Handoff) return 4;
+            MotionHostMessageKind terminal = behavior == "complete-on-handoff" ? MotionHostMessageKind.Completed : MotionHostMessageKind.SkipRequested;
+            MotionHostFrameCodec.WriteAsync(pipe, new(MotionHostFrame.CurrentProtocolVersion, request, terminal)).GetAwaiter().GetResult();
+            return 0;
+        }
         if (behavior == "crash") return 21;
         Thread.Sleep(Timeout.Infinite); // Deliberately ignores Stop and UI timers, parent remains alive.
         return 0;

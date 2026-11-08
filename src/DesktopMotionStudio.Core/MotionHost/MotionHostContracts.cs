@@ -89,7 +89,7 @@ public sealed record MotionHostFrame(
     MotionHostError? Error = null,
     int? NativeErrorCode = null)
 {
-    public const int CurrentProtocolVersion = 2;
+    public const int CurrentProtocolVersion = 3;
 }
 
 public interface IMotionHostSession : IAsyncDisposable
@@ -156,17 +156,29 @@ public static class MotionHostFrameValidator
         MotionHostPeer sender,
         MotionHostMessageKind kind,
         out MotionHostProtocolState next,
-        MotionHostMode mode = MotionHostMode.Launch)
+        MotionHostMode mode = MotionHostMode.Launch,
+        bool finiteLaunch = false)
     {
         next = current;
         if (!Enum.IsDefined(current) || !Enum.IsDefined(sender) || !Enum.IsDefined(kind) || !Enum.IsDefined(mode)) return false;
         if (kind == MotionHostMessageKind.Completed)
         {
-            if (mode != MotionHostMode.Preview || sender != MotionHostPeer.Host || current is not (MotionHostProtocolState.Visible or MotionHostProtocolState.Closing)) return false;
+            bool closingNormally = current is MotionHostProtocolState.Visible or MotionHostProtocolState.Closing ||
+                finiteLaunch && current == MotionHostProtocolState.HandoffRequested;
+            if (sender != MotionHostPeer.Host || !closingNormally || (mode == MotionHostMode.Launch && !finiteLaunch)) return false;
             next = MotionHostProtocolState.Closed;
             return true;
         }
         if (mode == MotionHostMode.Preview && kind == MotionHostMessageKind.Handoff) return false;
+
+        if (finiteLaunch && mode == MotionHostMode.Launch && sender == MotionHostPeer.Host &&
+            (current == MotionHostProtocolState.Closing &&
+                kind is MotionHostMessageKind.SkipRequested or MotionHostMessageKind.TimedOut or MotionHostMessageKind.Failed ||
+             current == MotionHostProtocolState.HandoffRequested && kind == MotionHostMessageKind.TimedOut))
+        {
+            next = MotionHostProtocolState.Closing;
+            return true;
+        }
 
         if (kind == MotionHostMessageKind.Failed && current is not (MotionHostProtocolState.Closed or MotionHostProtocolState.Closing))
         {

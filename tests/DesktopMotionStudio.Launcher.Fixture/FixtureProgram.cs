@@ -48,9 +48,12 @@ internal static class FixtureProgram
             (DiagnosticResultCode.HandedOff, DiagnosticFallback.RendererCleanupFailed);
         bool timeout = Program.AnimationResult(plan, new(target, MotionHostOutcome.Failed, MotionHostError.TimedOut)) ==
             (DiagnosticResultCode.TimedOut, DiagnosticFallback.RendererFailed);
+        bool completed = Program.AnimationResult(plan, new(target, MotionHostOutcome.Completed)) ==
+            (DiagnosticResultCode.Completed, DiagnosticFallback.None);
         Console.WriteLine($"{(invalid ? "PASS" : "FAIL")} malformed invocation emits only typed request result");
         Console.WriteLine($"{(cleanup ? "PASS" : "FAIL")} successful handoff retains cleanup failure");
         Console.WriteLine($"{(timeout ? "PASS" : "FAIL")} renderer timeout retains exact result");
-        return invalid && cleanup && timeout ? 0 : 1;
+        Console.WriteLine($"{(completed ? "PASS" : "FAIL")} a naturally finished launch animation reports completion without fallback");
+        return invalid && cleanup && timeout && completed ? 0 : 1;
     }
 }

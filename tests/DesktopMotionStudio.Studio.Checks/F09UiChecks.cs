@@ -32,8 +32,10 @@ internal static class F09UiChecks
             Require(Program.WaitFor(() => ListCount(library, "完整动效作品") >= 2), "Shipped scenes did not load");
             Select(library, "完整动效作品", "零界");
             AutomationElement preview = Find(library, "预览作品");
-            foreach (string interaction in new[] { "natural", "Escape", "Tab+Enter", "pointer" })
+            foreach (string interaction in new[] { "natural", "Escape", "Tab+Enter", "pointer", "legacy" })
             {
+                if (interaction == "legacy")
+                    Select(library, "完整动效作品", "Studio Pulse（开发作品）");
                 Require(Program.WaitFor(() => preview.Current.IsEnabled), "Preview action unavailable");
                 ((InvokePattern)preview.GetCurrentPattern(InvokePattern.Pattern)).Invoke();
                 nint stage = 0;
@@ -56,7 +58,7 @@ internal static class F09UiChecks
                 }), "New work did not show");
                 var stageElement = AutomationElement.FromHandle(stage);
                 var visibleCaption = stageElement.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "预览模拟交接"));
-                Check($"{interaction} preview has no legacy caption on stage", visibleCaption is null);
+                Check($"{interaction} preview uses its own stage presentation", (visibleCaption is not null) == (interaction == "legacy"));
                 if (interaction == "natural")
                     Check("Studio explains the target-free preview outside the stage", Program.WaitFor(() =>
                         library.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, "正在预览 · 模拟交接，不会启动应用。")) is not null,
@@ -85,8 +87,9 @@ internal static class F09UiChecks
                     }
                     finally { PointAt(originalPointer.X, originalPointer.Y); }
                 }
-                string expected = interaction == "natural" ? "预览已完成。" : "预览已跳过。";
-                Require(Program.WaitFor(() => library.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, expected)) is not null),
+                string expected = interaction is "natural" or "legacy" ? "预览已完成。" : "预览已跳过。";
+                Require(Program.WaitFor(() => library.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.NameProperty, expected)) is not null,
+                    TimeSpan.FromSeconds(7)),
                     "Studio did not report the expected end of preview");
                 Check($"{interaction} restores the preview action in Studio", preview.Current.IsEnabled);
             }

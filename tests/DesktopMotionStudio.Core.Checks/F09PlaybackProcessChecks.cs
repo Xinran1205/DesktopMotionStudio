@@ -4,9 +4,85 @@ using System.Text;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.Preview;
+using DesktopMotionStudio.Core.Checks;
 
 internal static class F09PlaybackProcessChecks
 {
+    internal static int RunFiniteLaunch(string legacyHost, string delayedTarget)
+    {
+        string? hostPath = Environment.GetEnvironmentVariable("DMS_F06_HOST_PATH");
+        if (!OperatingSystem.IsWindows() || !File.Exists(hostPath) || !File.Exists(legacyHost) || !File.Exists(delayedTarget)) return 2;
+        ScenePlaybackDefinition playback = F09Checks.TechPlayback() with { SceneId = "dragon-portal" };
+        var factory = new WindowsMotionHostProcessFactory(hostPath);
+        int failures = 0;
+        foreach (SceneDisplayMode mode in new[] { SceneDisplayMode.Centered, SceneDisplayMode.Full })
+        {
+            IMotionHostSession session = factory.Start(new(Guid.NewGuid(), playback.SceneId, playback.SceneVersion, mode, Playback: playback));
+            try
+            {
+                MotionHostOutcome? start = session.Started.WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                nint window = FindHostWindow(session.HostProcessId!.Value);
+                var visible = Stopwatch.StartNew();
+                MotionHostOutcome end = session.Completion.WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                long duration = visible.ElapsedMilliseconds;
+                bool passed = start is null && window != 0 && end == MotionHostOutcome.Completed &&
+                    session.FailureReason is null && duration <= 2500 && !IsWindowVisible(window);
+                Console.WriteLine($"{(passed ? "PASS" : "FAIL")} F13 actual {mode} naturally closes in {duration}ms as {end}");
+                if (!passed) failures++;
+            }
+            finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+        }
+        foreach (bool escape in new[] { false, true })
+        {
+            IMotionHostSession session = factory.Start(new(Guid.NewGuid(), playback.SceneId, playback.SceneVersion, SceneDisplayMode.Centered, Playback: playback));
+            try
+            {
+                MotionHostOutcome? started = session.Started.WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                nint window = FindHostWindow(session.HostProcessId!.Value);
+                var elapsed = Stopwatch.StartNew();
+                bool sent = !escape || window != 0 && F06DesktopAcceptance.ActivateWindow(window) && F06DesktopAcceptance.SendEscape();
+                MotionHostOutcome result = (escape ? session.Completion : session.HandoffAsync())
+                    .WaitAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult();
+                bool passed = started is null && window != 0 && sent && !IsWindowVisible(window) && session.FailureReason is null &&
+                    (escape ? result == MotionHostOutcome.Skipped : result == MotionHostOutcome.HandedOff && elapsed.ElapsedMilliseconds <= 300);
+                Console.WriteLine($"{(passed ? "PASS" : "FAIL")} F13 launch {(escape ? "Esc" : "handoff")} closes in {elapsed.ElapsedMilliseconds}ms as {result}");
+                if (!passed) failures++;
+            }
+            finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+        }
+        failures += F06Checks.RunRealTargetHostIntegration(hostPath, playback, delayedTarget, ["--target", "550"]);
+        failures += F06Checks.RunRealTargetHostIntegration(hostPath, playback, delayedTarget, ["--target", "2750"], MotionHostOutcome.Completed);
+        failures += F06Checks.RunRealTargetHostIntegration(legacyHost, playback, delayedTarget, ["--target", "2750"],
+            MotionHostOutcome.Failed, MotionHostError.UnsupportedProtocol);
+        return failures + ActualFailures(hostPath, playback, MotionHostMode.Launch);
+    }
+
+    internal static int RunReducedMotion()
+    {
+        string? hostPath = Environment.GetEnvironmentVariable("DMS_F06_HOST_PATH");
+        if (!OperatingSystem.IsWindows() || !File.Exists(hostPath)) return 2;
+        if (!SystemParametersInfo(0x1042, 0, out bool enabled, 0) || enabled)
+        {
+            Console.WriteLine("FAIL F13 reduced-motion acceptance requires the actual Windows animation preference to be off.");
+            return 1;
+        }
+        ScenePlaybackDefinition playback = F09Checks.TechPlayback();
+        IMotionHostSession session = new WindowsMotionHostProcessFactory(hostPath).Start(
+            new(Guid.NewGuid(), playback.SceneId, playback.SceneVersion, SceneDisplayMode.Centered, Playback: playback));
+        try
+        {
+            MotionHostOutcome? started = session.Started.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+            nint window = FindHostWindow(session.HostProcessId!.Value);
+            var elapsed = Stopwatch.StartNew();
+            MotionHostOutcome result = session.Completion.WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+            bool passed = started is null && window != 0 && result == MotionHostOutcome.Completed &&
+                session.FailureReason is null && elapsed.ElapsedMilliseconds < 600 && !IsWindowVisible(window);
+            Console.WriteLine($"{(passed ? "PASS" : "FAIL")} F13 Windows animations disabled, static launch closes in {elapsed.ElapsedMilliseconds}ms as {result}");
+            return passed ? 0 : 1;
+        }
+        finally { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
+    }
+
     internal static int Run()
     {
         string? hostPath = Environment.GetEnvironmentVariable("DMS_F06_HOST_PATH");
@@ -50,13 +126,13 @@ internal static class F09PlaybackProcessChecks
         return failures;
     }
 
-    private static int ActualFailures(string hostPath, ScenePlaybackDefinition playback)
+    private static int ActualFailures(string hostPath, ScenePlaybackDefinition playback, MotionHostMode mode = MotionHostMode.Preview)
     {
         int failures = 0;
         var shortWork = playback with { DurationMilliseconds = 1000, Keyframes = System.Collections.Immutable.ImmutableArray.Create(playback.Keyframes[0], playback.Keyframes[^1] with { AtMilliseconds = 1000 }) };
         foreach (bool hang in new[] { false, true })
         {
-            IMotionHostSession session = new WindowsMotionHostProcessFactory(hostPath).Start(new(Guid.NewGuid(), shortWork.SceneId, shortWork.SceneVersion, SceneDisplayMode.Centered, 1500, MotionHostMode.Preview, shortWork));
+            IMotionHostSession session = new WindowsMotionHostProcessFactory(hostPath).Start(new(Guid.NewGuid(), shortWork.SceneId, shortWork.SceneVersion, SceneDisplayMode.Centered, 1500, mode, shortWork));
             Microsoft.Win32.SafeHandles.SafeWaitHandle? thread = null;
             bool suspended = false;
             Process? host = null;
@@ -156,6 +232,9 @@ internal static class F09PlaybackProcessChecks
     [DllImport("user32.dll")] private static extern bool EnumWindows(WindowCallback callback, nint parameter);
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(nint window, out uint processId);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SystemParametersInfo(uint action, uint value, [MarshalAs(UnmanagedType.Bool)] out bool setting, uint flags);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern Microsoft.Win32.SafeHandles.SafeWaitHandle OpenThread(uint access, [MarshalAs(UnmanagedType.Bool)] bool inherit, uint threadId);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern uint SuspendThread(Microsoft.Win32.SafeHandles.SafeWaitHandle thread);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(Microsoft.Win32.SafeHandles.SafeWaitHandle thread);
