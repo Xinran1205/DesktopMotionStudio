@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private readonly PreviewIntentController _intents;
     private readonly DiagnosticLogStore? _diagnostics;
     private readonly StudioLanguagePreference? _language;
+    private readonly MotionDisplayPreference? _display;
     private ApplicationRow[] _rows = [];
     private bool _busy;
     private bool _readable;
@@ -46,12 +47,13 @@ public partial class MainWindow : Window
 
     internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
         ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null, TestLaunchClient? testLaunch = null,
-        StudioLanguagePreference? language = null)
+        StudioLanguagePreference? language = null, MotionDisplayPreference? display = null)
     {
         InitializeComponent();
         _shortcuts = shortcuts;
         _diagnostics = diagnostics;
         _language = language;
+        _display = display;
         _testLaunch = testLaunch;
         ShortcutPanel.Visibility = shortcuts is null ? Visibility.Collapsed : Visibility.Visible;
         TestLaunchPanel.Visibility = testLaunch is null ? Visibility.Collapsed : Visibility.Visible;
@@ -59,7 +61,7 @@ public partial class MainWindow : Window
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
         _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
-            Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language)));
+            Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display)));
         _intents = new(_previews, _workspace.FindPlayable);
         _presenter = new(_previews, this, PreviewStatusText, StopPreviewButton);
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));
@@ -303,7 +305,7 @@ public partial class MainWindow : Window
     private void OnSettings(object sender, RoutedEventArgs e)
     {
         if (_busy || _closing) return;
-        var window = new SettingsWindow(new StudioSettingsService(_store), _language) { Owner = this };
+        var window = new SettingsWindow(new StudioSettingsService(_store), _language, _display) { Owner = this };
         if (window.ShowDialog() == true)
             StatusText.Text = ProductText.Get(window.RequiresLanguageRestart ? "LanguageSaved" : "SettingsSaved");
     }

@@ -15,14 +15,16 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        ProductText.UseLanguage(new StudioLanguagePreference(StudioStateRepository.CurrentUserPath()).Read());
+        string profile = StudioStateRepository.CurrentUserPath();
+        ProductText.UseLanguage(new StudioLanguagePreference(profile).Read());
         return Run(args, StudioStateRepository.ForCurrentUser, ReportLaunchError,
-            diagnostics: static events => new DiagnosticLogStore(DiagnosticLogStore.CurrentUserDirectory()).Append(events));
+            diagnostics: static events => new DiagnosticLogStore(DiagnosticLogStore.CurrentUserDirectory()).Append(events),
+            display: new MotionDisplayPreference(profile));
     }
 
     internal static int Run(string[] args, Func<IStudioStateStore> openState, Func<string, int, int> reportError,
         Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null,
-        Action<DiagnosticEvent[]>? diagnostics = null)
+        Action<DiagnosticEvent[]>? diagnostics = null, MotionDisplayPreference? display = null)
     {
         bool test = args.Length > 0 && args[0] == TestLaunchProtocol.Command;
         if (!test && (args.Length == 0 || args[0] != "--binding")) return 2;
@@ -73,7 +75,7 @@ internal static class Program
             if (plan.Scene is not null && plan.Playback is not null)
             {
                 var hosts = new WindowsMotionHostProcessFactory(
-                    Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language);
+                    Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display);
                 var lifecycle = new MotionHostLifecycleCoordinator(instances, hosts);
                 animated = lifecycle.OpenAsync(plan.AppId, plan.Target, plan.Scene, playback: plan.Playback).GetAwaiter().GetResult();
                 result = animated.TargetResult;

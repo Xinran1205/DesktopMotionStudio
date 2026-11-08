@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Automation;
@@ -82,7 +81,7 @@ internal static class F17LanguageChecks
             Invoke(library, "Preview work");
             nint stage = 0;
             string host = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
-            Require(Program.WaitFor(() => (stage = PreviewWindow(host)) != 0), "The actual English preview did not open.");
+            Require(Program.WaitFor(() => (stage = FindOwnedMotionWindow(host, PreviewTitle)) != 0), "The actual English preview did not open.");
             Keys(stage, 0x09);
             var stop = Find(AutomationElement.FromHandle(stage), "Stop preview");
             Require(!stop.Current.IsOffscreen && stop.Current.HasKeyboardFocus, "English stop control did not receive keyboard focus.");
@@ -120,6 +119,8 @@ internal static class F17LanguageChecks
         Invoke(home, english ? "打开设置" : "Open settings");
         string title = english ? "设置" : "Settings";
         var settings = AutomationElement.FromHandle(Window(process, title));
+        var display = settings.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "DisplayBox"));
+        Require(display?.Current.Name == (english ? "动效显示区域" : "Animation display area"), "Display selector label was incorrect.");
         var choices = settings.FindFirst(TreeScope.Descendants,
             new PropertyCondition(AutomationElement.AutomationIdProperty, "LanguageBox"))
             ?? throw new InvalidOperationException("Language selector was absent.");
@@ -133,26 +134,6 @@ internal static class F17LanguageChecks
         string button = save ? (english ? "保存设置" : "Save settings") : (english ? "取消设置" : "Cancel settings");
         Invoke(settings, button);
         Require(Program.WaitFor(() => FindWindow(process.Id, title) == 0), "Language settings did not close.");
-    }
-
-    private static nint PreviewWindow(string executable)
-    {
-        nint window = 0;
-        foreach (Process candidate in Process.GetProcessesByName("DesktopMotionStudio.MotionHost"))
-        {
-            using (candidate)
-            {
-                try
-                {
-                    if (window != 0) continue;
-                    nint preview = FindWindow(candidate.Id, PreviewTitle);
-                    if (preview != 0 && string.Equals(candidate.MainModule?.FileName, executable, StringComparison.OrdinalIgnoreCase))
-                        window = preview;
-                }
-                catch (Exception error) when (error is InvalidOperationException or Win32Exception) { }
-            }
-        }
-        return window;
     }
 
     private static void Invoke(AutomationElement root, string name) =>

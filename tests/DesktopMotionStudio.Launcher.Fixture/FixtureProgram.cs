@@ -31,7 +31,7 @@ internal static class FixtureProgram
                 Window = (long)(instance.WindowHandle ?? 0),
                 Host = host?.HostOutcome.ToString(),
                 HostError = host?.HostError?.ToString()
-            })), diagnostics);
+            })), diagnostics, display: new MotionDisplayPreference(profile));
     }
 
     private static int DiagnosticMappingCheck()

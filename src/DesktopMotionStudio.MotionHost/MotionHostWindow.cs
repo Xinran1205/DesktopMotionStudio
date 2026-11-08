@@ -41,7 +41,9 @@ internal sealed class MotionHostWindow : Form
             throw new ArgumentException("MotionHost display request is invalid.", nameof(start));
 
         bool techFrame = start.Playback?.IsTechFrame == true;
-        Screen screen = techFrame
+        bool usePointerScreen = techFrame || start.DisplayMode is SceneDisplayMode.CompactCentered
+            or SceneDisplayMode.LargeCentered or SceneDisplayMode.PointerScreenFull;
+        Screen screen = usePointerScreen
             ? Screen.FromPoint(Cursor.Position)
             : Screen.PrimaryScreen ?? throw new InvalidOperationException("No primary display is available.");
         _animationsEnabled = animationsEnabled ?? SystemAnimationsEnabled();
@@ -55,9 +57,13 @@ internal sealed class MotionHostWindow : Form
         TransparencyKey = TransparentColor;
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
-        Bounds = start.DisplayMode == SceneDisplayMode.Full
-            ? screen.Bounds
-            : CenteredBounds(screen.WorkingArea, techFrame);
+        Bounds = start.DisplayMode switch
+        {
+            SceneDisplayMode.Full or SceneDisplayMode.PointerScreenFull => screen.Bounds,
+            SceneDisplayMode.CompactCentered => CenteredBounds(screen.WorkingArea, largeFrame: false, compactFrame: true),
+            SceneDisplayMode.LargeCentered => CenteredBounds(screen.WorkingArea, largeFrame: true),
+            _ => CenteredBounds(screen.WorkingArea, techFrame)
+        };
 
         _card = new Panel
         {
@@ -346,15 +352,20 @@ internal sealed class MotionHostWindow : Form
         action();
     }
 
-    private static Rectangle CenteredBounds(Rectangle workArea, bool largeFrame)
+    internal static Rectangle CenteredBounds(Rectangle workArea, bool largeFrame, bool compactFrame = false)
     {
         int width = Math.Min(760, workArea.Width);
         int height = Math.Min(420, workArea.Height);
-        if (largeFrame)
+        if (largeFrame || compactFrame)
         {
             width = Math.Min(1120, (int)(workArea.Width * .82));
             height = Math.Max(1, Math.Min(width * 9 / 16, (int)(workArea.Height * .84)));
             width = Math.Max(1, height * 16 / 9);
+            if (compactFrame)
+            {
+                width = Math.Clamp(width * 3 / 4, 1, 760);
+                height = Math.Clamp(height * 3 / 4, 1, 420);
+            }
         }
         return new Rectangle(
             workArea.Left + (workArea.Width - width) / 2,

@@ -241,7 +241,13 @@ internal static class F09Checks
         var request = new MotionHostStartRequest(id, manifest.SceneId, manifest.SceneVersion, manifest.DisplayMode, 10_000, MotionHostMode.Preview, definition);
         MotionHostFrame frame = request.ToStartFrame();
         MotionHostFrame decoded = MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(frame));
-        Check("F13 IPC v3 retains explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 3 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        Check("F18 IPC v4 retains explicit preview and immutable playback", MotionHostFrame.CurrentProtocolVersion == 4 && request.IsValid && decoded.Start is { Mode: MotionHostMode.Preview, Playback.IsValid: true } && decoded.Start.Playback.Keyframes.SequenceEqual(definition.Keyframes), ref failures);
+        foreach (SceneDisplayMode placement in new[] { SceneDisplayMode.CompactCentered, SceneDisplayMode.LargeCentered, SceneDisplayMode.PointerScreenFull })
+        {
+            var placed = request with { DisplayMode = placement };
+            Check($"F18 IPC round-trips {placement}", placed.IsValid &&
+                MotionHostFrameCodec.Decode(MotionHostFrameCodec.Encode(placed.ToStartFrame())).Start?.DisplayMode == placement, ref failures);
+        }
         Check("F09 preview requires playback, matching identity and watchdog headroom", !(request with { Playback = null }).IsValid && !(request with { SceneId = "wrong-scene" }).IsValid && !(request with { MaximumVisibleMilliseconds = 3000 }).IsValid, ref failures);
         Check("F09 lifecycle-only diagnostic launch stays valid", (request with { Mode = MotionHostMode.Launch, Playback = null }).IsValid, ref failures);
         string json = Encoding.UTF8.GetString(MotionHostFrameCodec.Encode(frame).AsSpan(MotionHostFrameCodec.HeaderSize));
@@ -266,7 +272,7 @@ internal static class F09Checks
             catch (InvalidDataException) { rejected = true; }
             Check($"F09 IPC rejects {name}", rejected, ref failures);
         }
-        foreach (int version in new[] { 1, 2, 4 })
+        foreach (int version in new[] { 1, 2, MotionHostFrame.CurrentProtocolVersion - 1, MotionHostFrame.CurrentProtocolVersion + 1 })
         {
             bool rejected = false;
             try { _ = MotionHostFrameCodec.Decode(RawFrame($"{{\"protocolVersion\":{version},\"unknownFutureShape\":{{}}}}")); }

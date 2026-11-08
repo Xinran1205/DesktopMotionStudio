@@ -74,6 +74,13 @@ internal static class Program
                 launch.Controls.OfType<Panel>().Single().AccessibleName == (english ? "Animation status" : "动效状态") &&
                 preview.Text == "Desktop Motion Studio — Preview" && launch.Text == "Desktop Motion Studio — Launch");
         }
+        foreach (var work in new[] { new Rectangle(0, 0, 800, 600), new Rectangle(-720, 0, 720, 1280) })
+        {
+            Rectangle compact = MotionHostWindow.CenteredBounds(work, largeFrame: false, compactFrame: true);
+            Rectangle large = MotionHostWindow.CenteredBounds(work, largeFrame: true);
+            Check($"F18 explicit compact stays smaller and on-screen in {work.Size}",
+                work.Contains(compact) && work.Contains(large) && compact.Width < large.Width && compact.Height < large.Height);
+        }
         return failures == 0 ? 0 : 1;
     }
 

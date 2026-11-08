@@ -51,7 +51,7 @@ internal static class Program
         TestLaunchClient? testLaunch = stateFile is null && !seen.Contains("--catalog-root")
             ? new(InstalledLayout.LauncherForBundle(AppContext.BaseDirectory)) : null;
         return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics,
-            testLaunch: testLaunch, language: language));
+            testLaunch: testLaunch, language: language, display: new MotionDisplayPreference(profile)));
     }
 
     private static bool IsFixtureDesktop(string stateFile, string desktop)

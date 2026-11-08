@@ -76,7 +76,7 @@ public sealed record MotionHostStartPayload(
 {
     [JsonIgnore]
     public bool IsValid => SceneManifestReader.IsValidSceneId(SceneId) && SceneManifestReader.IsValidSceneVersion(SceneVersion) &&
-        DisplayMode is SceneDisplayMode.Full or SceneDisplayMode.Centered && Enum.IsDefined(Mode) && MaximumVisibleMilliseconds is > 0 and <= 10_000 &&
+        Enum.IsDefined(DisplayMode) && Enum.IsDefined(Mode) && MaximumVisibleMilliseconds is > 0 and <= 10_000 &&
         (Playback is null ? Mode == MotionHostMode.Launch : Playback.IsValid && Playback.SceneId == SceneId && Playback.SceneVersion == SceneVersion &&
             (Mode == MotionHostMode.Launch || MaximumVisibleMilliseconds >= Playback.DurationMilliseconds + 500));
 }
@@ -89,7 +89,7 @@ public sealed record MotionHostFrame(
     MotionHostError? Error = null,
     int? NativeErrorCode = null)
 {
-    public const int CurrentProtocolVersion = 3;
+    public const int CurrentProtocolVersion = 4;
 }
 
 public interface IMotionHostSession : IAsyncDisposable

@@ -10,6 +10,14 @@
             <ComboBoxItem Content="English" Tag="en" />
         </ComboBox>
         <TextBlock Text="{loc:Text LanguageNote}" Style="{StaticResource Caption}" Margin="0,6,0,14" />
+        <Label Content="{loc:Text MotionDisplayLabel}" Target="{Binding ElementName=DisplayBox}" Padding="0,0,0,6" />
+        <ComboBox x:Name="DisplayBox" AutomationProperties.Name="{loc:Text MotionDisplayLabel}" IsEnabled="False">
+            <ComboBoxItem Content="{loc:Text MotionDisplayRecommended}" Tag="recommended" />
+            <ComboBoxItem Content="{loc:Text MotionDisplayCompact}" Tag="compact" />
+            <ComboBoxItem Content="{loc:Text MotionDisplayLarge}" Tag="large" />
+            <ComboBoxItem Content="{loc:Text MotionDisplayFull}" Tag="full" />
+        </ComboBox>
+        <TextBlock Text="{loc:Text MotionDisplayHint}" Style="{StaticResource Caption}" Margin="0,6,0,14" />
         <Label Content="{loc:Text Theme}" Target="{Binding ElementName=ThemeBox}" Padding="0,0,0,6" />
         <ComboBox x:Name="ThemeBox" AutomationProperties.Name="{loc:Text Theme2}" IsEnabled="False">
             <ComboBoxItem Content="{loc:Text FollowSystem}" Tag="system" />

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.Scenes;
+using DesktopMotionStudio.Core.State;
 
 namespace DesktopMotionStudio.Core.MotionHost;
 
@@ -9,14 +10,17 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 {
     private readonly string _hostExecutablePath;
     private readonly bool _english;
+    private readonly MotionDisplayPreference? _display;
 
-    public WindowsMotionHostProcessFactory(string hostExecutablePath, string language = ProductText.DefaultLanguage)
+    public WindowsMotionHostProcessFactory(string hostExecutablePath, string language = ProductText.DefaultLanguage,
+        MotionDisplayPreference? display = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hostExecutablePath);
         if (!Path.IsPathFullyQualified(hostExecutablePath))
             throw new ArgumentException("MotionHost executable path must be absolute.", nameof(hostExecutablePath));
         _hostExecutablePath = Path.GetFullPath(hostExecutablePath);
         _english = language == ProductText.English;
+        _display = display;
     }
 
     public IMotionHostSession Start(MotionHostStartRequest request)
@@ -25,6 +29,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("MotionHost is Windows-only.");
         if (!request.IsValid) throw new ArgumentException("MotionHost request is invalid.", nameof(request));
         if (!File.Exists(_hostExecutablePath)) throw new FileNotFoundException("MotionHost executable is unavailable.", _hostExecutablePath);
+        if (_display is not null) request = request with { DisplayMode = _display.Resolve(request.DisplayMode) };
 
         string pipeName = $"dms-motionhost-{request.RequestId:N}";
         var pipe = new NamedPipeServerStream(

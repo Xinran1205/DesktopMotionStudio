@@ -517,6 +517,27 @@
   <data name="MotionDisabled" xml:space="preserve">
     <value> · 动效已停用</value>
   </data>
+  <data name="MotionDisplayLabel" xml:space="preserve">
+    <value>动效显示区域</value>
+  </data>
+  <data name="MotionDisplayRecommended" xml:space="preserve">
+    <value>作品推荐</value>
+  </data>
+  <data name="MotionDisplayCompact" xml:space="preserve">
+    <value>居中小窗</value>
+  </data>
+  <data name="MotionDisplayLarge" xml:space="preserve">
+    <value>居中大画幅</value>
+  </data>
+  <data name="MotionDisplayFull" xml:space="preserve">
+    <value>当前屏幕全屏</value>
+  </data>
+  <data name="MotionDisplayHint" xml:space="preserve">
+    <value>保存后对下次播放生效。自选区域使用鼠标所在屏幕。</value>
+  </data>
+  <data name="MotionDisplaySaveFailed" xml:space="preserve">
+    <value>无法保存动效显示区域。请重试。</value>
+  </data>
   <data name="MotionHandedOff" xml:space="preserve">
     <value>动效已交接</value>
   </data>

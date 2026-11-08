@@ -517,6 +517,27 @@ Confirm the launch entry first.</value>
   <data name="MotionDisabled" xml:space="preserve">
     <value> · Motion disabled</value>
   </data>
+  <data name="MotionDisplayLabel" xml:space="preserve">
+    <value>Animation display area</value>
+  </data>
+  <data name="MotionDisplayRecommended" xml:space="preserve">
+    <value>Recommended</value>
+  </data>
+  <data name="MotionDisplayCompact" xml:space="preserve">
+    <value>Compact centered</value>
+  </data>
+  <data name="MotionDisplayLarge" xml:space="preserve">
+    <value>Large centered</value>
+  </data>
+  <data name="MotionDisplayFull" xml:space="preserve">
+    <value>Full screen</value>
+  </data>
+  <data name="MotionDisplayHint" xml:space="preserve">
+    <value>Applies to the next playback. Custom areas use the display under the pointer.</value>
+  </data>
+  <data name="MotionDisplaySaveFailed" xml:space="preserve">
+    <value>Could not save the animation display area. Try again.</value>
+  </data>
   <data name="MotionHandedOff" xml:space="preserve">
     <value>Motion handed off</value>
   </data>

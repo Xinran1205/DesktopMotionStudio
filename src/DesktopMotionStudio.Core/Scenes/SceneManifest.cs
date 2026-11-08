@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace DesktopMotionStudio.Core.Scenes;
 
-public enum SceneDisplayMode { Full, Centered }
+public enum SceneDisplayMode { Full, Centered, CompactCentered, LargeCentered, PointerScreenFull }
 
 public sealed record SceneManifest(
     int SchemaVersion,

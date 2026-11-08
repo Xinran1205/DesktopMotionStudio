@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -209,6 +210,26 @@ internal static class StudioUiChecks
             return true;
         }, 0);
         return found;
+    }
+
+    internal static nint FindOwnedMotionWindow(string executable, string title)
+    {
+        nint result = 0;
+        foreach (Process candidate in Process.GetProcessesByName("DesktopMotionStudio.MotionHost"))
+        {
+            using (candidate)
+            {
+                try
+                {
+                    if (result != 0) continue;
+                    nint window = FindWindow(candidate.Id, title);
+                    if (window != 0 && string.Equals(candidate.MainModule?.FileName, executable, StringComparison.OrdinalIgnoreCase))
+                        result = window;
+                }
+                catch (Exception error) when (error is InvalidOperationException or Win32Exception) { }
+            }
+        }
+        return result;
     }
 
     internal static AutomationElement Find(AutomationElement root, string name) =>
