@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.MotionHost;
 
 namespace DesktopMotionStudio.MotionHost;
@@ -11,6 +12,7 @@ internal static class Program
         if (!HostArguments.TryParse(args, out HostArguments? parsed) || parsed is null) return 2;
         if (!OperatingSystem.IsWindows() || !Environment.UserInteractive) return 3;
 
+        ProductText.UseLanguage(parsed.Language);
         ApplicationConfiguration.Initialize();
         HostProtocolClient? client = null;
         try
@@ -52,7 +54,7 @@ internal static class Program
     }
 }
 
-internal sealed record HostArguments(string PipeName, Guid RequestId)
+internal sealed record HostArguments(string PipeName, Guid RequestId, string Language)
 {
     private static readonly Regex PipeNamePattern = new(
         "^dms-motionhost-[0-9a-f]{32}$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
@@ -61,14 +63,15 @@ internal sealed record HostArguments(string PipeName, Guid RequestId)
     public static bool TryParse(string[] args, out HostArguments? parsed)
     {
         parsed = null;
-        if (args.Length != 4 || args[0] != "--pipe" || args[2] != "--request-id") return false;
+        if (args.Length is not (4 or 6) || args[0] != "--pipe" || args[2] != "--request-id") return false;
+        if (args.Length == 6 && (args[4] != "--language" || args[5] != ProductText.English)) return false;
         if (args[1].Length > 64 || !PipeNamePattern.IsMatch(args[1]) ||
             !Guid.TryParseExact(args[3], "D", out Guid requestId) || requestId == Guid.Empty)
             return false;
 
         string expectedName = $"dms-motionhost-{requestId:N}";
         if (!string.Equals(args[1], expectedName, StringComparison.OrdinalIgnoreCase)) return false;
-        parsed = new HostArguments(args[1], requestId);
+        parsed = new HostArguments(args[1], requestId, args.Length == 6 ? ProductText.English : ProductText.DefaultLanguage);
         return true;
     }
 }

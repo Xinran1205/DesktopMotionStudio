@@ -22,9 +22,9 @@ public partial class MainWindow
         TestLaunchStatusText.Text = row switch
         {
             null => "",
-            { Binding.Binding: null } => "绑定动效后可测试启动。",
-            { TargetAvailable: false } => "请先确认启动入口。",
-            { Binding.Status: BindingResolutionStatus.StorageError } => "无法读取绑定，请刷新后重试。",
+            { Binding.Binding: null } => ProductText.Get("BindAWorkToTestLaunch"),
+            { TargetAvailable: false } => ProductText.Get("ConfirmTheLaunchEntryFirst"),
+            { Binding.Status: BindingResolutionStatus.StorageError } => ProductText.Get("CouldNotReadTheBindingRefreshAndTry"),
             _ => ""
         };
     }
@@ -36,7 +36,7 @@ public partial class MainWindow
         int selection = _detailsVersion;
         using var wait = new CancellationTokenSource();
         _testLaunchWait = wait;
-        TestLaunchStatusText.Text = "正在测试启动…";
+        TestLaunchStatusText.Text = ProductText.Get("TestingLaunch");
         UpdateEnabled();
         try
         {
@@ -47,7 +47,7 @@ public partial class MainWindow
         catch (Exception)
         {
             if (!_closed && !_closing && selection == _detailsVersion)
-                TestLaunchStatusText.Text = "测试启动结果未确认，请检查目标应用。";
+                TestLaunchStatusText.Text = ProductText.Get("CouldNotConfirmTheResultCheckTheTarget");
         }
         finally
         {
@@ -58,21 +58,21 @@ public partial class MainWindow
 
     private static string TestLaunchText(TestLaunchResult result) => result.Status switch
     {
-        TestLaunchClientStatus.ComponentUnavailable => "启动组件不可用。请修复或重新安装 Desktop Motion Studio。",
-        TestLaunchClientStatus.TimedOut => "等待启动结果超时，请检查目标应用是否已打开。",
+        TestLaunchClientStatus.ComponentUnavailable => ProductText.Get("TheLauncherIsUnavailableRepairOrReinstallDesktop"),
+        TestLaunchClientStatus.TimedOut => ProductText.Get("TheTestTimedOutCheckWhetherTheTarget"),
         TestLaunchClientStatus.Detached => "",
         _ => result.Outcome switch
         {
-            TestLaunchOutcome.Opened => "已打开目标应用。",
-            TestLaunchOutcome.OpenedWithoutMotion => "已打开目标应用，未播放动效。",
-            TestLaunchOutcome.ExistingWindow => "目标已运行，已尝试切换到它的窗口。",
-            TestLaunchOutcome.BindingUnavailable => "绑定已改变，请刷新并重新确认绑定。",
-            TestLaunchOutcome.TargetUnavailable => "启动入口不可用，请重新确认入口。",
-            TestLaunchOutcome.ConfigurationUnavailable => "无法读取配置，请刷新后检查配置状态。",
-            TestLaunchOutcome.TimedOut => "未在等待时间内确认目标窗口，请检查应用是否已打开。",
-            TestLaunchOutcome.Busy => "同一个应用正在启动，请稍后重试。",
-            TestLaunchOutcome.ComponentUnavailable => "启动组件不可用。请修复或重新安装 Desktop Motion Studio。",
-            _ => "未能确认目标应用已打开，请检查启动入口。"
+            TestLaunchOutcome.Opened => ProductText.Get("TargetAppOpened"),
+            TestLaunchOutcome.OpenedWithoutMotion => ProductText.Get("TargetAppOpenedWithoutMotion"),
+            TestLaunchOutcome.ExistingWindow => ProductText.Get("TheAppWasAlreadyRunningStudioTriedTo"),
+            TestLaunchOutcome.BindingUnavailable => ProductText.Get("TheBindingChangedRefreshAndConfirmTheBinding"),
+            TestLaunchOutcome.TargetUnavailable => ProductText.Get("TheLaunchEntryIsUnavailableConfirmItAgain"),
+            TestLaunchOutcome.ConfigurationUnavailable => ProductText.Get("CouldNotReadTheConfigurationRefreshAndCheck"),
+            TestLaunchOutcome.TimedOut => ProductText.Get("NoTargetWindowWasConfirmedInTimeCheck"),
+            TestLaunchOutcome.Busy => ProductText.Get("ThisAppIsAlreadyStartingTryAgainShortly"),
+            TestLaunchOutcome.ComponentUnavailable => ProductText.Get("TheLauncherIsUnavailableRepairOrReinstallDesktop"),
+            _ => ProductText.Get("CouldNotConfirmThatTheTargetAppOpened")
         }
     };
 }

@@ -31,6 +31,8 @@ internal static class Program
         }
         if (desktopRoot is not null && (stateFile is null || !IsFixtureDesktop(stateFile, desktopRoot))) return 2;
         string profile = stateFile ?? StudioStateRepository.CurrentUserPath();
+        var language = new StudioLanguagePreference(profile);
+        ProductText.UseLanguage(language.Read());
         var store = new StudioStateRepository(profile);
         ManagedShortcutService? shortcuts = stateFile is not null && desktopRoot is null ? null : new(
             store, catalogRoot, Path.Combine(Path.GetDirectoryName(profile)!, "managed-shortcuts"),
@@ -48,7 +50,8 @@ internal static class Program
             Path.Combine(Path.GetDirectoryName(profile)!, "logs"));
         TestLaunchClient? testLaunch = stateFile is null && !seen.Contains("--catalog-root")
             ? new(InstalledLayout.LauncherForBundle(AppContext.BaseDirectory)) : null;
-        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics, testLaunch: testLaunch));
+        return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics,
+            testLaunch: testLaunch, language: language));
     }
 
     private static bool IsFixtureDesktop(string stateFile, string desktop)

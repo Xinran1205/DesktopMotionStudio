@@ -9,9 +9,10 @@ namespace DesktopMotionStudio.Studio;
 
 internal sealed record SceneRow(SceneLibraryItem Item)
 {
-    public string Name => Item.DisplayName;
+    public string Name => SceneUiText.Name(Item);
     public string? Id => Item.Catalog.Manifest?.SceneId;
-    public string Summary => Item.IsPlayable ? Item.Presentation?.Style is { Length: > 0 } style ? style + " · 可播放" : "可播放" : "暂不可用";
+    public string Summary => Item.IsPlayable ? SceneUiText.Presentation(Item)?.Style is { Length: > 0 } style
+        ? style + ProductText.Get("Playable") : ProductText.Get("Playable2") : ProductText.Get("Unavailable2");
 }
 
 public partial class SceneLibraryWindow : Window
@@ -50,7 +51,7 @@ public partial class SceneLibraryWindow : Window
 
     internal async Task RefreshAsync()
     {
-        int generation = ++_generation; _loading = true; UpdateActions(); StatusText.Text = "正在读取作品…";
+        int generation = ++_generation; _loading = true; UpdateActions(); StatusText.Text = ProductText.Get("LoadingWorks");
         try
         {
             SceneLibrarySnapshot snapshot = await Task.Run(_workspace.Scan);
@@ -59,15 +60,15 @@ public partial class SceneLibraryWindow : Window
             Filter();
             StatusText.Text = snapshot.Error switch
             {
-                SceneLibraryError.TooManyScenes => "作品目录超出允许数量，请检查安装内容后重试。",
-                SceneLibraryError.Unavailable => "无法读取作品库，请检查安装内容后刷新。",
-                _ => _preferredScene is not null && Selected is null ? "原先选择的作品暂不可用，请重新选择。" : $"{_rows.Length} 个作品 · 同一作品可用于多个应用。"
+                SceneLibraryError.TooManyScenes => ProductText.Get("TheLibraryExceedsTheSupportedSizeCheckThe"),
+                SceneLibraryError.Unavailable => ProductText.Get("CouldNotReadTheLibraryCheckTheInstallation"),
+                _ => _preferredScene is not null && Selected is null ? ProductText.Get("ThePreviouslySelectedWorkIsUnavailableChooseAnother") : ProductText.Format("WorksEachWorkCanBeUsedWithSeveral", _rows.Length)
             };
         }
         catch (Exception)
         {
             if (_closed || _closing || generation != _generation) return;
-            _rows = []; Filter(); StatusText.Text = "无法读取作品库，请刷新重试。";
+            _rows = []; Filter(); StatusText.Text = ProductText.Get("CouldNotLoadTheLibraryRefreshAndTry");
         }
         finally { if (!_closed && generation == _generation) { _loading = false; UpdateActions(); } }
     }
@@ -78,7 +79,7 @@ public partial class SceneLibraryWindow : Window
         SceneRow[] visible = _rows.Where(row => row.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
         SceneList.ItemsSource = visible;
         SceneList.SelectedItem = _preferredScene is null ? visible.FirstOrDefault() : visible.FirstOrDefault(row => string.Equals(row.Id, _preferredScene, StringComparison.OrdinalIgnoreCase));
-        EmptyText.Text = _rows.Length == 0 ? "暂无可显示作品。\n可刷新或返回我的应用。" : "没有匹配的作品。";
+        EmptyText.Text = _rows.Length == 0 ? ProductText.Get("NoWorksAvailableRefreshOrReturnToMy") : ProductText.Get("NoWorksMatchTheSearch");
         EmptyText.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateDetails();
     }
@@ -89,9 +90,10 @@ public partial class SceneLibraryWindow : Window
         int version = ++_selectionVersion;
         SceneRow? row = Selected;
         if (row?.Id is string id) _preferredScene = id;
-        SceneNameText.Text = row?.Name ?? "请选择作品";
-        DescriptionText.Text = row?.Item.Presentation?.Description is { Length: > 0 } description ? description : "暂无作品介绍。";
-        PresentationText.Text = row is null ? "" : string.Join(" · ", new[] { row.Item.Presentation?.Style, row.Item.Presentation?.Theme }.Where(text => !string.IsNullOrWhiteSpace(text)));
+        SceneNameText.Text = row?.Name ?? ProductText.Get("ChooseAWork");
+        ScenePresentation? presentation = row is null ? null : SceneUiText.Presentation(row.Item);
+        DescriptionText.Text = presentation?.Description is { Length: > 0 } description ? description : ProductText.Get("NoDescriptionAvailable");
+        PresentationText.Text = presentation is null ? "" : string.Join(" · ", new[] { presentation.Style, presentation.Theme }.Where(text => !string.IsNullOrWhiteSpace(text)));
         AvailabilityText.Text = row is null ? "" : SceneUiText.Availability(row.Item);
         CoverImage.Source = null; FallbackMark.Visibility = Visibility.Visible;
         FallbackMark.Text = row?.Name[..1] ?? "M"; UpdateActions();
@@ -112,7 +114,7 @@ public partial class SceneLibraryWindow : Window
         PreviewResult result = await _intents.PlayAsync(id);
         if (_closed || _closing || !_intents.IsCurrent(result)) return;
         if (result.Outcome == PreviewOutcome.Unavailable)
-        { AvailabilityText.Text = "作品暂不可用，请刷新后重新选择。"; PreviewButton.IsEnabled = BindButton.IsEnabled = false; }
+        { AvailabilityText.Text = ProductText.Get("ThisWorkIsUnavailableRefreshAndChooseIt"); PreviewButton.IsEnabled = BindButton.IsEnabled = false; }
         else if (PreviewButton.IsEnabled)
         {
             FocusManager.SetFocusedElement(this, PreviewButton);
@@ -136,10 +138,10 @@ public partial class SceneLibraryWindow : Window
             ApplicationBinding? expected = picker.Result.Binding;
             ApplicationBinding? actual = current.State!.Bindings.FirstOrDefault(binding => string.Equals(binding.AppId, expected?.AppId, StringComparison.OrdinalIgnoreCase));
             StatusText.Text = actual is not null && actual == expected
-                ? Selected?.Item.IsPlayable == true ? "动效绑定已保存。" : "绑定已保存；作品当前不可用。"
-                : "配置已被另一项操作改变，请刷新后核对。";
+                ? Selected?.Item.IsPlayable == true ? ProductText.Get("MotionBindingSaved") : ProductText.Get("BindingSavedThisWorkIsCurrentlyUnavailable")
+                : ProductText.Get("AnotherOperationChangedTheConfigurationRefreshAndCheck");
         }
-        catch (Exception) { if (!_closed && !_closing) StatusText.Text = "无法重新读取绑定，请刷新后核对配置。"; }
+        catch (Exception) { if (!_closed && !_closing) StatusText.Text = ProductText.Get("CouldNotReloadTheBindingRefreshAndCheck"); }
     }
 
     private void OnSearch(object sender, TextChangedEventArgs e) { if (SceneList is not null) Filter(); }

@@ -1,6 +1,6 @@
 <Window x:Class="DesktopMotionStudio.Studio.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="clr-namespace:DesktopMotionStudio.Studio"
         Title="Desktop Motion Studio" Width="1180" Height="760" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterScreen"
         Icon="pack://application:,,,/DesktopMotionStudio.Studio;component/Branding/DesktopMotionStudio.ico">
     <Grid Margin="24,18,24,14">
@@ -11,11 +11,11 @@
         </Grid.RowDefinitions>
         <DockPanel Margin="0,0,0,18">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button x:Name="LibraryButton" Content="动效作品库(_L)" AutomationProperties.Name="打开动效作品库"
+                <Button x:Name="LibraryButton" Content="{loc:Text MotionLibrary}" AutomationProperties.Name="{loc:Text OpenMotionLibrary}"
                         Style="{DynamicResource HomeAction}" Click="OnLibrary" Margin="0,0,8,0"/>
-                <Button x:Name="SettingsButton" Content="设置(_G)" AutomationProperties.Name="打开设置"
+                <Button x:Name="SettingsButton" Content="{loc:Text Settings}" AutomationProperties.Name="{loc:Text OpenSettings}"
                         Style="{DynamicResource HomeAction}" Click="OnSettings" Margin="0,0,8,0"/>
-                <Button x:Name="DiagnosticsButton" Content="本地诊断(_I)" AutomationProperties.Name="打开本地诊断"
+                <Button x:Name="DiagnosticsButton" Content="{loc:Text LocalDiagnostics2}" AutomationProperties.Name="{loc:Text OpenLocalDiagnostics}"
                         Style="{DynamicResource HomeAction}" Click="OnDiagnostics"/>
             </StackPanel>
             <DockPanel>
@@ -24,7 +24,7 @@
                 <StackPanel>
                     <TextBlock Text="DESKTOP MOTION STUDIO" FontSize="11" FontWeight="SemiBold"
                                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
-                    <TextBlock Text="我的应用" FontSize="27" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                    <TextBlock Text="{loc:Text MyApps}" FontSize="27" FontWeight="SemiBold" Margin="0,2,0,0"/>
                 </StackPanel>
             </DockPanel>
         </DockPanel>
@@ -44,18 +44,18 @@
                     </Grid.RowDefinitions>
                     <StackPanel Margin="14,12,14,10">
                         <DockPanel>
-                            <Button x:Name="AddButton" DockPanel.Dock="Right" Content="添加应用(_A)" AutomationProperties.Name="添加应用"
+                            <Button x:Name="AddButton" DockPanel.Dock="Right" Content="{loc:Text AddApp2}" AutomationProperties.Name="{loc:Text AddApp}"
                                     Style="{DynamicResource HomeAction}" Click="OnAdd"/>
-                            <TextBlock Text="应用列表" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{loc:Text AppList}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
-                        <TextBlock x:Name="CountText" Text="正在读取应用…" Style="{StaticResource Caption}" FontSize="12" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="CountText" Text="{loc:Text LoadingApps}" Style="{StaticResource Caption}" FontSize="12" Margin="0,6,0,0"/>
                     </StackPanel>
                     <DockPanel Grid.Row="1" Margin="14,0,14,8">
-                        <Button DockPanel.Dock="Right" Content="刷新" AutomationProperties.Name="刷新应用" Margin="6,0,0,0" Click="OnRefresh"/>
-                        <TextBox x:Name="SearchBox" AutomationProperties.Name="搜索已添加应用" ToolTip="搜索已添加应用" TextChanged="OnSearch"/>
+                        <Button DockPanel.Dock="Right" Content="{loc:Text Refresh}" AutomationProperties.Name="{loc:Text RefreshApps}" Margin="6,0,0,0" Click="OnRefresh"/>
+                        <TextBox x:Name="SearchBox" AutomationProperties.Name="{loc:Text SearchSavedApps}" ToolTip="{loc:Text SearchSavedApps}" TextChanged="OnSearch"/>
                     </DockPanel>
                     <Grid Grid.Row="2">
-                        <ListBox x:Name="ApplicationList" AutomationProperties.Name="已添加应用" Background="Transparent"
+                        <ListBox x:Name="ApplicationList" AutomationProperties.Name="{loc:Text SavedApps}" Background="Transparent"
                                  BorderThickness="0" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  SelectionChanged="OnSelection" Padding="8">
                             <ListBox.ItemContainerStyle>
@@ -104,62 +104,62 @@
                 <Grid>
                     <ScrollViewer x:Name="DetailsScroll" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="DetailsPanel" Margin="20,16,20,18" IsEnabled="False" Visibility="Collapsed">
-                            <TextBlock Text="当前应用" Style="{StaticResource Caption}" FontSize="12"/>
+                            <TextBlock Text="{loc:Text CurrentApp}" Style="{StaticResource Caption}" FontSize="12"/>
                             <TextBlock x:Name="SelectedAppText" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,3,0,12"/>
                             <TextBlock x:Name="TargetStatusText" Style="{StaticResource Caption}" Margin="0,0,0,8"/>
                             <Border x:Name="Artwork" Background="#121821" CornerRadius="8" Height="160">
                                 <Grid>
-                                    <TextBlock x:Name="BoundFallback" Text="选择作品后显示封面" Style="{StaticResource Caption}"
+                                    <TextBlock x:Name="BoundFallback" Text="{loc:Text ChooseAWorkToSeeItsCover}" Style="{StaticResource Caption}"
                                                Foreground="#BBCAD8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Image x:Name="BoundCover" Stretch="Uniform" AutomationProperties.Name="当前绑定作品封面"/>
+                                    <Image x:Name="BoundCover" Stretch="Uniform" AutomationProperties.Name="{loc:Text CoverOfTheBoundWork}"/>
                                 </Grid>
                             </Border>
-                            <TextBlock x:Name="BoundSceneNameText" Text="未绑定作品" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="BoundSceneNameText" Text="{loc:Text NoWorkBound}" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,10,0,0"/>
                             <TextBlock x:Name="BindingText" Style="{StaticResource Caption}" Margin="0,4,0,10"/>
                             <WrapPanel>
                                 <StackPanel x:Name="TestLaunchPanel" Margin="0,0,8,6">
-                                    <Button x:Name="TestLaunchButton" Content="测试启动(_T)" AutomationProperties.Name="测试启动" AutomationProperties.AutomationId="TestLaunchButton"
+                                    <Button x:Name="TestLaunchButton" Content="{loc:Text TestLaunch}" AutomationProperties.Name="{loc:Text TestLaunch2}" AutomationProperties.AutomationId="TestLaunchButton"
                                             Style="{DynamicResource HomeAction}" Click="OnTestLaunch" IsEnabled="False"/>
                                 </StackPanel>
-                                <Button x:Name="PreviewBoundButton" Content="预览(_P)" AutomationProperties.Name="预览当前绑定作品"
+                                <Button x:Name="PreviewBoundButton" Content="{loc:Text Preview}" AutomationProperties.Name="{loc:Text PreviewTheBoundWork}"
                                         Style="{DynamicResource HomeAction}" Click="OnPreviewBound" Margin="0,0,8,6"/>
-                                <Button x:Name="ReplaceButton" Content="选择动效(_B)" AutomationProperties.Name="替换绑定作品"
+                                <Button x:Name="ReplaceButton" Content="{loc:Text ChooseMotionB}" AutomationProperties.Name="{loc:Text ReplaceTheBoundWork}"
                                         Style="{DynamicResource HomeAction}" Click="OnReplace" Margin="0,0,8,6"/>
-                                <Button x:Name="RepairButton" Content="确认入口(_R)" AutomationProperties.Name="修复启动入口"
+                                <Button x:Name="RepairButton" Content="{loc:Text ConfirmEntry}" AutomationProperties.Name="{loc:Text RepairLaunchEntry}"
                                         Style="{DynamicResource HomeAction}" Margin="0,0,8,6" Click="OnRepair"/>
                             </WrapPanel>
                             <TextBlock x:Name="TestLaunchStatusText" AutomationProperties.AutomationId="TestLaunchStatus" AutomationProperties.LiveSetting="Polite"
                                        Style="{StaticResource Caption}" Margin="0,1,0,8"/>
                             <StackPanel x:Name="ShortcutPanel" Margin="0,0,0,12">
                                 <Separator Margin="0,6,0,12"/>
-                                <TextBlock Text="受管理桌面入口" FontWeight="SemiBold"/>
+                                <TextBlock Text="{loc:Text ManagedDesktopShortcut}" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="ShortcutHealthText" AutomationProperties.AutomationId="ShortcutHealth" Style="{StaticResource Caption}" Margin="0,6,0,8"/>
                                 <WrapPanel>
-                                    <Button x:Name="ShortcutCreateButton" Content="创建入口(_C)" AutomationProperties.Name="创建桌面入口" Click="OnCreateShortcut" IsEnabled="False" Margin="0,0,8,4"/>
-                                    <Button x:Name="ShortcutRepairButton" Content="修复入口(_E)" AutomationProperties.Name="修复桌面入口" Click="OnRepairShortcut" IsEnabled="False" Margin="0,0,8,4"/>
-                                    <Button x:Name="ShortcutRemoveButton" Content="移除入口(_M)" AutomationProperties.Name="移除桌面入口" Click="OnRemoveShortcut" IsEnabled="False" Margin="0,0,8,4"/>
+                                    <Button x:Name="ShortcutCreateButton" Content="{loc:Text CreateShortcut}" AutomationProperties.Name="{loc:Text CreateDesktopShortcut}" Click="OnCreateShortcut" IsEnabled="False" Margin="0,0,8,4"/>
+                                    <Button x:Name="ShortcutRepairButton" Content="{loc:Text RepairShortcut2}" AutomationProperties.Name="{loc:Text RepairDesktopShortcut}" Click="OnRepairShortcut" IsEnabled="False" Margin="0,0,8,4"/>
+                                    <Button x:Name="ShortcutRemoveButton" Content="{loc:Text RemoveShortcut}" AutomationProperties.Name="{loc:Text RemoveDesktopShortcut}" Click="OnRemoveShortcut" IsEnabled="False" Margin="0,0,8,4"/>
                                 </WrapPanel>
                                 <TextBlock x:Name="ShortcutActionText" AutomationProperties.AutomationId="ShortcutAction" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Separator Margin="0,6,0,12"/>
-                            <TextBlock Text="应用设置" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                            <Label Content="显示名称(_N)" Target="{Binding ElementName=NameBox}" Padding="0,0,0,6"/>
+                            <TextBlock Text="{loc:Text AppSettings}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <Label Content="{loc:Text DisplayName}" Target="{Binding ElementName=NameBox}" Padding="0,0,0,6"/>
                             <DockPanel Margin="0,0,0,14">
-                                <Button x:Name="RenameButton" DockPanel.Dock="Right" Content="保存名称(_S)" AutomationProperties.Name="保存应用名称" Margin="8,0,0,0" Click="OnRename"/>
-                                <TextBox x:Name="NameBox" AutomationProperties.Name="应用显示名称" MaxLength="120"/>
+                                <Button x:Name="RenameButton" DockPanel.Dock="Right" Content="{loc:Text SaveName}" AutomationProperties.Name="{loc:Text SaveAppName}" Margin="8,0,0,0" Click="OnRename"/>
+                                <TextBox x:Name="NameBox" AutomationProperties.Name="{loc:Text AppDisplayName}" MaxLength="120"/>
                             </DockPanel>
                             <TextBlock x:Name="TargetKindText" FontWeight="SemiBold"/>
                             <TextBlock x:Name="TargetText" Style="{StaticResource Caption}" Margin="0,4,0,6"/>
                             <WrapPanel>
-                                <Button x:Name="ToggleButton" Content="停用动效" AutomationProperties.Name="切换动效启用状态" Margin="0,0,8,6" Click="OnToggle" IsEnabled="False"/>
-                                <Button x:Name="RemoveButton" Content="移除应用配置(_D)" AutomationProperties.Name="移除应用配置" Margin="0,0,8,6" Click="OnRemove"/>
+                                <Button x:Name="ToggleButton" Content="{loc:Text DisableMotion}" AutomationProperties.Name="{loc:Text ToggleMotion}" Margin="0,0,8,6" Click="OnToggle" IsEnabled="False"/>
+                                <Button x:Name="RemoveButton" Content="{loc:Text RemoveAppD}" AutomationProperties.Name="{loc:Text RemoveAppConfiguration}" Margin="0,0,8,6" Click="OnRemove"/>
                             </WrapPanel>
                         </StackPanel>
                     </ScrollViewer>
                     <StackPanel x:Name="SelectionPrompt" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                        <TextBlock x:Name="SelectionPromptTitle" Text="先添加一个应用" FontSize="22" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/>
-                        <TextBlock x:Name="SelectionPromptText" Text="添加后可选择动效、预览，再尝试真实启动。" Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,8,0,0"/>
-                        <Button x:Name="ClearSearchButton" Content="清除搜索" AutomationProperties.Name="清除应用搜索"
+                        <TextBlock x:Name="SelectionPromptTitle" Text="{loc:Text AddAnAppToGetStarted}" FontSize="22" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="SelectionPromptText" Text="{loc:Text AddAnAppChooseAMotionAndTest}" Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,8,0,0"/>
+                        <Button x:Name="ClearSearchButton" Content="{loc:Text ClearSearch}" AutomationProperties.Name="{loc:Text ClearAppSearch}"
                                 Style="{DynamicResource HomeAction}" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,12,0,0" Click="OnClearSearch"/>
                     </StackPanel>
                 </Grid>
@@ -172,9 +172,9 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock x:Name="PreviewStatusText" Style="{StaticResource Caption}"/>
-                <TextBlock x:Name="StatusText" Text="正在读取配置…" Style="{StaticResource Caption}" AutomationProperties.AutomationId="OperationStatus"/>
+                <TextBlock x:Name="StatusText" Text="{loc:Text LoadingConfiguration}" Style="{StaticResource Caption}" AutomationProperties.AutomationId="OperationStatus"/>
             </StackPanel>
-            <Button x:Name="StopPreviewButton" Grid.Column="1" Content="停止预览" AutomationProperties.Name="停止首页预览" Click="OnStopPreview" Margin="8,0,0,0">
+            <Button x:Name="StopPreviewButton" Grid.Column="1" Content="{loc:Text StopPreview}" AutomationProperties.Name="{loc:Text StopHomePreview}" Click="OnStopPreview" Margin="8,0,0,0">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Style.Triggers>

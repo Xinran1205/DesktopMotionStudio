@@ -3,6 +3,7 @@ using System.Diagnostics;
 using DesktopMotionStudio.Core.Diagnostics;
 using DesktopMotionStudio.Core.Instances;
 using DesktopMotionStudio.Core.Launch;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
@@ -12,8 +13,12 @@ namespace DesktopMotionStudio.Launcher;
 internal static class Program
 {
     [STAThread]
-    private static int Main(string[] args) => Run(args, StudioStateRepository.ForCurrentUser, ReportLaunchError,
-        diagnostics: static events => new DiagnosticLogStore(DiagnosticLogStore.CurrentUserDirectory()).Append(events));
+    private static int Main(string[] args)
+    {
+        ProductText.UseLanguage(new StudioLanguagePreference(StudioStateRepository.CurrentUserPath()).Read());
+        return Run(args, StudioStateRepository.ForCurrentUser, ReportLaunchError,
+            diagnostics: static events => new DiagnosticLogStore(DiagnosticLogStore.CurrentUserDirectory()).Append(events));
+    }
 
     internal static int Run(string[] args, Func<IStudioStateStore> openState, Func<string, int, int> reportError,
         Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null,
@@ -45,13 +50,13 @@ internal static class Program
                     ManagedLaunchStatus.BindingMissing => TestLaunchOutcome.BindingUnavailable,
                     _ => TestLaunchOutcome.TargetUnavailable
                 });
-                return reportError(plan.Status switch
+                return reportError(ProductText.Get(plan.Status switch
                 {
-                    ManagedLaunchStatus.StorageError => "无法读取应用配置。请打开 Desktop Motion Studio 检查配置状态。",
-                    ManagedLaunchStatus.BindingMissing => "找不到此快捷方式的绑定。请打开 Desktop Motion Studio 检查桌面入口。",
-                    ManagedLaunchStatus.RecursiveTarget => "此快捷方式的目标指向 Desktop Motion Studio 的组件。",
-                    _ => "无法打开已绑定的应用。请在 Desktop Motion Studio 中检查应用路径。"
-                }, 3);
+                    ManagedLaunchStatus.StorageError => "LauncherConfigurationUnavailable",
+                    ManagedLaunchStatus.BindingMissing => "LauncherBindingMissing",
+                    ManagedLaunchStatus.RecursiveTarget => "LauncherRecursiveTarget",
+                    _ => "LauncherTargetUnavailable"
+                }), 3);
             }
 
             stage = DiagnosticStage.Target;
@@ -67,7 +72,8 @@ internal static class Program
             MotionHostLifecycleResult? animated = null;
             if (plan.Scene is not null && plan.Playback is not null)
             {
-                var hosts = new WindowsMotionHostProcessFactory(Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"));
+                var hosts = new WindowsMotionHostProcessFactory(
+                    Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language);
                 var lifecycle = new MotionHostLifecycleCoordinator(instances, hosts);
                 animated = lifecycle.OpenAsync(plan.AppId, plan.Target, plan.Scene, playback: plan.Playback).GetAwaiter().GetResult();
                 result = animated.TargetResult;
@@ -96,14 +102,14 @@ internal static class Program
             return result.Outcome is InstanceOutcome.WindowReady or InstanceOutcome.ActivatedExisting or InstanceOutcome.ForegroundDenied ||
                    result.Process is not null && result.Outcome is InstanceOutcome.NoUsableWindow or InstanceOutcome.TimedOut
                 ? 0
-                : reportError("未能确认应用已打开。请检查目标应用或使用其原有入口。", 4);
+                : reportError(ProductText.Get("LauncherOpenUnconfirmed"), 4);
         }
         catch (Exception)
         {
             Record(diagnostics, request, elapsed, adapter, (stage, DiagnosticResultCode.UnexpectedFailure, DiagnosticFallback.None));
             // Dispatch may already have happened. Report the failure without a second launch attempt.
             return test ? (int)TestLaunchOutcome.Failed :
-                reportError("启动过程中出现错误。请检查目标应用或使用其原有入口。", 4);
+                reportError(ProductText.Get("LauncherUnexpectedError"), 4);
         }
     }
 

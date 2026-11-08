@@ -1,0 +1,1093 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddAnAppChooseAMotionAndTest" xml:space="preserve">
+    <value>Add an app, choose a motion, and test a real launch.</value>
+  </data>
+  <data name="AddAnAppToGetStarted" xml:space="preserve">
+    <value>Add an app to get started</value>
+  </data>
+  <data name="AddApp" xml:space="preserve">
+    <value>Add app</value>
+  </data>
+  <data name="AddApp2" xml:space="preserve">
+    <value>_Add app</value>
+  </data>
+  <data name="AddingAnAppSavesItsLaunchEntry" xml:space="preserve">
+    <value>Adding an app saves its launch entry.</value>
+  </data>
+  <data name="AdvancedLaunchOptions" xml:space="preserve">
+    <value>Advanced launch options</value>
+  </data>
+  <data name="AnimationOff" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="AnimationOn" xml:space="preserve">
+    <value>on</value>
+  </data>
+  <data name="AnotherOperationChangedTheConfigurationRefreshAndCheck" xml:space="preserve">
+    <value>Another operation changed the configuration. Refresh and check it.</value>
+  </data>
+  <data name="AppDisplayName" xml:space="preserve">
+    <value>App display name</value>
+  </data>
+  <data name="AppLaunch" xml:space="preserve">
+    <value>App launch</value>
+  </data>
+  <data name="AppList" xml:space="preserve">
+    <value>App list</value>
+  </data>
+  <data name="AppSettings" xml:space="preserve">
+    <value>App settings</value>
+  </data>
+  <data name="AppWindowReady" xml:space="preserve">
+    <value>App window ready</value>
+  </data>
+  <data name="ApplicationPath" xml:space="preserve">
+    <value>Application _path</value>
+  </data>
+  <data name="ApplicationPath2" xml:space="preserve">
+    <value>Application path</value>
+  </data>
+  <data name="AppsCouldNotBeLoaded" xml:space="preserve">
+    <value>Apps could not be loaded</value>
+  </data>
+  <data name="BindAWorkToCreateADesktopShortcut" xml:space="preserve">
+    <value>Bind a work to create a desktop shortcut.</value>
+  </data>
+  <data name="BindAWorkToTestLaunch" xml:space="preserve">
+    <value>Bind a work to test launch.</value>
+  </data>
+  <data name="BindMotionToAnApp" xml:space="preserve">
+    <value>Bind motion to an app</value>
+  </data>
+  <data name="BindToApp" xml:space="preserve">
+    <value>_Bind to app</value>
+  </data>
+  <data name="BindToApp2" xml:space="preserve">
+    <value>Bind to app</value>
+  </data>
+  <data name="BindingNotFound" xml:space="preserve">
+    <value>Binding not found</value>
+  </data>
+  <data name="BindingSavedThisWorkIsCurrentlyUnavailable" xml:space="preserve">
+    <value>Binding saved. This work is currently unavailable.</value>
+  </data>
+  <data name="BindingSavedThisWorkIsCurrentlyUnavailableRefresh" xml:space="preserve">
+    <value>Binding saved. This work is currently unavailable. Refresh the library.</value>
+  </data>
+  <data name="BindingSelectedWork" xml:space="preserve">
+    <value>Selected work: {0}</value>
+  </data>
+  <data name="BindingStateDisabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="BindingStateEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="BoundWorkState" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="BrowseApplicationFiles" xml:space="preserve">
+    <value>Browse application files</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CancelAddingApp" xml:space="preserve">
+    <value>Cancel adding app</value>
+  </data>
+  <data name="CancelBinding" xml:space="preserve">
+    <value>Cancel binding</value>
+  </data>
+  <data name="CancelSettings" xml:space="preserve">
+    <value>Cancel settings</value>
+  </data>
+  <data name="ChangeThisAppSLaunchEntryAndKeep" xml:space="preserve">
+    <value>Change this app's launch entry and keep its binding.</value>
+  </data>
+  <data name="CheckThatTheBoundWorkIsAvailableIn" xml:space="preserve">
+    <value>Check that the bound work is available in the library.</value>
+  </data>
+  <data name="CheckTheBindingAndManagedShortcutUnderMy" xml:space="preserve">
+    <value>Check the binding and managed shortcut under My apps.</value>
+  </data>
+  <data name="CheckTheConfigurationInStudioBeforeTryingAgain" xml:space="preserve">
+    <value>Check the configuration in Studio before trying again.</value>
+  </data>
+  <data name="CheckTheNameAndLaunchEntrySomeValues" xml:space="preserve">
+    <value>Check the name and launch entry. Some values are missing or out of range.</value>
+  </data>
+  <data name="CheckTheRendererAndWindowsAnimationSettingsUnder" xml:space="preserve">
+    <value>Check the renderer and Windows animation settings under Components.</value>
+  </data>
+  <data name="CheckTheRendererUnderComponentsAndReopenStudio" xml:space="preserve">
+    <value>Check the renderer under Components and reopen Studio.</value>
+  </data>
+  <data name="CheckTheTargetUnderMyAppsAndConfirm" xml:space="preserve">
+    <value>Check the target under My apps and confirm it opens directly.</value>
+  </data>
+  <data name="CheckingAndRepairingTheDesktopShortcut" xml:space="preserve">
+    <value>Checking and repairing the desktop shortcut…</value>
+  </data>
+  <data name="CheckingDesktopShortcut" xml:space="preserve">
+    <value>Checking desktop shortcut…</value>
+  </data>
+  <data name="ChooseACompleteWorkPreviewItAndBind" xml:space="preserve">
+    <value>Choose a complete work, preview it, and bind it to an app.</value>
+  </data>
+  <data name="ChooseALaunchEntryFirst" xml:space="preserve">
+    <value>Choose a launch entry first.</value>
+  </data>
+  <data name="ChooseALocalEntryOrSelectAnApp" xml:space="preserve">
+    <value>Choose a local entry or select an app installed on this device.</value>
+  </data>
+  <data name="ChooseASavedApp" xml:space="preserve">
+    <value>Choose a saved app</value>
+  </data>
+  <data name="ChooseASavedAppWithAWorkingLaunch" xml:space="preserve">
+    <value>Choose a saved app with a working launch entry.</value>
+  </data>
+  <data name="ChooseAWork" xml:space="preserve">
+    <value>Choose a work</value>
+  </data>
+  <data name="ChooseAWorkOnTheLeftToSee" xml:space="preserve">
+    <value>Choose a work on the left to see its details.</value>
+  </data>
+  <data name="ChooseAWorkToSeeItsCover" xml:space="preserve">
+    <value>Choose a work to see its cover</value>
+  </data>
+  <data name="ChooseAndConfirmAnEntryTypeTheOriginal" xml:space="preserve">
+    <value>Choose and confirm an entry type. The original entry has been kept.</value>
+  </data>
+  <data name="ChooseMotionB" xml:space="preserve">
+    <value>Choose motion (_B)</value>
+  </data>
+  <data name="ClearAppSearch" xml:space="preserve">
+    <value>Clear app search</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
+  <data name="ClearTheSearchToChooseAnAppAgain" xml:space="preserve">
+    <value>Clear the search to choose an app again.</value>
+  </data>
+  <data name="ClipboardUnavailableTryAgain" xml:space="preserve">
+    <value>Clipboard unavailable. Try again.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="CloseDiagnostics" xml:space="preserve">
+    <value>Close diagnostics</value>
+  </data>
+  <data name="CloseTheTargetAppBeforeTryingAgain" xml:space="preserve">
+    <value>Close the target app before trying again.</value>
+  </data>
+  <data name="ClosedAfterARenderFailure" xml:space="preserve">
+    <value> · Closed after a render failure</value>
+  </data>
+  <data name="CompleteMotionWorks" xml:space="preserve">
+    <value>Complete motion works</value>
+  </data>
+  <data name="ConfigurationUnavailable" xml:space="preserve">
+    <value>Configuration unavailable</value>
+  </data>
+  <data name="ConfirmAWorkingLaunchEntryUnderMyApps" xml:space="preserve">
+    <value>Confirm a working launch entry under My apps.</value>
+  </data>
+  <data name="ConfirmBinding" xml:space="preserve">
+    <value>Confirm binding</value>
+  </data>
+  <data name="ConfirmEntry" xml:space="preserve">
+    <value>Confirm ent_ry</value>
+  </data>
+  <data name="ConfirmLaunchEntry" xml:space="preserve">
+    <value>Confirm launch entry</value>
+  </data>
+  <data name="ConfirmTheLaunchEntryFirst" xml:space="preserve">
+    <value>Confirm the launch entry first.</value>
+  </data>
+  <data name="ConfirmTheLaunchEntryFirst2" xml:space="preserve">
+    <value>
+Confirm the launch entry first.</value>
+  </data>
+  <data name="CopyDiagnosticSummary" xml:space="preserve">
+    <value>Copy diagnostic summary</value>
+  </data>
+  <data name="CopySummary" xml:space="preserve">
+    <value>_Copy summary</value>
+  </data>
+  <data name="CouldNotConfirmPreviewCleanupCloseStudioAnd" xml:space="preserve">
+    <value>Could not confirm preview cleanup. Close Studio and try again.</value>
+  </data>
+  <data name="CouldNotConfirmThatTheTargetAppOpened" xml:space="preserve">
+    <value>Could not confirm that the target app opened. Check its launch entry.</value>
+  </data>
+  <data name="CouldNotConfirmTheRepairRefreshToCheck" xml:space="preserve">
+    <value>Could not confirm the repair. Refresh to check.</value>
+  </data>
+  <data name="CouldNotConfirmTheResultCheckTheTarget" xml:space="preserve">
+    <value>Could not confirm the result. Check the target app.</value>
+  </data>
+  <data name="CouldNotConfirmTheSaveTryAgain" xml:space="preserve">
+    <value>Could not confirm the save. Try again.</value>
+  </data>
+  <data name="CouldNotConfirmTheShortcutOperationRefreshAnd" xml:space="preserve">
+    <value>Could not confirm the shortcut operation. Refresh and try again.</value>
+  </data>
+  <data name="CouldNotFinishBindingOrReloadTheConfiguration" xml:space="preserve">
+    <value>Could not finish binding or reload the configuration. Refresh and check it.</value>
+  </data>
+  <data name="CouldNotLoadLocalDiagnostics" xml:space="preserve">
+    <value>Could not load local diagnostics.</value>
+  </data>
+  <data name="CouldNotLoadTheAppsOrWorksRefresh" xml:space="preserve">
+    <value>Could not load the apps or works. Refresh and try again.</value>
+  </data>
+  <data name="CouldNotLoadTheConfigurationRefreshAndTry" xml:space="preserve">
+    <value>Could not load the configuration. Refresh and try again.</value>
+  </data>
+  <data name="CouldNotLoadTheLibraryRefreshAndTry" xml:space="preserve">
+    <value>Could not load the library. Refresh and try again.</value>
+  </data>
+  <data name="CouldNotOpenTheLocalLogFolder" xml:space="preserve">
+    <value>Could not open the local log folder.</value>
+  </data>
+  <data name="CouldNotReadOrSaveTheShortcutOwnership" xml:space="preserve">
+    <value>Could not read or save the shortcut ownership record. Check the configuration.</value>
+  </data>
+  <data name="CouldNotReadOrWriteTheConfigurationCheck" xml:space="preserve">
+    <value>Could not read or write the configuration. Check file permissions and free space.</value>
+  </data>
+  <data name="CouldNotReadTheBindingRefreshAndTry" xml:space="preserve">
+    <value>Could not read the binding. Refresh and try again.</value>
+  </data>
+  <data name="CouldNotReadTheConfigurationKeepTheOriginal" xml:space="preserve">
+    <value>Could not read the configuration. Keep the original file and check available backups.</value>
+  </data>
+  <data name="CouldNotReadTheConfigurationRefreshAndCheck" xml:space="preserve">
+    <value>Could not read the configuration. Refresh and check its status.</value>
+  </data>
+  <data name="CouldNotReadTheLibraryCheckTheInstallation" xml:space="preserve">
+    <value>Could not read the library. Check the installation and refresh.</value>
+  </data>
+  <data name="CouldNotReloadTheBindingRefreshAndCheck" xml:space="preserve">
+    <value>Could not reload the binding. Refresh and check the configuration.</value>
+  </data>
+  <data name="CouldNotSaveTheMotionSettingTryAgain" xml:space="preserve">
+    <value>Could not save the motion setting. Try again.</value>
+  </data>
+  <data name="CoverOfTheBoundWork" xml:space="preserve">
+    <value>Cover of the bound work</value>
+  </data>
+  <data name="CreateDesktopShortcut" xml:space="preserve">
+    <value>Create desktop shortcut</value>
+  </data>
+  <data name="CreateShortcut" xml:space="preserve">
+    <value>_Create shortcut</value>
+  </data>
+  <data name="CurrentApp" xml:space="preserve">
+    <value>Current app</value>
+  </data>
+  <data name="Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="DesktopShortcutConflictExistingFilesHaveBeenKept" xml:space="preserve">
+    <value>Desktop shortcut conflict. Existing files have been kept.</value>
+  </data>
+  <data name="DesktopShortcutForTheSelectedApp" xml:space="preserve">
+    <value>Desktop shortcut for the selected app</value>
+  </data>
+  <data name="DesktopShortcutRecordRemoved" xml:space="preserve">
+    <value>Desktop shortcut record removed.</value>
+  </data>
+  <data name="DesktopShortcutSavedAndVerified" xml:space="preserve">
+    <value>Desktop shortcut saved and verified.</value>
+  </data>
+  <data name="DisableMotion" xml:space="preserve">
+    <value>Disable motion</value>
+  </data>
+  <data name="DiscoveredApps" xml:space="preserve">
+    <value>Discovered apps</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Display _name</value>
+  </data>
+  <data name="DisplayName2" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="EnableAnAvailableWorkAndConfirmTheApp" xml:space="preserve">
+    <value>Enable an available work and confirm the app entry first.</value>
+  </data>
+  <data name="EnableMotion" xml:space="preserve">
+    <value>Enable motion</value>
+  </data>
+  <data name="EntriesFoundCheckTheNameAndIdentityBefore" xml:space="preserve">
+    <value>Entries found: {0}. Check the name and identity before selecting.</value>
+  </data>
+  <data name="EntryAvailable" xml:space="preserve">
+    <value>Entry available</value>
+  </data>
+  <data name="EntryType" xml:space="preserve">
+    <value>Entry _type</value>
+  </data>
+  <data name="EntryType2" xml:space="preserve">
+    <value>Entry type</value>
+  </data>
+  <data name="EntryUnavailable" xml:space="preserve">
+    <value>Entry unavailable</value>
+  </data>
+  <data name="FollowSystem" xml:space="preserve">
+    <value>Follow system</value>
+  </data>
+  <data name="HostLaunchFooter" xml:space="preserve">
+    <value>Opening the app · You can skip the animation</value>
+  </data>
+  <data name="HostLaunchHelp" xml:space="preserve">
+    <value>Press Esc to skip the animation or Tab to show the skip button.</value>
+  </data>
+  <data name="HostLaunchName" xml:space="preserve">
+    <value>Launch animation</value>
+  </data>
+  <data name="HostLaunchWindow" xml:space="preserve">
+    <value>Desktop Motion Studio launch animation</value>
+  </data>
+  <data name="HostPreparing" xml:space="preserve">
+    <value>Preparing your application</value>
+  </data>
+  <data name="HostPreparingDetail" xml:space="preserve">
+    <value>Your application will continue opening if this animation is skipped or unavailable.</value>
+  </data>
+  <data name="HostPreviewFooter" xml:space="preserve">
+    <value>Preview · Simulated handoff. No app will open.</value>
+  </data>
+  <data name="HostPreviewHelp" xml:space="preserve">
+    <value>Press Esc to stop the preview or Tab to show the stop button.</value>
+  </data>
+  <data name="HostPreviewName" xml:space="preserve">
+    <value>Preview simulated handoff</value>
+  </data>
+  <data name="HostPreviewWindow" xml:space="preserve">
+    <value>Desktop Motion Studio scene preview</value>
+  </data>
+  <data name="HostAnimationStatus" xml:space="preserve">
+    <value>Animation status</value>
+  </data>
+  <data name="HostScene" xml:space="preserve">
+    <value>Animation surface</value>
+  </data>
+  <data name="HostSkip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="HostSkipAnimation" xml:space="preserve">
+    <value>Skip animation</value>
+  </data>
+  <data name="HostSkipDescription" xml:space="preserve">
+    <value>Close the animation and continue opening the application.</value>
+  </data>
+  <data name="HostSkipEsc" xml:space="preserve">
+    <value>Skip / Esc</value>
+  </data>
+  <data name="HostStop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="HostStopEsc" xml:space="preserve">
+    <value>Stop / Esc</value>
+  </data>
+  <data name="HostStopPreview" xml:space="preserve">
+    <value>Stop preview</value>
+  </data>
+  <data name="IdentityFormatIsValid" xml:space="preserve">
+    <value>Identity format is valid</value>
+  </data>
+  <data name="InstalledApps" xml:space="preserve">
+    <value>Installed apps</value>
+  </data>
+  <data name="InvalidRequest" xml:space="preserve">
+    <value>Invalid request</value>
+  </data>
+  <data name="InvalidSettings" xml:space="preserve">
+    <value>Invalid settings.</value>
+  </data>
+  <data name="LanguageLabel" xml:space="preserve">
+    <value>Interface language</value>
+  </data>
+  <data name="LanguageNote" xml:space="preserve">
+    <value>Save and reopen Studio to apply the language.</value>
+  </data>
+  <data name="LanguageSaveFailed" xml:space="preserve">
+    <value>Could not save the interface language. Try again.</value>
+  </data>
+  <data name="LanguageSaved" xml:space="preserve">
+    <value>Language saved. Reopen Studio to apply it.</value>
+  </data>
+  <data name="LatestLaunchResult" xml:space="preserve">
+    <value>Latest launch result</value>
+  </data>
+  <data name="LaunchArguments" xml:space="preserve">
+    <value>Launch arguments</value>
+  </data>
+  <data name="LaunchArgumentsOnePerLineSavedAsEntered" xml:space="preserve">
+    <value>Launch arguments (one per line, saved as entered)</value>
+  </data>
+  <data name="LauncherBindingMissing" xml:space="preserve">
+    <value>This shortcut has no binding. Open Desktop Motion Studio to check the desktop shortcut.</value>
+  </data>
+  <data name="LauncherConfigurationUnavailable" xml:space="preserve">
+    <value>Could not read the app configuration. Open Desktop Motion Studio to check it.</value>
+  </data>
+  <data name="LauncherOpenUnconfirmed" xml:space="preserve">
+    <value>Could not confirm that the app opened. Check the app or open it from its original shortcut.</value>
+  </data>
+  <data name="LauncherRecursiveTarget" xml:space="preserve">
+    <value>This shortcut points to a Desktop Motion Studio component.</value>
+  </data>
+  <data name="LauncherTargetUnavailable" xml:space="preserve">
+    <value>Could not open the bound app. Check its path in Desktop Motion Studio.</value>
+  </data>
+  <data name="LauncherUnexpectedError" xml:space="preserve">
+    <value>An error occurred while opening the app. Check the app or open it from its original shortcut.</value>
+  </data>
+  <data name="Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="LoadedThisDeviceSSavedApps" xml:space="preserve">
+    <value>Loaded this device's saved apps.</value>
+  </data>
+  <data name="LoadingApps" xml:space="preserve">
+    <value>Loading apps…</value>
+  </data>
+  <data name="LoadingAppsAndWorks" xml:space="preserve">
+    <value>Loading apps and works…</value>
+  </data>
+  <data name="LoadingConfiguration" xml:space="preserve">
+    <value>Loading configuration…</value>
+  </data>
+  <data name="LoadingDiagnostics" xml:space="preserve">
+    <value>Loading diagnostics…</value>
+  </data>
+  <data name="LoadingSettings" xml:space="preserve">
+    <value>Loading settings…</value>
+  </data>
+  <data name="LoadingWorks" xml:space="preserve">
+    <value>Loading works…</value>
+  </data>
+  <data name="LocalDiagnostics" xml:space="preserve">
+    <value>Local diagnostics</value>
+  </data>
+  <data name="LocalDiagnostics2" xml:space="preserve">
+    <value>Local d_iagnostics</value>
+  </data>
+  <data name="LocalFile" xml:space="preserve">
+    <value>Local file</value>
+  </data>
+  <data name="LocalLogsAreUnavailable" xml:space="preserve">
+    <value>Local logs are unavailable.</value>
+  </data>
+  <data name="LocalProgram" xml:space="preserve">
+    <value>Local program</value>
+  </data>
+  <data name="LocalRecordsYouCanCopyASummary" xml:space="preserve">
+    <value>Local records: {0}. You can copy a summary.</value>
+  </data>
+  <data name="LookingForLocalApps" xml:space="preserve">
+    <value>Looking for local apps…</value>
+  </data>
+  <data name="ManagedDesktopShortcut" xml:space="preserve">
+    <value>Managed desktop shortcut</value>
+  </data>
+  <data name="MotionBindingSaved" xml:space="preserve">
+    <value>Motion binding saved.</value>
+  </data>
+  <data name="MotionDisabled" xml:space="preserve">
+    <value> · Motion disabled</value>
+  </data>
+  <data name="MotionHandedOff" xml:space="preserve">
+    <value>Motion handed off</value>
+  </data>
+  <data name="MotionLibrary" xml:space="preserve">
+    <value>Motion _library</value>
+  </data>
+  <data name="MotionLibrary2" xml:space="preserve">
+    <value>Motion library</value>
+  </data>
+  <data name="MotionPreferenceSaved" xml:space="preserve">
+    <value>Motion preference saved.</value>
+  </data>
+  <data name="MuteAllMotion" xml:space="preserve">
+    <value>Global _mute</value>
+  </data>
+  <data name="MuteAllMotion2" xml:space="preserve">
+    <value>Global mute</value>
+  </data>
+  <data name="MyApps" xml:space="preserve">
+    <value>My apps</value>
+  </data>
+  <data name="NoAppsAddedAddAnAppAndConfirm" xml:space="preserve">
+    <value>No apps added.
+Add an app and confirm its entry under My apps before binding.</value>
+  </data>
+  <data name="NoAppsAddedAddAnAppAndConfirm2" xml:space="preserve">
+    <value>No apps added.
+Add an app and confirm its entry under My apps before binding.</value>
+  </data>
+  <data name="NoAppsYetSelectAddAppToGet" xml:space="preserve">
+    <value>No apps yet.
+Select Add app to get started.</value>
+  </data>
+  <data name="NoCoverAvailable" xml:space="preserve">
+    <value>No cover available</value>
+  </data>
+  <data name="NoDescriptionAvailable" xml:space="preserve">
+    <value>No description available.</value>
+  </data>
+  <data name="NoDesktopShortcutYet" xml:space="preserve">
+    <value>No desktop shortcut yet.</value>
+  </data>
+  <data name="NoEntriesFoundYouCanChooseOneUnder" xml:space="preserve">
+    <value>No entries found. You can choose one under Local file.</value>
+  </data>
+  <data name="NoLaunchDiagnosticsYet" xml:space="preserve">
+    <value>No launch diagnostics yet.</value>
+  </data>
+  <data name="NoMatchingApps" xml:space="preserve">
+    <value>No matching apps</value>
+  </data>
+  <data name="NoMatchingSavedApps" xml:space="preserve">
+    <value>No matching saved apps.</value>
+  </data>
+  <data name="NoMotionBound" xml:space="preserve">
+    <value>No motion bound</value>
+  </data>
+  <data name="NoSavedAppsMatchTheSearch" xml:space="preserve">
+    <value>No saved apps match the search.</value>
+  </data>
+  <data name="NoTargetWindowWasConfirmedInTimeCheck" xml:space="preserve">
+    <value>No target window was confirmed in time. Check whether the app opened.</value>
+  </data>
+  <data name="NoWorkBound" xml:space="preserve">
+    <value>No work bound</value>
+  </data>
+  <data name="NoWorksAvailableRefreshOrReturnToMy" xml:space="preserve">
+    <value>No works available.
+Refresh or return to My apps.</value>
+  </data>
+  <data name="NoWorksMatchTheSearch" xml:space="preserve">
+    <value>No works match the search.</value>
+  </data>
+  <data name="NotStarted" xml:space="preserve">
+    <value>Not started</value>
+  </data>
+  <data name="OpenLocalDiagnostics" xml:space="preserve">
+    <value>Open local diagnostics</value>
+  </data>
+  <data name="OpenLogFolder" xml:space="preserve">
+    <value>_Open log folder</value>
+  </data>
+  <data name="OpenLogFolder2" xml:space="preserve">
+    <value>Open log folder</value>
+  </data>
+  <data name="OpenMotionLibrary" xml:space="preserve">
+    <value>Open motion library</value>
+  </data>
+  <data name="OpenSettings" xml:space="preserve">
+    <value>Open settings</value>
+  </data>
+  <data name="PackagedApp" xml:space="preserve">
+    <value>Packaged app</value>
+  </data>
+  <data name="Playable" xml:space="preserve">
+    <value> · Playable</value>
+  </data>
+  <data name="Playable2" xml:space="preserve">
+    <value>Playable</value>
+  </data>
+  <data name="PreparingPreview" xml:space="preserve">
+    <value>Preparing preview…</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>_Preview</value>
+  </data>
+  <data name="PreviewComplete" xml:space="preserve">
+    <value>Preview complete.</value>
+  </data>
+  <data name="PreviewDidNotFinishRefreshTheWorkAnd" xml:space="preserve">
+    <value>Preview did not finish. Refresh the work and try again.</value>
+  </data>
+  <data name="PreviewPlaysOnlyTheMotion" xml:space="preserve">
+    <value>Preview plays only the motion.</value>
+  </data>
+  <data name="PreviewSkipped" xml:space="preserve">
+    <value>Preview skipped.</value>
+  </data>
+  <data name="PreviewStopped" xml:space="preserve">
+    <value>Preview stopped.</value>
+  </data>
+  <data name="PreviewTheBoundWork" xml:space="preserve">
+    <value>Preview the bound work</value>
+  </data>
+  <data name="PreviewWork" xml:space="preserve">
+    <value>_Preview work</value>
+  </data>
+  <data name="PreviewWork2" xml:space="preserve">
+    <value>Preview work</value>
+  </data>
+  <data name="PreviewingSimulatedHandoffNoAppWillOpen" xml:space="preserve">
+    <value>Previewing · Simulated handoff. No app will open.</value>
+  </data>
+  <data name="ProgramExe" xml:space="preserve">
+    <value>Program (.exe)</value>
+  </data>
+  <data name="ProgramsAndShortcutsExeLnkProgramsExeShortcuts" xml:space="preserve">
+    <value>Programs and shortcuts|*.exe;*.lnk|Programs|*.exe|Shortcuts|*.lnk</value>
+  </data>
+  <data name="ReadyToBind" xml:space="preserve">
+    <value> · Ready to bind</value>
+  </data>
+  <data name="ReadyToPreviewAndBindToMultipleApps" xml:space="preserve">
+    <value>Ready to preview and bind to multiple apps</value>
+  </data>
+  <data name="RecentDiagnosticRecords" xml:space="preserve">
+    <value>Recent diagnostic records</value>
+  </data>
+  <data name="RedactedSummaryCopied" xml:space="preserve">
+    <value>Redacted summary copied.</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Refresh2" xml:space="preserve">
+    <value>Re_fresh</value>
+  </data>
+  <data name="Refresh3" xml:space="preserve">
+    <value>_Refresh</value>
+  </data>
+  <data name="RefreshApps" xml:space="preserve">
+    <value>Refresh apps</value>
+  </data>
+  <data name="RefreshAppsForBinding" xml:space="preserve">
+    <value>Refresh apps for binding</value>
+  </data>
+  <data name="RefreshDiagnostics" xml:space="preserve">
+    <value>Refresh diagnostics</value>
+  </data>
+  <data name="RefreshMotionLibrary" xml:space="preserve">
+    <value>Refresh motion library</value>
+  </data>
+  <data name="RefreshTheConfigurationOrCheckLocalDiagnostics" xml:space="preserve">
+    <value>Refresh the configuration or check Local diagnostics.</value>
+  </data>
+  <data name="RemoveAndItsMotionBinding" xml:space="preserve">
+    <value>Remove “{0}” and its motion binding?{1}</value>
+  </data>
+  <data name="RemoveAnyManagedShortcutFromThisPageFirst" xml:space="preserve">
+    <value>
+Remove any managed shortcut from this page first. Removing the binding will disable that shortcut.</value>
+  </data>
+  <data name="RemoveAppConfiguration" xml:space="preserve">
+    <value>Remove app configuration</value>
+  </data>
+  <data name="RemoveAppD" xml:space="preserve">
+    <value>Remove app (_D)</value>
+  </data>
+  <data name="RemoveDesktopShortcut" xml:space="preserve">
+    <value>Remove desktop shortcut</value>
+  </data>
+  <data name="RemoveShortcut" xml:space="preserve">
+    <value>Re_move shortcut</value>
+  </data>
+  <data name="RendererCapability" xml:space="preserve">
+    <value>Built-in GDI+ vector renderer · Windows animations {0}</value>
+  </data>
+  <data name="RendererCleanupIssue" xml:space="preserve">
+    <value> · Renderer cleanup issue</value>
+  </data>
+  <data name="RendererFailed" xml:space="preserve">
+    <value>Renderer failed</value>
+  </data>
+  <data name="RendererUnavailable" xml:space="preserve">
+    <value> · Renderer unavailable</value>
+  </data>
+  <data name="Rendering" xml:space="preserve">
+    <value>Rendering</value>
+  </data>
+  <data name="RepairDesktopShortcut" xml:space="preserve">
+    <value>Repair desktop shortcut</value>
+  </data>
+  <data name="RepairLaunchEntry" xml:space="preserve">
+    <value>Repair launch entry</value>
+  </data>
+  <data name="RepairShortcut" xml:space="preserve">
+    <value>_Repair shortcut</value>
+  </data>
+  <data name="RepairShortcut2" xml:space="preserve">
+    <value>R_epair shortcut</value>
+  </data>
+  <data name="RepairShortcutFromDiagnostics" xml:space="preserve">
+    <value>Repair shortcut from diagnostics</value>
+  </data>
+  <data name="ReplaceMotionB" xml:space="preserve">
+    <value>Replace motion (_B)</value>
+  </data>
+  <data name="ReplaceTheBoundWork" xml:space="preserve">
+    <value>Replace the bound work</value>
+  </data>
+  <data name="Request" xml:space="preserve">
+    <value>Request</value>
+  </data>
+  <data name="Rescan" xml:space="preserve">
+    <value>Rescan</value>
+  </data>
+  <data name="RescanInstalledApps" xml:space="preserve">
+    <value>Rescan installed apps</value>
+  </data>
+  <data name="ReturnToMyApps" xml:space="preserve">
+    <value>Return to my apps</value>
+  </data>
+  <data name="ReturnToMyAppsH" xml:space="preserve">
+    <value>Return to my apps (_H)</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>_Save</value>
+  </data>
+  <data name="SaveApp" xml:space="preserve">
+    <value>_Save app</value>
+  </data>
+  <data name="SaveApp2" xml:space="preserve">
+    <value>Save app</value>
+  </data>
+  <data name="SaveAppName" xml:space="preserve">
+    <value>Save app name</value>
+  </data>
+  <data name="SaveBinding" xml:space="preserve">
+    <value>_Save binding</value>
+  </data>
+  <data name="SaveName" xml:space="preserve">
+    <value>_Save name</value>
+  </data>
+  <data name="SaveSettings" xml:space="preserve">
+    <value>Save settings</value>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="SavedApps" xml:space="preserve">
+    <value>Saved apps</value>
+  </data>
+  <data name="SavedApps2" xml:space="preserve">
+    <value>Saved apps: {0}</value>
+  </data>
+  <data name="SavedAppsAvailableForBinding" xml:space="preserve">
+    <value>Saved apps available for binding</value>
+  </data>
+  <data name="SavingBinding" xml:space="preserve">
+    <value>Saving binding…</value>
+  </data>
+  <data name="SavingConfigurationWaitBeforeClosing" xml:space="preserve">
+    <value>Saving configuration. Wait before closing.</value>
+  </data>
+  <data name="SavingSettings" xml:space="preserve">
+    <value>Saving settings…</value>
+  </data>
+  <data name="ScanCancelled" xml:space="preserve">
+    <value>Scan cancelled.</value>
+  </data>
+  <data name="SearchAppsToBind" xml:space="preserve">
+    <value>Search apps to bind</value>
+  </data>
+  <data name="SearchByWorkName" xml:space="preserve">
+    <value>Search by work name</value>
+  </data>
+  <data name="SearchInstalledApps" xml:space="preserve">
+    <value>Search installed apps</value>
+  </data>
+  <data name="SearchSavedApps" xml:space="preserve">
+    <value>Search saved apps</value>
+  </data>
+  <data name="SearchWorks" xml:space="preserve">
+    <value>Search works</value>
+  </data>
+  <data name="SelectAnAppToViewItsConfiguration" xml:space="preserve">
+    <value>Select an app to view its configuration</value>
+  </data>
+  <data name="SelectAnAppWithAMotionBindingTo" xml:space="preserve">
+    <value>Select an app with a motion binding to see its shortcut.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settin_gs</value>
+  </data>
+  <data name="Settings2" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsChangedInAnotherWindowTheCurrentValues" xml:space="preserve">
+    <value>Settings changed in another window. The current values have been loaded.</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="SettingsSavedReopenStudioToApplyTheTheme" xml:space="preserve">
+    <value>Theme preference saved. Reopen Studio to apply it.</value>
+  </data>
+  <data name="Shortcut" xml:space="preserve">
+    <value>Shortcut</value>
+  </data>
+  <data name="ShortcutLnk" xml:space="preserve">
+    <value>Shortcut (.lnk)</value>
+  </data>
+  <data name="SomeOlderEntriesNeedConfirmationTheirOriginalValues" xml:space="preserve">
+    <value>Some older entries need confirmation. Their original values have been kept.</value>
+  </data>
+  <data name="StopHomePreview" xml:space="preserve">
+    <value>Stop home preview</value>
+  </data>
+  <data name="StopPreview" xml:space="preserve">
+    <value>Stop preview</value>
+  </data>
+  <data name="StoppingPreview" xml:space="preserve">
+    <value>Stopping preview…</value>
+  </data>
+  <data name="StudioPulseDescription" xml:space="preserve">
+    <value>An original development scene for testing the shared timeline, isolated preview, and window handoff.</value>
+  </data>
+  <data name="StudioPulseName" xml:space="preserve">
+    <value>Studio Pulse (Development work)</value>
+  </data>
+  <data name="StudioPulseStyle" xml:space="preserve">
+    <value>Rings · Geometry</value>
+  </data>
+  <data name="StudioPulseTheme" xml:space="preserve">
+    <value>Original development work</value>
+  </data>
+  <data name="SwitchToTheTargetWindowAndTryThe" xml:space="preserve">
+    <value>Switch to the target window and try the desktop shortcut again.</value>
+  </data>
+  <data name="TargetAppOpened" xml:space="preserve">
+    <value>Target app opened.</value>
+  </data>
+  <data name="TargetAppOpenedWithoutMotion" xml:space="preserve">
+    <value>Target app opened without motion.</value>
+  </data>
+  <data name="TargetNeedsConfirmation" xml:space="preserve">
+    <value>Target needs confirmation</value>
+  </data>
+  <data name="TargetToConfirm" xml:space="preserve">
+    <value>Target to confirm</value>
+  </data>
+  <data name="TargetUnavailable" xml:space="preserve">
+    <value>Target unavailable</value>
+  </data>
+  <data name="TestLaunch" xml:space="preserve">
+    <value>_Test launch</value>
+  </data>
+  <data name="TestLaunch2" xml:space="preserve">
+    <value>Test launch</value>
+  </data>
+  <data name="TestingLaunch" xml:space="preserve">
+    <value>Testing launch…</value>
+  </data>
+  <data name="TheAppWasAlreadyRunningStudioTriedTo" xml:space="preserve">
+    <value>The app was already running. Studio tried to bring it forward.</value>
+  </data>
+  <data name="TheBindingChangedRefreshAndConfirmTheBinding" xml:space="preserve">
+    <value>The binding changed. Refresh and confirm the binding again.</value>
+  </data>
+  <data name="TheBindingDidNotFinishRefreshAndChoose" xml:space="preserve">
+    <value>The binding did not finish. Refresh and choose the app and work again.</value>
+  </data>
+  <data name="TheBundledRendererIsUnavailable" xml:space="preserve">
+    <value>The bundled renderer is unavailable.</value>
+  </data>
+  <data name="TheConfigurationComesFromANewerVersionOpen" xml:space="preserve">
+    <value>The configuration comes from a newer version. Open it with that version.</value>
+  </data>
+  <data name="TheConfigurationIsAlreadyUpToDate" xml:space="preserve">
+    <value>The configuration is already up to date.</value>
+  </data>
+  <data name="TheConfigurationIsInUseTryAgainShortly" xml:space="preserve">
+    <value>The configuration is in use. Try again shortly.</value>
+  </data>
+  <data name="TheCurrentBuiltInWorksAreSilentStudio" xml:space="preserve">
+    <value>The current built-in works are silent. Studio saves your mute preference.</value>
+  </data>
+  <data name="TheDesktopLocationChangedYouCanRecreateThe" xml:space="preserve">
+    <value>The desktop location changed. You can recreate the shortcut on the current desktop.</value>
+  </data>
+  <data name="TheDesktopOrLauncherIsUnavailable" xml:space="preserve">
+    <value>The desktop or launcher is unavailable.</value>
+  </data>
+  <data name="TheDesktopShortcutIsInUseTryAgain" xml:space="preserve">
+    <value>The desktop shortcut is in use. Try again shortly.</value>
+  </data>
+  <data name="TheDesktopShortcutIsValid" xml:space="preserve">
+    <value>The desktop shortcut is valid.</value>
+  </data>
+  <data name="TheDiagnosticLogIsInUseRefreshTo" xml:space="preserve">
+    <value>The diagnostic log is in use. Refresh to retry.</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableChooseALocal" xml:space="preserve">
+    <value>The launch entry is unavailable. Choose a local program, shortcut, or installed app again.</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableConfirmItAgain" xml:space="preserve">
+    <value>The launch entry is unavailable. Confirm it again.</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableConfirmItUnder" xml:space="preserve">
+    <value>The launch entry is unavailable. Confirm it under My apps.</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableOrTheConfiguration" xml:space="preserve">
+    <value>The launch entry is unavailable or the configuration changed. Refresh and try again.</value>
+  </data>
+  <data name="TheLauncherIsUnavailableRepairOrReinstallDesktop" xml:space="preserve">
+    <value>The launcher is unavailable. Repair or reinstall Desktop Motion Studio.</value>
+  </data>
+  <data name="TheLibraryExceedsTheSupportedSizeCheckThe" xml:space="preserve">
+    <value>The library exceeds the supported size. Check the installation and try again.</value>
+  </data>
+  <data name="TheLocalLogFolderIsUnavailable" xml:space="preserve">
+    <value>The local log folder is unavailable.</value>
+  </data>
+  <data name="TheLogCouldNotBeVerifiedTheOriginal" xml:space="preserve">
+    <value>The log could not be verified. The original log has been kept.</value>
+  </data>
+  <data name="TheLogFormatIsUnsupportedTheOriginalLog" xml:space="preserve">
+    <value>The log format is unsupported. The original log has been kept.</value>
+  </data>
+  <data name="TheOperationDidNotFinishTheExistingConfiguration" xml:space="preserve">
+    <value>The operation did not finish. The existing configuration has been kept. Refresh and try again.</value>
+  </data>
+  <data name="ThePreviousAppIsNoLongerListedChoose" xml:space="preserve">
+    <value>The previous app is no longer listed. Choose another one.</value>
+  </data>
+  <data name="ThePreviouslySelectedWorkIsUnavailableChooseAnother" xml:space="preserve">
+    <value>The previously selected work is unavailable. Choose another one.</value>
+  </data>
+  <data name="TheRegisteredShortcutIsMissingAndCanBe" xml:space="preserve">
+    <value>The registered shortcut is missing and can be repaired.</value>
+  </data>
+  <data name="TheSaveDidNotCompleteCheckYourConfiguration" xml:space="preserve">
+    <value>The save did not complete. Check your configuration and try again.</value>
+  </data>
+  <data name="TheScanDidNotFinishRetryOrSelect" xml:space="preserve">
+    <value>The scan did not finish. Retry or select a local file.</value>
+  </data>
+  <data name="TheScanTimedOutRetryOrSelectA" xml:space="preserve">
+    <value>The scan timed out. Retry or select a local file.</value>
+  </data>
+  <data name="TheSelectedAppIsNoLongerAvailable" xml:space="preserve">
+    <value>The selected app is no longer available.</value>
+  </data>
+  <data name="TheSelectedBindingIsNoLongerAvailable" xml:space="preserve">
+    <value>The selected binding is no longer available.</value>
+  </data>
+  <data name="TheShortcutPointsToAnOldLauncherRepair" xml:space="preserve">
+    <value>The shortcut points to an old launcher. Repair it to continue.</value>
+  </data>
+  <data name="TheTestTimedOutCheckWhetherTheTarget" xml:space="preserve">
+    <value>The test timed out. Check whether the target app opened.</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheBindingHasBeen" xml:space="preserve">
+    <value>
+The work is unavailable. The binding has been kept.</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheBindingHasBeen2" xml:space="preserve">
+    <value>The work is unavailable. The binding has been kept. Refresh and try again.</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheMotionSettingWas" xml:space="preserve">
+    <value>The work is unavailable. The motion setting was kept.</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>_Theme</value>
+  </data>
+  <data name="Theme2" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="ThisAppAlreadyUsesTheSelectedWork" xml:space="preserve">
+    <value>This app already uses the selected work.</value>
+  </data>
+  <data name="ThisAppIsAlreadyStartingTryAgainShortly" xml:space="preserve">
+    <value>This app is already starting. Try again shortly.</value>
+  </data>
+  <data name="ThisAppWasRemovedChooseAnotherOne" xml:space="preserve">
+    <value>This app was removed. Choose another one.</value>
+  </data>
+  <data name="ThisAppWasRemovedRefreshTheList" xml:space="preserve">
+    <value>This app was removed. Refresh the list.</value>
+  </data>
+  <data name="ThisEntryIsAlreadySavedAs" xml:space="preserve">
+    <value>This entry is already saved as “{0}”.</value>
+  </data>
+  <data name="ThisWorkIsUnavailableRefreshAndChooseIt" xml:space="preserve">
+    <value>This work is unavailable. Refresh and choose it again.</value>
+  </data>
+  <data name="ThisWorkIsUnavailableTheExistingBindingHas" xml:space="preserve">
+    <value>This work is unavailable. The existing binding has been kept.</value>
+  </data>
+  <data name="ThisWorkIsUnavailableTheExistingBindingHas2" xml:space="preserve">
+    <value>This work is unavailable. The existing binding has been kept. Refresh the library.</value>
+  </data>
+  <data name="ThisWorkRequiresASupportedPlaybackVersion" xml:space="preserve">
+    <value>This work requires a supported playback version.</value>
+  </data>
+  <data name="TimedOut" xml:space="preserve">
+    <value>Timed out</value>
+  </data>
+  <data name="ToggleMotion" xml:space="preserve">
+    <value>Toggle motion</value>
+  </data>
+  <data name="Unavailable" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="Unavailable2" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="UpdatingDesktopShortcut" xml:space="preserve">
+    <value>Updating desktop shortcut…</value>
+  </data>
+  <data name="WorkCover" xml:space="preserve">
+    <value>Work cover</value>
+  </data>
+  <data name="WorkFilesAreMissingDamagedOrUnreadable" xml:space="preserve">
+    <value>Work files are missing, damaged, or unreadable.</value>
+  </data>
+  <data name="WorkUnavailable" xml:space="preserve">
+    <value> · Work unavailable</value>
+  </data>
+  <data name="WorkingDirectory" xml:space="preserve">
+    <value>Working directory</value>
+  </data>
+  <data name="WorkingDirectoryOptional" xml:space="preserve">
+    <value>Working directory (optional)</value>
+  </data>
+  <data name="WorksEachWorkCanBeUsedWithSeveral" xml:space="preserve">
+    <value>Works: {0}. Each work can be used with several apps.</value>
+  </data>
+  <data name="YouCanBindAWorkToSeveralApps" xml:space="preserve">
+    <value>You can bind a work to several apps. Replacing the work keeps this app's binding.</value>
+  </data>
+  <data name="ZeroBoundaryDescription" xml:space="preserve">
+    <value>An ice-blue beam sweeps across graphite as two precise frames align and draw together, revealing the app window. The animation lasts about two seconds and plays in a large centered frame by default.</value>
+  </data>
+  <data name="ZeroBoundaryName" xml:space="preserve">
+    <value>Zero Boundary</value>
+  </data>
+  <data name="ZeroBoundaryStyle" xml:space="preserve">
+    <value>Technology · Precision frames</value>
+  </data>
+  <data name="ZeroBoundaryTheme" xml:space="preserve">
+    <value>Graphite and ice blue</value>
+  </data>
+</root>

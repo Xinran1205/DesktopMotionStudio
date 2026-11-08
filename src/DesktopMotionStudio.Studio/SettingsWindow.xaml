@@ -1,22 +1,28 @@
 <Window x:Class="DesktopMotionStudio.Studio.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="设置" Width="440" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="clr-namespace:DesktopMotionStudio.Studio"
+        Title="{loc:Text Settings2}" Width="440" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
     <StackPanel Margin="24">
-        <TextBlock Text="设置" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,18" />
-        <Label Content="主题(_T)" Target="{Binding ElementName=ThemeBox}" Padding="0,0,0,6" />
-        <ComboBox x:Name="ThemeBox" AutomationProperties.Name="主题" IsEnabled="False">
-            <ComboBoxItem Content="跟随系统" Tag="system" />
-            <ComboBoxItem Content="浅色" Tag="light" />
-            <ComboBoxItem Content="深色" Tag="dark" />
+        <TextBlock Text="{loc:Text Settings2}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,18" />
+        <Label Content="{loc:Text LanguageLabel}" Target="{Binding ElementName=LanguageBox}" Padding="0,0,0,6" />
+        <ComboBox x:Name="LanguageBox" AutomationProperties.Name="{loc:Text LanguageLabel}" IsEnabled="False">
+            <ComboBoxItem Content="简体中文" Tag="zh-CN" />
+            <ComboBoxItem Content="English" Tag="en" />
         </ComboBox>
-        <CheckBox x:Name="MuteBox" Content="全局静音(_M)" AutomationProperties.Name="全局静音" Margin="0,18,0,4" IsEnabled="False" />
-        <TextBlock Text="当前内置作品没有音频。静音偏好会保留。" Style="{StaticResource Caption}" />
-        <TextBlock x:Name="PreferenceStatus" Text="正在读取设置…" Style="{StaticResource Caption}"
+        <TextBlock Text="{loc:Text LanguageNote}" Style="{StaticResource Caption}" Margin="0,6,0,14" />
+        <Label Content="{loc:Text Theme}" Target="{Binding ElementName=ThemeBox}" Padding="0,0,0,6" />
+        <ComboBox x:Name="ThemeBox" AutomationProperties.Name="{loc:Text Theme2}" IsEnabled="False">
+            <ComboBoxItem Content="{loc:Text FollowSystem}" Tag="system" />
+            <ComboBoxItem Content="{loc:Text Light}" Tag="light" />
+            <ComboBoxItem Content="{loc:Text Dark}" Tag="dark" />
+        </ComboBox>
+        <CheckBox x:Name="MuteBox" Content="{loc:Text MuteAllMotion}" AutomationProperties.Name="{loc:Text MuteAllMotion2}" Margin="0,18,0,4" IsEnabled="False" />
+        <TextBlock Text="{loc:Text TheCurrentBuiltInWorksAreSilentStudio}" Style="{StaticResource Caption}" />
+        <TextBlock x:Name="PreferenceStatus" Text="{loc:Text LoadingSettings}" Style="{StaticResource Caption}"
                    AutomationProperties.AutomationId="PreferenceStatus" Margin="0,14,0,14" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="CancelButton" Content="取消" AutomationProperties.Name="取消设置" IsCancel="True" Margin="0,0,8,0" />
-            <Button x:Name="SaveButton" Content="保存(_S)" AutomationProperties.Name="保存设置" Style="{DynamicResource AccentButtonStyle}" ContentTemplate="{StaticResource AccessButtonContent}"
+            <Button x:Name="CancelButton" Content="{loc:Text Cancel}" AutomationProperties.Name="{loc:Text CancelSettings}" IsCancel="True" Margin="0,0,8,0" />
+            <Button x:Name="SaveButton" Content="{loc:Text Save}" AutomationProperties.Name="{loc:Text SaveSettings}" Style="{DynamicResource AccentButtonStyle}" ContentTemplate="{StaticResource AccessButtonContent}"
                     IsDefault="True" IsEnabled="False" Click="OnSave" />
         </StackPanel>
     </StackPanel>

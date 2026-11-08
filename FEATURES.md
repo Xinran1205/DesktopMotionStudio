@@ -22,7 +22,8 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 13 | Studio / F15 Test launch | Launch the actual bound application from Studio before creating a desktop link | F05, F06, F09, F10, F11 | Complete · Alt+T, actual launch, warm reuse and fallback · [evidence](specs/016-test-launch/evidence.md) |
 | 14 | Content / F13 零界 and launch performance | First original pure-tech work with full preview, short real-window handoff and two composition prototypes | F03, F05, F06, F07, F09, F10, F15 | Complete in published Windows bundle · [evidence](specs/014-first-licensed-scene/evidence.md) |
 | 15 | Studio / F16 Home and product icon | Polish the application-to-test-launch path and integrate one Windows product icon | F08–F13, F15 | Complete · 0.16.0 local candidate · [evidence](specs/017-studio-home-polish/evidence.md) |
-| 16 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 · scheduled after F16 | Spec baseline |
+| 16 | Studio / F17 Bilingual client | English and Simplified Chinese for product text and built-in works, plus paired GitHub READMEs | F11, F13, F16 | [Spec](specs/018-bilingual-client/spec.md) · [Evidence](specs/018-bilingual-client/evidence.md) |
+| 17 | Content / F14 Second licensed scene | A visually distinct second built-in scene, reusable across apps | F13 · scheduled after F16 | Spec baseline |
 
 ## Selection for first feature
 
@@ -73,3 +74,4 @@ Each feature spec must include goal, user scenarios, functional requirements, ru
 | 1.0.33 | 2026-11-07 | Refine F13 as the original pure-tech work 零界. Add F16 homepage and icon polish, then validate one combined candidate before scheduling F14. |
 | 1.0.34 | 2026-11-08 | Complete F13 with original art, finite launch playback, safe handoff and real Windows evidence. Advance to the F16 homepage and icon. |
 | 1.0.35 | 2026-11-08 | Complete F16 and verify the combined 0.16.0 local candidate, including isolated upgrade and real Windows UI. |
+| 1.0.36 | 2026-11-08 | Add English-first GitHub documentation and optional English Studio UI, with separate language storage and preserved user names. |

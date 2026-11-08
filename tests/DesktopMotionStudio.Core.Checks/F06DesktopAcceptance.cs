@@ -294,7 +294,7 @@ internal static class F06DesktopAcceptance
 
     private static bool SendButtonClick(nint hostWindow)
     {
-        nint button = FindChildButton(hostWindow, "Skip animation");
+        nint button = FindChildButton(hostWindow, "跳过动效");
         if (button == 0) return false;
         Rect buttonRect = GetWindowRectangle(button);
         int x = buttonRect.Left + (buttonRect.Right - buttonRect.Left) / 2;

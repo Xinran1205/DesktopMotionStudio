@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.Scenes;
 
 namespace DesktopMotionStudio.Core.MotionHost;
@@ -7,13 +8,15 @@ namespace DesktopMotionStudio.Core.MotionHost;
 public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
 {
     private readonly string _hostExecutablePath;
+    private readonly bool _english;
 
-    public WindowsMotionHostProcessFactory(string hostExecutablePath)
+    public WindowsMotionHostProcessFactory(string hostExecutablePath, string language = ProductText.DefaultLanguage)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hostExecutablePath);
         if (!Path.IsPathFullyQualified(hostExecutablePath))
             throw new ArgumentException("MotionHost executable path must be absolute.", nameof(hostExecutablePath));
         _hostExecutablePath = Path.GetFullPath(hostExecutablePath);
+        _english = language == ProductText.English;
     }
 
     public IMotionHostSession Start(MotionHostStartRequest request)
@@ -36,7 +39,7 @@ public sealed class WindowsMotionHostProcessFactory : IMotionHostSessionFactory
         OwnedMotionHostProcess? owned = null;
         try
         {
-            owned = OwnedMotionHostProcess.Start(_hostExecutablePath, pipeName, request.RequestId);
+            owned = OwnedMotionHostProcess.Start(_hostExecutablePath, pipeName, request.RequestId, english: _english);
             return new WindowsMotionHostSession(pipe, owned, request);
         }
         catch

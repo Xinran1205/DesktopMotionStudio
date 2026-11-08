@@ -1,66 +1,41 @@
 # Desktop Motion Studio
 
-Windows 11 x64 desktop application for binding built-in launch animations to local apps. The self-contained Windows Setup has passed workstation acceptance through F12. The current candidates are unsigned development builds.
+**English** · [简体中文](README.zh-CN.md)
 
-[中文使用指南](docs/USER_GUIDE.zh-CN.md)
+Desktop Motion Studio adds short launch animations to apps on Windows 11 x64. Pick a built-in work, preview it, and test a real launch from Studio. Once you like the result, create a managed desktop shortcut that works with Studio closed.
 
-## Development status
+## Getting started
 
-The original [PRD](Desktop_Motion_Studio_PRD_V1.0.md) and [technical design](Desktop_Motion_Studio_Technical_Design_V1.0.md) remain source baselines. [Feature inventory](FEATURES.md), [Spec Kit constitution](.specify/memory/constitution.md), [decisions](docs/DECISIONS.md), and independent specifications under `specs/` track the executable plan and refinements.
+1. Run `DesktopMotionStudio.Setup.exe` and open **Desktop Motion Studio** from the Windows Start menu. The current-user installer includes the runtime. Local candidate builds are unsigned.
+2. In **My apps**, add an installed app, local executable, or Windows shortcut. Choose a motion from the library and bind it to the app.
+3. Preview the motion, then press **Alt+T** or click **Test launch** to open the real app. Create a desktop shortcut once you are happy with the result.
+4. Open **Settings → Interface language** (设置 → 界面语言), choose **English** or **简体中文**, save, and reopen Studio. Saved app names stay exactly as entered.
 
-Spec Kit 1.2.3 is initialized with Codex skills in `.agents/skills/` and PowerShell scripts in `.specify/scripts/powershell/`. On a machine with the CLI installed, `specify version` checks the installation. See the [official installation guide](https://github.com/github/spec-kit/blob/main/docs/installation.md) for setting up another machine.
+**Zero Boundary** is an original two-second tech sequence with an ice-blue window frame. Studio Pulse is also available as a development work. Press **Esc** to skip a motion. A running app can reuse its existing window, and renderer failures fall back to opening the app normally.
 
-F00–F12 are verified under their documented scope. Studio provides **My applications** for local EXE/LNK and discovered packaged entries, legacy state migration with a backup, scene previews and binding. Managed desktop entries run independently through the bundled Launcher. Settings and local diagnostics are available. Licensed release scenes are pending.
+See the [Chinese user guide](docs/USER_GUIDE.zh-CN.md) for installation, shortcuts, and troubleshooting.
+
+## Build from source
+
+Use the .NET SDK pinned in [global.json](global.json) and Windows PowerShell.
 
 ```powershell
 dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
 & .\src\DesktopMotionStudio.Studio\bin\Release\net10.0-windows\win-x64\DesktopMotionStudio.Studio.exe
 ```
 
-Use the SDK pinned in `global.json`. See [F08 quickstart](specs/009-application-management/quickstart.md) for isolated UI tests, current workstation SDK setup, configuration behavior and keyboard controls, and [verification evidence](specs/009-application-management/evidence.md) for the actual Windows/DPI coverage.
-
-## First feature
-
-F00 validates the Windows animation host in isolation. Once the .NET 10 SDK is installed:
+To build a self-contained Setup, run the following command with a new output directory. [Installer and validation guide](specs/013-installer-upgrade/quickstart.md)
 
 ```powershell
-dotnet build .\src\DesktopMotionStudio.WindowHost.Poc\DesktopMotionStudio.WindowHost.Poc.csproj -c Release
-dotnet run --project .\src\DesktopMotionStudio.WindowHost.Poc -- --mode centered
-dotnet run --project .\src\DesktopMotionStudio.WindowHost.Poc -- --mode full --monitor 0
+& .\installer\Build-Setup.ps1 -Version 0.17.0 -OutputDirectory (Join-Path $PWD 'artifacts/local-0.17.0')
 ```
 
-Press Esc or click **Close** to exit. The [F00 evidence log](specs/001-window-host-feasibility/evidence.md) distinguishes compilation from real Windows desktop observations.
+## Project development
 
-## Scene library and preview
+Spec Kit is configured for Codex with PowerShell scripts. Run `specify version` to check the CLI on your machine. [Official Spec Kit setup](https://github.com/github/spec-kit/blob/main/docs/installation.md)
 
-Open **动效作品库** with Alt+L from home. In the library, use Alt+P to preview the selected work, Alt+B to choose a saved app, and Alt+H to return home. The picker confirms with Alt+S and cancels with Esc. Home also offers Preview/Replace for the selected app. Preview Esc/Stop closes only the animation; browsing and preview do not write configuration or start target apps. Unavailable work remains represented without deleting stored bindings.
-
-Studio build/publish automatically bundles MotionHost and the original neutral development work. The work is labelled development content; licensed release works are F13/F14. A framework-dependent publish needs the .NET10 Windows Desktop x64 runtime. Installer delivery remains F12.
-
-See [F09 validation guide](specs/010-scene-preview-binding-ui/quickstart.md), [evidence](specs/010-scene-preview-binding-ui/evidence.md) and [review](specs/010-scene-preview-binding-ui/review.md). The actual desktop covered100/125/150% and both system motion preferences, restoring original settings.
-
-## Test launch
-
-Select an application with a binding in **我的应用** and choose **测试启动** or press Alt+T. Studio opens the real target with the current binding and shows the result. An already running target can be reused. A disabled scene or unavailable renderer still allows the target to open. Test launch leaves the profile and desktop entries as they were. See the [F15 verification guide](specs/016-test-launch/quickstart.md).
-
-## Managed desktop entries
-
-Select a saved application with an enabled and available work. In **受管理桌面入口**, use Alt+C to create its desktop entry, Alt+E to repair a missing or stale entry, and Alt+M to remove it. The entry works after Studio closes and follows the current binding. Disabling the work leaves the entry available for native launch. Desktop files that are edited, replaced, or in conflict are preserved and Studio shows their status. This feature requires a supported local NTFS desktop. The development bundle's location must stay available for its entries to launch.
-
-See [F10 validation and isolated fixture commands](specs/011-managed-shortcuts/quickstart.md) and [verification evidence](specs/011-managed-shortcuts/evidence.md).
-
-## Settings and local diagnostics
-
-Open **设置** with Alt+G to choose a system, light or dark theme and save the mute preference. Windows high contrast takes priority. The current development work has no audio track.
-
-Open **本地诊断** with Alt+I to check versions, renderer availability, recent launch outcomes and the selected desktop entry. Copying a summary is explicit. Its typed records stay local and omit user paths, identifiers and arguments. When the selected entry can be repaired, Alt+R calls the managed-entry recovery flow.
-
-See the [F11 validation guide](specs/012-settings-diagnostics/quickstart.md) and [Windows evidence](specs/012-settings-diagnostics/evidence.md).
-
-## Windows Setup validation
-
-`installer/Build-Setup.ps1` produces an unsigned, self-contained Windows x64 Setup and a SHA256 file. Validation candidates install for the current user under LocalAppData and preserve the separate user-data directory during upgrades and uninstall. Upgrades keep the registered entry paths and existing link bytes, update both verified entry binaries, and keep the active and immediately previous program generations for recovery. If an upgrade is interrupted during entry replacement, rerun the same Setup package.
-
-Run the verified Setup, then open **Desktop Motion Studio** from Start. Run a newer Setup to upgrade. Use **Settings → Apps → Installed apps** to uninstall. Preferences, backups and local diagnostics are retained under `%LOCALAPPDATA%\DesktopMotionStudio`.
-
-The [F12 validation guide](specs/013-installer-upgrade/quickstart.md) describes workstation testing and additional compatibility coverage. Public release also requires a project code license, cleared assets, a signing policy and installed-package evidence for the target Windows display and DPI matrix.
+- [Feature inventory](FEATURES.md) and [Spec Kit constitution](.specify/memory/constitution.md)
+- [Original product requirements](Desktop_Motion_Studio_PRD_V1.0.md) and [technical design](Desktop_Motion_Studio_Technical_Design_V1.0.md)
+- [Architecture decisions](docs/DECISIONS.md) and [project checkpoint](docs/RESUME.md)
+- [Launch animation evidence](specs/014-first-licensed-scene/evidence.md) and [bilingual client evidence](specs/018-bilingual-client/evidence.md)
+- [Isolated Studio checks](specs/009-application-management/quickstart.md) and [desktop shortcut checks](specs/011-managed-shortcuts/quickstart.md)

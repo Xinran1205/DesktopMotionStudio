@@ -27,10 +27,10 @@ public partial class ApplicationEditorWindow : Window
         Height = Math.Min(Height, Math.Max(MinHeight, SystemParameters.WorkArea.Height - 80));
         if (profile is not null)
         {
-            Title = Heading.Text = "确认启动入口";
+            Title = Heading.Text = ProductText.Get("ConfirmLaunchEntry");
             DisplayNameBox.Text = profile.DisplayName;
             DisplayNameBox.IsReadOnly = true;
-            Intro.Text = profile.Target is null ? "原始入口已保留。请选择并确认目标类型。" : "更换此应用的启动入口，保留已有绑定。";
+            Intro.Text = profile.Target is null ? ProductText.Get("ChooseAndConfirmAnEntryTypeTheOriginal") : ProductText.Get("ChangeThisAppSLaunchEntryAndKeep");
             if (profile.Target is { Kind: not ApplicationTargetKind.Packaged } target)
             {
                 KindBox.SelectedIndex = target.Kind == ApplicationTargetKind.Shortcut ? 1 : 0;
@@ -51,7 +51,7 @@ public partial class ApplicationEditorWindow : Window
         var cancellation = new CancellationTokenSource();
         _discoveryCancellation = cancellation;
         int version = ++_scanVersion;
-        DiscoveryStatusText.Text = "正在发现本地应用…";
+        DiscoveryStatusText.Text = ProductText.Get("LookingForLocalApps");
         try
         {
             ApplicationDiscoveryResult result = await new DiscoveryClient().ScanAsync(cancellation.Token);
@@ -60,11 +60,11 @@ public partial class ApplicationEditorWindow : Window
             FilterDiscovery();
             DiscoveryStatusText.Text = result.Status switch
             {
-                ApplicationDiscoveryStatus.Complete => $"找到 {_candidates.Length} 个入口。选择前请核对名称与身份。",
-                ApplicationDiscoveryStatus.Empty => "未找到应用入口，可切换到“本地文件”手动选择。",
-                ApplicationDiscoveryStatus.TimedOut => "发现超时。可重试，或手动选择本地文件。",
-                ApplicationDiscoveryStatus.Cancelled => "发现已取消。",
-                _ => "发现未完成。可重试，或手动选择本地文件。"
+                ApplicationDiscoveryStatus.Complete => ProductText.Format("EntriesFoundCheckTheNameAndIdentityBefore", _candidates.Length),
+                ApplicationDiscoveryStatus.Empty => ProductText.Get("NoEntriesFoundYouCanChooseOneUnder"),
+                ApplicationDiscoveryStatus.TimedOut => ProductText.Get("TheScanTimedOutRetryOrSelectA"),
+                ApplicationDiscoveryStatus.Cancelled => ProductText.Get("ScanCancelled"),
+                _ => ProductText.Get("TheScanDidNotFinishRetryOrSelect")
             };
         }
         finally { cancellation.Dispose(); if (ReferenceEquals(_discoveryCancellation, cancellation)) _discoveryCancellation = null; }
@@ -81,7 +81,7 @@ public partial class ApplicationEditorWindow : Window
 
     private void OnBrowse(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Filter = "程序与快捷方式|*.exe;*.lnk|程序|*.exe|快捷方式|*.lnk", CheckFileExists = true, Multiselect = false };
+        var dialog = new OpenFileDialog { Filter = ProductText.Get("ProgramsAndShortcutsExeLnkProgramsExeShortcuts"), CheckFileExists = true, Multiselect = false };
         if (dialog.ShowDialog(this) != true) return;
         PathBox.Text = dialog.FileName;
         KindBox.SelectedIndex = Path.GetExtension(dialog.FileName).Equals(".lnk", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
@@ -101,7 +101,7 @@ public partial class ApplicationEditorWindow : Window
             target = new(executable ? ApplicationTargetKind.Executable : ApplicationTargetKind.Shortcut,
                 PathBox.Text, arguments, executable && WorkingDirectoryBox.Text.Length > 0 ? WorkingDirectoryBox.Text : null);
         }
-        if (target is null) { StatusText.Text = "请先选择一个启动入口。"; return; }
+        if (target is null) { StatusText.Text = ProductText.Get("ChooseALaunchEntryFirst"); return; }
         string name = DisplayNameBox.Text;
         _saving = true;
         SaveButton.IsEnabled = false;
@@ -118,7 +118,7 @@ public partial class ApplicationEditorWindow : Window
                 DialogResult = true;
             }
         }
-        catch (Exception) { if (!_closed) StatusText.Text = "保存未完成，请检查配置后重试。"; }
+        catch (Exception) { if (!_closed) StatusText.Text = ProductText.Get("TheSaveDidNotCompleteCheckYourConfiguration"); }
         finally
         {
             _saving = false;

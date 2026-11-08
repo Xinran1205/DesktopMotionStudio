@@ -18,6 +18,7 @@ internal static class Program
         if (args is ["--f13-launch-ui", var delayedTarget]) return F10UiChecks.RunTechLaunch(delayedTarget);
         if (args is ["--f13-legacy-launch-ui", var legacyTarget]) return F10UiChecks.RunTechLaunch(legacyTarget, legacy: true);
         if (args is ["--f16-home-layout", var layoutOutput]) return F16HomeChecks.Run(layoutOutput);
+        if (args is ["--f17-language-ui"]) return F17LanguageChecks.Run();
         if (args is ["--f11-launch-ui"]) return F10UiChecks.Run(diagnostics: true);
         if (args is ["--f11-ui"]) return F10UiChecks.Run(diagnostics: true, settingsAndRecovery: true);
         if (args is ["--f15-native", var fixture, var pid, var executable] && int.TryParse(pid, out int ownedPid))

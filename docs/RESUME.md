@@ -1,8 +1,10 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — 0.16.0 候选包已验收
+## 当前断点 — 0.17.0 双语候选包已验收
 
-0.16.0 包含首套原创「零界」、新版首页和产品图标。最新候选安装包在 `artifacts/f16/final-0.16.0/setup`。已完成本机真实界面、启动与隔离升级验收，详见 [使用指南](USER_GUIDE.zh-CN.md)、[F13 证据](../specs/014-first-licensed-scene/evidence.md) 和 [F16 证据](../specs/017-studio-home-polish/evidence.md)。
+0.17.0 加入英文默认 README 和客户端中英文切换。最新候选安装包在 `artifacts/f17/candidate-0.17.0/setup`。已验证本机双向切换、真实预览、配置保留和隔离升级。见 [使用指南](USER_GUIDE.zh-CN.md)和 [F17 验收记录](../specs/018-bilingual-client/evidence.md)。
+
+0.16.0 的首套原创「零界」、新版首页和产品图标仍见 [F13 证据](../specs/014-first-licensed-scene/evidence.md)和 [F16 证据](../specs/017-studio-home-polish/evidence.md)。
 
 按已定路线，下一套作品从 [F14 基础规格](../specs/015-second-licensed-scene/spec.md) 独立推进。首套的全屏对比已留证，当前发布默认使用作品推荐画幅。开发顺序与测试边界见 [阶段路线](NEXT_STAGE.zh-CN.md)。
 

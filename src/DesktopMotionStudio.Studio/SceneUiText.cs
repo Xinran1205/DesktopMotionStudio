@@ -6,34 +6,64 @@ namespace DesktopMotionStudio.Studio;
 
 internal static class SceneUiText
 {
-    internal static string Availability(SceneLibraryItem item) => item.IsPlayable ? "可预览 · 可绑定到多个应用" : item.PlaybackError switch
+    private static string? BuiltInKey(SceneLibraryItem item) => item.Catalog.Manifest?.SceneId switch
     {
-        SceneDataError.UnsupportedSchema or SceneDataError.UnsupportedRuntime => "作品暂不可用：需要受支持的播放版本。",
-        _ => "作品暂不可用：文件缺失、受损或无法读取。"
+        "zero-boundary" when item.DisplayName == ProductText.Get("ZeroBoundaryName", ProductText.DefaultLanguage) => "ZeroBoundary",
+        "studio-pulse" when item.DisplayName == ProductText.Get("StudioPulseName", ProductText.DefaultLanguage) => "StudioPulse",
+        _ => null
+    };
+
+    internal static string Name(SceneLibraryItem item) => BuiltInKey(item) is string key
+        ? ProductText.Get(key + "Name") : item.DisplayName;
+
+    internal static ScenePresentation? Presentation(SceneLibraryItem item)
+    {
+        ScenePresentation? presentation = item.Presentation;
+        if (presentation is null || BuiltInKey(item) is not string key || ProductText.Language == ProductText.DefaultLanguage)
+            return presentation;
+
+        string Translate(string field, string value)
+        {
+            string resource = key + field;
+            return value == ProductText.Get(resource, ProductText.DefaultLanguage) ? ProductText.Get(resource) : value;
+        }
+
+        return presentation with
+        {
+            Description = Translate("Description", presentation.Description),
+            Style = Translate("Style", presentation.Style),
+            Theme = Translate("Theme", presentation.Theme)
+        };
+    }
+
+    internal static string Availability(SceneLibraryItem item) => item.IsPlayable ? ProductText.Get("ReadyToPreviewAndBindToMultipleApps") : item.PlaybackError switch
+    {
+        SceneDataError.UnsupportedSchema or SceneDataError.UnsupportedRuntime => ProductText.Get("ThisWorkRequiresASupportedPlaybackVersion"),
+        _ => ProductText.Get("WorkFilesAreMissingDamagedOrUnreadable")
     };
 
     internal static string Binding(BindingMutationResult result) => result.Status switch
     {
-        BindingMutationStatus.Applied => "动效绑定已保存。",
-        BindingMutationStatus.Unchanged => "此应用已使用所选作品。",
-        BindingMutationStatus.ApplicationMissing => "此应用配置已被移除，请重新选择。",
-        BindingMutationStatus.TargetUnavailable => "启动入口不可用，请返回我的应用确认入口。",
-        BindingMutationStatus.SceneUnavailable => "作品暂不可用，原有绑定已保留。请刷新作品库。",
+        BindingMutationStatus.Applied => ProductText.Get("MotionBindingSaved"),
+        BindingMutationStatus.Unchanged => ProductText.Get("ThisAppAlreadyUsesTheSelectedWork"),
+        BindingMutationStatus.ApplicationMissing => ProductText.Get("ThisAppWasRemovedChooseAnotherOne"),
+        BindingMutationStatus.TargetUnavailable => ProductText.Get("TheLaunchEntryIsUnavailableConfirmItUnder"),
+        BindingMutationStatus.SceneUnavailable => ProductText.Get("ThisWorkIsUnavailableTheExistingBindingHas2"),
         BindingMutationStatus.StorageError => UiText.Storage(result.RepositoryError),
-        _ => "绑定未完成，请刷新并重新选择应用和作品。"
+        _ => ProductText.Get("TheBindingDidNotFinishRefreshAndChoose")
     };
 
     internal static string Preview(PreviewSnapshot state) => state.Error == PreviewError.CleanupFailed
-        ? "无法确认预览已清理。请关闭工作室后重试。"
+        ? ProductText.Get("CouldNotConfirmPreviewCleanupCloseStudioAnd")
         : state.Phase switch
         {
-            PreviewPhase.Starting => "正在准备预览…",
-            PreviewPhase.Playing => "正在预览 · 模拟交接，不会启动应用。",
-            PreviewPhase.Stopping => "正在停止预览…",
-            PreviewPhase.Completed => "预览已完成。",
-            PreviewPhase.Skipped => "预览已跳过。",
-            PreviewPhase.Stopped => "预览已停止。",
-            PreviewPhase.Failed => "预览未完成，请刷新作品后重试。",
-            _ => "预览不会启动任何应用。"
+            PreviewPhase.Starting => ProductText.Get("PreparingPreview"),
+            PreviewPhase.Playing => ProductText.Get("PreviewingSimulatedHandoffNoAppWillOpen"),
+            PreviewPhase.Stopping => ProductText.Get("StoppingPreview"),
+            PreviewPhase.Completed => ProductText.Get("PreviewComplete"),
+            PreviewPhase.Skipped => ProductText.Get("PreviewSkipped"),
+            PreviewPhase.Stopped => ProductText.Get("PreviewStopped"),
+            PreviewPhase.Failed => ProductText.Get("PreviewDidNotFinishRefreshTheWorkAnd"),
+            _ => ProductText.Get("PreviewPlaysOnlyTheMotion")
         };
 }

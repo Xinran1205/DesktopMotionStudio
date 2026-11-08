@@ -10,7 +10,7 @@ namespace DesktopMotionStudio.Studio;
 internal sealed record BindingAppRow(ApplicationProfile Profile, bool CanBind)
 {
     public string Name => Profile.DisplayName;
-    public string Status => CanBind ? UiText.Kind(Profile.Target?.Kind) + " · 可绑定" : "需要在我的应用中确认可用的启动入口";
+    public string Status => CanBind ? UiText.Kind(Profile.Target?.Kind) + ProductText.Get("ReadyToBind") : ProductText.Get("ConfirmAWorkingLaunchEntryUnderMyApps");
 }
 
 public partial class BindingPickerWindow : Window
@@ -39,7 +39,7 @@ public partial class BindingPickerWindow : Window
     internal async Task RefreshAsync()
     {
         if (_saving) return;
-        int generation = ++_generation; _readable = false; UpdateEnabled(); StatusText.Text = "正在读取应用和作品…";
+        int generation = ++_generation; _readable = false; UpdateEnabled(); StatusText.Text = ProductText.Get("LoadingAppsAndWorks");
         try
         {
             var loaded = await Task.Run(() =>
@@ -54,14 +54,15 @@ public partial class BindingPickerWindow : Window
             });
             if (_closed || generation != _generation) return;
             _readable = loaded.state.IsSuccess; _playable = loaded.scene is not null; _rows = loaded.rows;
-            SceneText.Text = "所选作品：" + (loaded.scene?.DisplayName ?? _sceneId);
+            SceneText.Text = ProductText.Format("BindingSelectedWork",
+                loaded.scene is { } work ? SceneUiText.Name(work) : _sceneId);
             Filter();
-            StatusText.Text = !_readable ? UiText.Storage(loaded.state.Error) : !_playable ? "作品暂不可用，原有绑定已保留。" : _preferredApp is not null && BindingAppsList.SelectedItem is null ? "原先的应用已不在列表中，请重新选择。" : "选择一个已保存且入口可用的应用。";
+            StatusText.Text = !_readable ? UiText.Storage(loaded.state.Error) : !_playable ? ProductText.Get("ThisWorkIsUnavailableTheExistingBindingHas") : _preferredApp is not null && BindingAppsList.SelectedItem is null ? ProductText.Get("ThePreviousAppIsNoLongerListedChoose") : ProductText.Get("ChooseASavedAppWithAWorkingLaunch");
         }
         catch (Exception)
         {
             if (_closed || generation != _generation) return;
-            _rows = []; _readable = false; Filter(); StatusText.Text = "无法读取应用或作品，请刷新重试。";
+            _rows = []; _readable = false; Filter(); StatusText.Text = ProductText.Get("CouldNotLoadTheAppsOrWorksRefresh");
         }
         if (!_closed && generation == _generation) UpdateEnabled();
     }
@@ -72,7 +73,7 @@ public partial class BindingPickerWindow : Window
         BindingAppRow[] visible = _rows.Where(row => row.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
         BindingAppsList.ItemsSource = visible;
         BindingAppsList.SelectedItem = visible.FirstOrDefault(row => string.Equals(row.Profile.AppId, _preferredApp, StringComparison.OrdinalIgnoreCase));
-        EmptyText.Text = _rows.Length == 0 ? "尚未添加应用。\n返回我的应用添加并确认入口后，再来绑定。" : "没有匹配的已保存应用。";
+        EmptyText.Text = _rows.Length == 0 ? ProductText.Get("NoAppsAddedAddAnAppAndConfirm2") : ProductText.Get("NoMatchingSavedApps");
         EmptyText.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed; UpdateEnabled();
     }
 
@@ -85,7 +86,7 @@ public partial class BindingPickerWindow : Window
     private async void OnSave(object sender, RoutedEventArgs e)
     {
         if (_saving || !SaveButton.IsEnabled || BindingAppsList.SelectedItem is not BindingAppRow row) return;
-        _saving = true; _generation++; UpdateEnabled(); StatusText.Text = "正在保存绑定…";
+        _saving = true; _generation++; UpdateEnabled(); StatusText.Text = ProductText.Get("SavingBinding");
         try
         {
             BindingMutationResult result = await Task.Run(() => _bindings.Bind(row.Profile.AppId, _sceneId));
@@ -97,11 +98,11 @@ public partial class BindingPickerWindow : Window
             if (!current.Item1.IsSuccess) { _readable = false; StatusText.Text = UiText.Storage(current.Item1.Error); return; }
             ApplicationBinding? saved = current.Item1.State!.Bindings.SingleOrDefault(binding => string.Equals(binding.AppId, row.Profile.AppId, StringComparison.OrdinalIgnoreCase));
             if (saved?.BindingId != result.Binding?.BindingId || !string.Equals(saved?.SceneId, _sceneId, StringComparison.OrdinalIgnoreCase) || saved?.Enabled != true)
-            { StatusText.Text = "配置已被另一项操作改变，请刷新后核对。"; return; }
-            if (current.Item2 is null) { _playable = false; StatusText.Text = "绑定已保存；作品当前不可用，请刷新作品库。"; return; }
+            { StatusText.Text = ProductText.Get("AnotherOperationChangedTheConfigurationRefreshAndCheck"); return; }
+            if (current.Item2 is null) { _playable = false; StatusText.Text = ProductText.Get("BindingSavedThisWorkIsCurrentlyUnavailableRefresh"); return; }
             _saving = false; DialogResult = true;
         }
-        catch (Exception) { if (!_closed) StatusText.Text = "无法完成绑定或重新读取配置，请刷新后核对。"; }
+        catch (Exception) { if (!_closed) StatusText.Text = ProductText.Get("CouldNotFinishBindingOrReloadTheConfiguration"); }
         finally { _saving = false; if (!_closed) UpdateEnabled(); }
     }
 

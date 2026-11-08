@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Scenes;
 
@@ -49,7 +50,7 @@ internal sealed class MotionHostWindow : Form
         ShowInTaskbar = false;
         TopMost = true;
         KeyPreview = true;
-        AccessibleName = start.Mode == MotionHostMode.Preview ? "Desktop Motion Studio 场景预览" : "Desktop Motion Studio animation host";
+        AccessibleName = ProductText.Get(start.Mode == MotionHostMode.Preview ? "HostPreviewWindow" : "HostLaunchWindow");
         BackColor = TransparentColor;
         TransparencyKey = TransparentColor;
         StartPosition = FormStartPosition.Manual;
@@ -62,7 +63,7 @@ internal sealed class MotionHostWindow : Form
         {
             BackColor = Color.FromArgb(24, 30, 48),
             BorderStyle = BorderStyle.FixedSingle,
-            AccessibleName = "Animation status"
+            AccessibleName = ProductText.Get("HostAnimationStatus")
         };
         if (start.Playback is not null)
         {
@@ -134,7 +135,7 @@ internal sealed class MotionHostWindow : Form
         _detailFont = new Font("Segoe UI", Scaled(12), FontStyle.Regular, GraphicsUnit.Pixel);
         var heading = new Label
         {
-            Text = "Preparing your application",
+            Text = ProductText.Get("HostPreparing"),
             ForeColor = Color.White,
             Font = _headingFont,
             AutoSize = false,
@@ -144,7 +145,7 @@ internal sealed class MotionHostWindow : Form
         };
         var detail = new Label
         {
-            Text = "Your application will continue opening if this animation is skipped or unavailable.",
+            Text = ProductText.Get("HostPreparingDetail"),
             ForeColor = Color.FromArgb(205, 214, 235),
             Font = _detailFont,
             AutoSize = false,
@@ -154,9 +155,9 @@ internal sealed class MotionHostWindow : Form
         };
         var skip = new Button
         {
-            Text = "Skip animation",
-            AccessibleName = "Skip animation",
-            AccessibleDescription = "Close the animation and continue opening the application.",
+            Text = ProductText.Get("HostSkipAnimation"),
+            AccessibleName = ProductText.Get("HostSkipAnimation"),
+            AccessibleDescription = ProductText.Get("HostSkipDescription"),
             AccessibleRole = AccessibleRole.PushButton,
             TabIndex = 0,
             Size = new Size(Scaled(160), Scaled(42)),
@@ -181,16 +182,16 @@ internal sealed class MotionHostWindow : Form
         var footer = new Panel { Dock = DockStyle.Bottom, Height = height, BackColor = Color.FromArgb(24, 35, 58) };
         var caption = new Label
         {
-            Text = preview ? "预览 · 模拟交接，不会启动应用" : "应用正在打开 · 可随时跳过动画",
+            Text = ProductText.Get(preview ? "HostPreviewFooter" : "HostLaunchFooter"),
             ForeColor = Color.White,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleCenter,
-            AccessibleName = preview ? "预览模拟交接" : "启动动画"
+            AccessibleName = ProductText.Get(preview ? "HostPreviewName" : "HostLaunchName")
         };
         var stop = new Button
         {
-            Text = preview ? "停止 / Esc" : "跳过 / Esc",
-            AccessibleName = preview ? "停止预览" : "Skip animation",
+            Text = ProductText.Get(preview ? "HostStopEsc" : "HostSkipEsc"),
+            AccessibleName = ProductText.Get(preview ? "HostStopPreview" : "HostSkipAnimation"),
             Dock = DockStyle.Right,
             Width = height * 2,
             TabIndex = 0,
@@ -207,13 +208,13 @@ internal sealed class MotionHostWindow : Form
     private void BuildStageExitButton()
     {
         bool preview = _start.Mode == MotionHostMode.Preview;
-        AccessibleDescription = preview ? "按 Esc 停止预览，或按 Tab 显示停止按钮。" : "按 Esc 跳过动效，或按 Tab 显示跳过按钮。";
+        AccessibleDescription = ProductText.Get(preview ? "HostPreviewHelp" : "HostLaunchHelp");
         int Scale(int size) => Math.Max(1, (int)Math.Round(size * DeviceDpi / 96d));
         Size size = new(Scale(88), Scale(34));
         _stageExitButton = new Button
         {
-            Text = preview ? "停止" : "跳过",
-            AccessibleName = preview ? "停止预览" : "跳过动效",
+            Text = ProductText.Get(preview ? "HostStop" : "HostSkip"),
+            AccessibleName = ProductText.Get(preview ? "HostStopPreview" : "HostSkipAnimation"),
             AccessibleRole = AccessibleRole.PushButton,
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             Size = size,

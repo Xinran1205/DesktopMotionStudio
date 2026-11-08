@@ -20,7 +20,9 @@ internal sealed record ApplicationRow(ApplicationProfile Profile, BindingResolut
     public string Name => Profile.DisplayName;
     public string Initial => Name[..1].ToUpperInvariant();
     public string Summary => UiText.Kind(Profile.Target?.Kind) + " · " + TargetStatus;
-    public string Scene => Binding.Binding is null ? "未绑定动效" : $"{Work?.DisplayName ?? Binding.Binding.SceneId} · {(Binding.Binding.Enabled ? "已启用" : "已停用")}";
+    public string Scene => Binding.Binding is null ? ProductText.Get("NoMotionBound")
+        : ProductText.Format("BoundWorkState", Work is null ? Binding.Binding.SceneId : SceneUiText.Name(Work),
+            ProductText.Get(Binding.Binding.Enabled ? "BindingStateEnabled" : "BindingStateDisabled"));
 }
 
 public partial class MainWindow : Window
@@ -33,6 +35,7 @@ public partial class MainWindow : Window
     private readonly PreviewPresenter _presenter;
     private readonly PreviewIntentController _intents;
     private readonly DiagnosticLogStore? _diagnostics;
+    private readonly StudioLanguagePreference? _language;
     private ApplicationRow[] _rows = [];
     private bool _busy;
     private bool _readable;
@@ -42,18 +45,21 @@ public partial class MainWindow : Window
     private bool _closing, _allowClose;
 
     internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
-        ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null, TestLaunchClient? testLaunch = null)
+        ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null, TestLaunchClient? testLaunch = null,
+        StudioLanguagePreference? language = null)
     {
         InitializeComponent();
         _shortcuts = shortcuts;
         _diagnostics = diagnostics;
+        _language = language;
         _testLaunch = testLaunch;
         ShortcutPanel.Visibility = shortcuts is null ? Visibility.Collapsed : Visibility.Visible;
         TestLaunchPanel.Visibility = testLaunch is null ? Visibility.Collapsed : Visibility.Visible;
         DiagnosticsButton.Visibility = diagnostics is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
         _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
-        _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))));
+        _previews = new(previewFactory ?? new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
+            Path.Combine(AppContext.BaseDirectory, "MotionHost", "DesktopMotionStudio.MotionHost.exe"), ProductText.Language)));
         _intents = new(_previews, _workspace.FindPlayable);
         _presenter = new(_previews, this, PreviewStatusText, StopPreviewButton);
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));
@@ -63,7 +69,7 @@ public partial class MainWindow : Window
         {
             if (_allowClose) return;
             e.Cancel = true;
-            if (_busy) { StatusText.Text = "正在保存配置，请稍候再关闭。"; return; }
+            if (_busy) { StatusText.Text = ProductText.Get("SavingConfigurationWaitBeforeClosing"); return; }
             if (_closing) return;
             _closing = true; _refreshVersion++; IsEnabled = false;
             _testLaunchWait?.Cancel();
@@ -77,7 +83,7 @@ public partial class MainWindow : Window
     internal async Task RefreshAsync(string? selectId = null)
     {
         int version = ++_refreshVersion;
-        StatusText.Text = "正在读取配置…";
+        StatusText.Text = ProductText.Get("LoadingConfiguration");
         try
         {
             var loaded = await Task.Run(() =>
@@ -88,8 +94,8 @@ public partial class MainWindow : Window
                 {
                     LaunchTarget? target = ApplicationRegistry.GetTarget(profile);
                     bool targetAvailable = target is not null && new LaunchTargetIdentityResolver().Resolve(target).Succeeded;
-                    string status = target is null ? "需要确认目标" : targetAvailable
-                        ? profile.Target!.Kind == ApplicationTargetKind.Packaged ? "身份格式有效" : "入口可用" : "入口不可用";
+                    string status = target is null ? ProductText.Get("TargetNeedsConfirmation") : targetAvailable
+                        ? profile.Target!.Kind == ApplicationTargetKind.Packaged ? ProductText.Get("IdentityFormatIsValid") : ProductText.Get("EntryAvailable") : ProductText.Get("EntryUnavailable");
                     BindingResolution binding = _bindings.Resolve(profile.AppId);
                     SceneLibraryItem? work = binding.Binding is null ? null : library.Items.FirstOrDefault(item => string.Equals(item.Catalog.Manifest?.SceneId, binding.Binding.SceneId, StringComparison.OrdinalIgnoreCase));
                     return new ApplicationRow(profile, binding, status, targetAvailable, work);
@@ -100,16 +106,16 @@ public partial class MainWindow : Window
             _readable = loaded.result.IsSuccess;
             _rows = loaded.rows;
             Filter(selectId);
-            CountText.Text = $"{_rows.Length} 个已添加应用";
+            CountText.Text = ProductText.Format("SavedApps2", _rows.Length);
             StatusText.Text = loaded.result.IsSuccess
-                ? _rows.Any(row => row.Profile.Target is null) ? "部分旧配置需要确认启动入口，原始内容已保留。" : "已读取此设备上的应用配置。"
+                ? _rows.Any(row => row.Profile.Target is null) ? ProductText.Get("SomeOlderEntriesNeedConfirmationTheirOriginalValues") : ProductText.Get("LoadedThisDeviceSSavedApps")
                 : UiText.Storage(loaded.result.Error);
         }
         catch (Exception)
         {
             if (_closed || version != _refreshVersion) return;
             _readable = false;
-            StatusText.Text = "读取配置未完成，请刷新重试。";
+            StatusText.Text = ProductText.Get("CouldNotLoadTheConfigurationRefreshAndTry");
         }
         if (!_closed) UpdateEnabled();
     }
@@ -121,7 +127,7 @@ public partial class MainWindow : Window
         ApplicationRow[] visible = _rows.Where(row => row.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
         ApplicationList.ItemsSource = visible;
         ApplicationList.SelectedItem = visible.FirstOrDefault(row => row.Profile.AppId == selectedId) ?? visible.FirstOrDefault();
-        EmptyText.Text = _rows.Length == 0 ? "还没有添加应用。\n选择“添加应用”开始配置。" : "没有找到匹配的已添加应用。";
+        EmptyText.Text = _rows.Length == 0 ? ProductText.Get("NoAppsYetSelectAddAppToGet") : ProductText.Get("NoSavedAppsMatchTheSearch");
         EmptyText.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateDetails();
     }
@@ -134,13 +140,13 @@ public partial class MainWindow : Window
         SelectionPrompt.Visibility = row is null ? Visibility.Visible : Visibility.Collapsed;
         ClearSearchButton.Visibility = row is null && _rows.Length > 0 && SearchBox.Text.Trim().Length > 0
             ? Visibility.Visible : Visibility.Collapsed;
-        SelectionPromptTitle.Text = !_readable ? "暂时无法读取应用" : _rows.Length == 0 ? "先添加一个应用" : "没有匹配的应用";
-        SelectionPromptText.Text = !_readable ? "可尝试刷新配置，或在本地诊断查看状态。"
-            : _rows.Length == 0 ? "添加后可选择动效、预览，再尝试真实启动。" : "清除搜索后可重新选择应用。";
+        SelectionPromptTitle.Text = !_readable ? ProductText.Get("AppsCouldNotBeLoaded") : _rows.Length == 0 ? ProductText.Get("AddAnAppToGetStarted") : ProductText.Get("NoMatchingApps");
+        SelectionPromptText.Text = !_readable ? ProductText.Get("RefreshTheConfigurationOrCheckLocalDiagnostics")
+            : _rows.Length == 0 ? ProductText.Get("AddAnAppChooseAMotionAndTest") : ProductText.Get("ClearTheSearchToChooseAnAppAgain");
         SelectedAppText.Text = row?.Name ?? string.Empty;
         NameBox.Text = row?.Name ?? string.Empty;
         TargetKindText.Text = UiText.Kind(row?.Profile.Target?.Kind);
-        TargetText.Text = row?.Profile.Target?.Identifier ?? row?.Profile.LaunchTarget ?? "选择一个应用查看配置";
+        TargetText.Text = row?.Profile.Target?.Identifier ?? row?.Profile.LaunchTarget ?? ProductText.Get("SelectAnAppToViewItsConfiguration");
         TargetStatusText.Text = row?.TargetStatus ?? string.Empty;
         TargetStatusText.Visibility = row?.TargetAvailable == false ? Visibility.Visible : Visibility.Collapsed;
         Artwork.Visibility = row?.TargetAvailable == false ? Visibility.Collapsed : Visibility.Visible;
@@ -148,19 +154,20 @@ public partial class MainWindow : Window
         {
             BindingResolutionStatus.Ready => row.Scene,
             BindingResolutionStatus.Disabled => row.Scene,
-            BindingResolutionStatus.SceneUnavailable => row.Scene + "\n作品暂不可用，绑定已保留。",
-            BindingResolutionStatus.TargetUnavailable => row.Scene + "\n请先确认启动入口。",
+            BindingResolutionStatus.SceneUnavailable => row.Scene + ProductText.Get("TheWorkIsUnavailableTheBindingHasBeen"),
+            BindingResolutionStatus.TargetUnavailable => row.Scene + ProductText.Get("ConfirmTheLaunchEntryFirst2"),
             BindingResolutionStatus.StorageError => UiText.Storage(row.Binding.RepositoryError),
-            _ => "未绑定动效"
+            _ => ProductText.Get("NoMotionBound")
         };
-        BoundSceneNameText.Text = row?.Work?.DisplayName ?? row?.Binding.Binding?.SceneId ?? "未绑定作品";
-        ReplaceButton.Content = row?.Binding.Binding is null ? "选择动效(_B)" : "替换动效(_B)";
-        BoundFallback.Text = row?.Binding.Binding is null ? "选择作品后显示封面" : "暂无作品封面";
+        BoundSceneNameText.Text = row?.Work is { } selectedWork ? SceneUiText.Name(selectedWork)
+            : row?.Binding.Binding?.SceneId ?? ProductText.Get("NoWorkBound");
+        ReplaceButton.Content = row?.Binding.Binding is null ? ProductText.Get("ChooseMotionB") : ProductText.Get("ReplaceMotionB");
+        BoundFallback.Text = row?.Binding.Binding is null ? ProductText.Get("ChooseAWorkToSeeItsCover") : ProductText.Get("NoCoverAvailable");
         if (row?.Binding.Binding is not null && row.Work?.IsPlayable != true && row.Binding.Status == BindingResolutionStatus.Disabled)
-            BindingText.Text += "\n作品暂不可用，绑定已保留。";
+            BindingText.Text += ProductText.Get("TheWorkIsUnavailableTheBindingHasBeen");
         BoundCover.Source = null; BoundFallback.Visibility = Visibility.Visible;
         int version = ++_detailsVersion;
-        ToggleButton.Content = row?.Binding.Binding?.Enabled == true ? "停用动效" : "启用动效";
+        ToggleButton.Content = row?.Binding.Binding?.Enabled == true ? ProductText.Get("DisableMotion") : ProductText.Get("EnableMotion");
         RefreshTestLaunchDetails(row);
         RefreshShortcutDetails(row?.Binding.Binding?.BindingId, version);
         UpdateEnabled();
@@ -208,7 +215,7 @@ public partial class MainWindow : Window
             await RefreshAsync(selectedId);
             if (!_closed && _readable) StatusText.Text = UiText.Result(result);
         }
-        catch (Exception) { if (!_closed) StatusText.Text = "操作未完成，现有配置已保留。请刷新重试。"; }
+        catch (Exception) { if (!_closed) StatusText.Text = ProductText.Get("TheOperationDidNotFinishTheExistingConfiguration"); }
         finally { _busy = false; if (!_closed) UpdateEnabled(); }
     }
 
@@ -244,8 +251,8 @@ public partial class MainWindow : Window
     {
         if (Selected is not ApplicationRow row) return;
         string shortcutNotice = _shortcuts is not null && row.Binding.Binding is not null
-            ? "\n如已创建桌面入口，请先在本页移除入口。移除绑定后，原入口将失效。" : string.Empty;
-        if (MessageBox.Show(this, $"移除“{row.Name}”及其动效绑定配置？{shortcutNotice}", "移除应用配置", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            ? ProductText.Get("RemoveAnyManagedShortcutFromThisPageFirst") : string.Empty;
+        if (MessageBox.Show(this, ProductText.Format("RemoveAndItsMotionBinding", row.Name, shortcutNotice), ProductText.Get("RemoveAppConfiguration"), MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         await MutateAsync(() => _registry.Remove(row.Profile.AppId), null);
     }
 
@@ -258,14 +265,14 @@ public partial class MainWindow : Window
         {
             BindingMutationResult result = await Task.Run(() => _bindings.SetEnabled(row.Profile.AppId, !row.Binding.Binding.Enabled));
             await RefreshAsync(row.Profile.AppId);
-            if (!_closed && _readable) StatusText.Text = result.Succeeded ? "动效状态已保存。" : result.Status switch
+            if (!_closed && _readable) StatusText.Text = result.Succeeded ? ProductText.Get("MotionPreferenceSaved") : result.Status switch
             {
                 BindingMutationStatus.StorageError => UiText.Storage(result.RepositoryError),
-                BindingMutationStatus.SceneUnavailable => "作品暂不可用，启用状态未改变。",
-                _ => "启动入口不可用或配置已改变，请刷新后重试。"
+                BindingMutationStatus.SceneUnavailable => ProductText.Get("TheWorkIsUnavailableTheMotionSettingWas"),
+                _ => ProductText.Get("TheLaunchEntryIsUnavailableOrTheConfiguration")
             };
         }
-        catch (Exception) { if (!_closed) StatusText.Text = "动效状态未能保存，请重试。"; }
+        catch (Exception) { if (!_closed) StatusText.Text = ProductText.Get("CouldNotSaveTheMotionSettingTryAgain"); }
         finally { _busy = false; if (!_closed) UpdateEnabled(); }
     }
 
@@ -296,8 +303,9 @@ public partial class MainWindow : Window
     private void OnSettings(object sender, RoutedEventArgs e)
     {
         if (_busy || _closing) return;
-        var window = new SettingsWindow(new StudioSettingsService(_store)) { Owner = this };
-        if (window.ShowDialog() == true) StatusText.Text = "设置已保存。";
+        var window = new SettingsWindow(new StudioSettingsService(_store), _language) { Owner = this };
+        if (window.ShowDialog() == true)
+            StatusText.Text = ProductText.Get(window.RequiresLanguageRestart ? "LanguageSaved" : "SettingsSaved");
     }
     private async void OnDiagnostics(object sender, RoutedEventArgs e)
     {
@@ -316,7 +324,7 @@ public partial class MainWindow : Window
         if (Selected?.Binding.Binding?.SceneId is not string id) return;
         PreviewResult result = await _intents.PlayAsync(id);
         if (_closed || _closing || !_intents.IsCurrent(result)) return;
-        if (result.Outcome == PreviewOutcome.Unavailable) { PreviewStatusText.Text = "作品暂不可用，绑定已保留。请刷新后重试。"; PreviewBoundButton.IsEnabled = false; }
+        if (result.Outcome == PreviewOutcome.Unavailable) { PreviewStatusText.Text = ProductText.Get("TheWorkIsUnavailableTheBindingHasBeen2"); PreviewBoundButton.IsEnabled = false; }
         else if (Selected?.Binding.Binding?.SceneId == id && PreviewBoundButton.IsEnabled)
         {
             FocusManager.SetFocusedElement(this, PreviewBoundButton);

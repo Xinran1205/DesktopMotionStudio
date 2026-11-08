@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Drawing.Imaging;
 using System.Security.Cryptography;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.MotionHost;
@@ -61,6 +62,17 @@ internal static class Program
                 frames[1] != Fingerprint(orbit, 1100));
             Check($"F13 static path uses the same composition at {size}", Fingerprint(still, 200) == Fingerprint(still, 1600));
             Check($"F13 painting succeeds at {size}", faults == 0);
+        }
+        foreach (bool english in new[] { false, true })
+        {
+            ProductText.UseLanguage(english ? ProductText.English : ProductText.DefaultLanguage);
+            using var preview = new MotionHostWindow(new("zero-boundary", "1.0.0", SceneDisplayMode.Centered, 5000, MotionHostMode.Preview, tech));
+            using var launch = new MotionHostWindow(new("studio-pulse", "1.0.0", SceneDisplayMode.Centered, 5000, MotionHostMode.Launch));
+            Check($"F17 localizes window and fallback panel accessibility names, English={english}",
+                preview.AccessibleName == (english ? "Desktop Motion Studio scene preview" : "Desktop Motion Studio 场景预览") &&
+                launch.AccessibleName == (english ? "Desktop Motion Studio launch animation" : "Desktop Motion Studio 启动动效") &&
+                launch.Controls.OfType<Panel>().Single().AccessibleName == (english ? "Animation status" : "动效状态") &&
+                preview.Text == "Desktop Motion Studio — Preview" && launch.Text == "Desktop Motion Studio — Launch");
         }
         return failures == 0 ? 0 : 1;
     }

@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using DesktopMotionStudio.Core.Localization;
 using DesktopMotionStudio.Core.Scenes;
 
 namespace DesktopMotionStudio.MotionHost;
@@ -19,7 +20,7 @@ internal sealed class SceneSurface : Control
         _accent = ColorTranslator.FromHtml(definition.Accent);
         _frame = _timeline.Evaluate(TimeSpan.Zero, reducedMotion);
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-        AccessibleName = "场景画面";
+        AccessibleName = ProductText.Get("HostScene");
         TabStop = false;
     }
 

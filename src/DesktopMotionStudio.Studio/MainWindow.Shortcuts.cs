@@ -14,7 +14,7 @@ public partial class MainWindow
     {
         _shortcutStatus = null;
         ShortcutActionText.Text = string.Empty;
-        ShortcutHealthText.Text = bindingId is null ? "绑定作品后可创建桌面入口。" : "正在检查桌面入口…";
+        ShortcutHealthText.Text = bindingId is null ? ProductText.Get("BindAWorkToCreateADesktopShortcut") : ProductText.Get("CheckingDesktopShortcut");
         if (bindingId is not null && _shortcuts is not null)
             _ = ReadShortcutAsync(bindingId, version);
     }
@@ -49,7 +49,7 @@ public partial class MainWindow
 
         int version = _detailsVersion;
         _busy = true;
-        ShortcutActionText.Text = "正在处理桌面入口…";
+        ShortcutActionText.Text = ProductText.Get("UpdatingDesktopShortcut");
         UpdateEnabled();
         try
         {
@@ -63,7 +63,7 @@ public partial class MainWindow
         catch (Exception)
         {
             if (!_closed && !_closing && version == _detailsVersion)
-                ShortcutActionText.Text = "桌面入口操作未确认，请刷新后重试。";
+                ShortcutActionText.Text = ProductText.Get("CouldNotConfirmTheShortcutOperationRefreshAnd");
         }
         finally
         {
@@ -89,17 +89,17 @@ public partial class MainWindow
 
     internal static string ShortcutText(ShortcutStatus status) => status switch
     {
-        ShortcutStatus.NotCreated => "未创建桌面入口。",
-        ShortcutStatus.Healthy => "桌面入口有效。",
-        ShortcutStatus.Missing => "登记的入口已缺失，可以修复。",
-        ShortcutStatus.RepairRequired => "桌面入口指向旧的启动器，请修复。",
-        ShortcutStatus.OutOfScope => "桌面位置已改变，可在当前桌面重建。",
-        ShortcutStatus.Conflict => "桌面入口冲突。现有文件已保留。",
-        ShortcutStatus.Busy => "桌面入口正被使用，请稍后重试。",
-        ShortcutStatus.StorageError => "无法读取或保存所有权记录，请检查配置。",
-        ShortcutStatus.Ineligible => "请先启用可用的动效绑定并确认应用入口。",
-        ShortcutStatus.Created => "桌面入口已保存并验证。",
-        ShortcutStatus.Removed => "已清理桌面入口记录。",
-        _ => "当前桌面或启动器不可用。"
+        ShortcutStatus.NotCreated => ProductText.Get("NoDesktopShortcutYet"),
+        ShortcutStatus.Healthy => ProductText.Get("TheDesktopShortcutIsValid"),
+        ShortcutStatus.Missing => ProductText.Get("TheRegisteredShortcutIsMissingAndCanBe"),
+        ShortcutStatus.RepairRequired => ProductText.Get("TheShortcutPointsToAnOldLauncherRepair"),
+        ShortcutStatus.OutOfScope => ProductText.Get("TheDesktopLocationChangedYouCanRecreateThe"),
+        ShortcutStatus.Conflict => ProductText.Get("DesktopShortcutConflictExistingFilesHaveBeenKept"),
+        ShortcutStatus.Busy => ProductText.Get("TheDesktopShortcutIsInUseTryAgain"),
+        ShortcutStatus.StorageError => ProductText.Get("CouldNotReadOrSaveTheShortcutOwnership"),
+        ShortcutStatus.Ineligible => ProductText.Get("EnableAnAvailableWorkAndConfirmTheApp"),
+        ShortcutStatus.Created => ProductText.Get("DesktopShortcutSavedAndVerified"),
+        ShortcutStatus.Removed => ProductText.Get("DesktopShortcutRecordRemoved"),
+        _ => ProductText.Get("TheDesktopOrLauncherIsUnavailable")
     };
 }
