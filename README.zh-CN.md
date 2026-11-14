@@ -12,7 +12,9 @@ Desktop Motion Studio 可以为 Windows 11 x64 上的应用加一段启动动效
 4. 打开「设置 → 界面语言」，选择 **简体中文** 或 **English**，保存后重新打开 Studio。应用名称仍按你保存的内容显示。
 5. 在「设置 → 动效显示区域」选择作品推荐、居中小窗、居中大画幅或当前屏幕全屏，保存后下次播放生效。
 
-**零界**是一套约两秒的原创纯科技动效，冰蓝光框会随演出收束。作品库也保留了开发作品 Studio Pulse。冷启动时先播放动效，画面关闭后再启动目标应用。按 **Esc** 可跳过并立即启动。应用已运行时可复用现有窗口，渲染异常时仍会尝试正常打开应用。
+内置作品包括约两秒的 **零界**、六秒飞行器升空动效 **轨道点火**，以及开发作品 **Studio Pulse**。冷启动时先播放动效，画面关闭后再启动目标应用。按 **Esc** 可跳过。应用已运行时可复用现有窗口，渲染异常时仍会尝试正常打开应用。
+
+在「动效作品库 → 导入 MP4」加入你的视频，设置最长 10 秒的播放时长、画面适配和原声。「AI 动效制作指南」可生成制作简报，复制给你选用的 AI 工具或剪辑软件。
 
 安装、快捷键和常见情况见 [中文版使用指南](docs/USER_GUIDE.zh-CN.md)。
 
@@ -28,7 +30,7 @@ dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
 构建自包含安装包时，指定一个新输出目录。 [安装与验证指南](specs/013-installer-upgrade/quickstart.md)
 
 ```powershell
-& .\installer\Build-Setup.ps1 -Version 0.19.0 -OutputDirectory (Join-Path $PWD 'artifacts/local-0.19.0')
+& .\installer\Build-Setup.ps1 -Version 0.23.0 -OutputDirectory (Join-Path $PWD 'artifacts/local-0.23.0')
 ```
 
 ## 项目开发

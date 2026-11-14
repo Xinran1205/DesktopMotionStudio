@@ -6,6 +6,8 @@ using System.Windows.Automation;
 using DesktopMotionStudio.Core.Applications;
 using DesktopMotionStudio.Core.Bindings;
 using DesktopMotionStudio.Core.Diagnostics;
+using DesktopMotionStudio.Core.MotionHost;
+using DesktopMotionStudio.Core.Preview;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
 using DesktopMotionStudio.Core.Video;
@@ -50,10 +52,13 @@ internal static class F10UiChecks
             if (imports is not null)
             {
                 string source = Path.Combine(root, "source.mp4");
-                File.Copy(Path.Combine(videoFixtures!, "landscape.mp4"), source);
+                string input = orbit ? Path.Combine(bundle, "Scenes", "orbit-ignition", "orbit-ignition.mp4")
+                    : Path.Combine(videoFixtures!, "landscape.mp4");
+                File.Copy(input, source);
                 var draftResult = imports.PrepareAsync(source, new VideoInspector(videoWorker)).GetAwaiter().GetResult();
                 using var draft = draftResult.Value ?? throw new InvalidOperationException($"Import failed: {draftResult.Error}.");
-                var saved = draft.Save(new("F22 imported motion", 1800, VideoFit.Fill, false));
+                var saved = draft.Save(new(orbit ? "F24 imported Orbit Ignition" : "F22 imported motion",
+                    orbit ? 3000 : 1800, VideoFit.Fill, false));
                 imported = saved.Value ?? throw new InvalidOperationException($"Save failed: {saved.Error}.");
                 sceneId = imported.Id;
                 File.Move(source, Path.Combine(root, "moved.mp4"));
@@ -92,7 +97,14 @@ internal static class F10UiChecks
             {
                 Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
             });
-            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher), imports: imports) { Topmost = true };
+            IPreviewSessionFactory? previewFactory = import && orbit
+                ? new VideoAwarePreviewFactory(
+                    new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
+                        Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))),
+                    new VideoPlaybackSessionFactory(videoWorker), store)
+                : null;
+            var home = new MainWindow(store, catalog, previewFactory: previewFactory, shortcuts: shortcuts,
+                testLaunch: new(isolatedLauncher), imports: imports) { Topmost = true };
             F09WindowChecks.Pump(async () =>
             {
                 home.Show();
@@ -103,6 +115,16 @@ internal static class F10UiChecks
                         using Process current = Process.GetCurrentProcess();
                         nint handle = Window(current, "Desktop Motion Studio");
                         var element = AutomationElement.FromHandle(handle);
+                        if (import && orbit)
+                        {
+                            Require(Program.WaitFor(() => Enabled(element, "预览当前绑定作品")), "The imported sample cannot be previewed.");
+                            Invoke(element, "预览当前绑定作品");
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, "Desktop Motion Studio — Video preview") != 0),
+                                "The imported sample preview did not show.");
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, "Desktop Motion Studio — Video preview") == 0,
+                                TimeSpan.FromSeconds(6)), "The imported sample preview did not close.");
+                            Check("the imported Orbit Ignition sample previews without opening its bound app", OwnedTargets(delayCopy) == 0);
+                        }
                         Require(Program.WaitFor(() => Enabled(element, "测试启动")), "Real test action is unavailable.");
                         bool usedKeyboard = true;
                         try { Keys(handle, 0x12, 0x54); }

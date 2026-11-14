@@ -1148,4 +1148,34 @@ The work is unavailable. The binding has been kept.</value>
   <data name="OrbitIgnitionDescription" xml:space="preserve"><value>In a blue-lit hangar, an amber plume lifts a vehicle past an orbital ring. It dwindles to a point among the stars in this six-second motion.</value></data>
   <data name="OrbitIgnitionStyle" xml:space="preserve"><value>Tech · Orbital launch</value></data>
   <data name="OrbitIgnitionTheme" xml:space="preserve"><value>Cool blue and amber</value></data>
+  <data name="MotionGuideTitle" xml:space="preserve"><value>AI motion guide</value></data>
+  <data name="MotionGuideIdea" xml:space="preserve"><value>Motion idea</value></data>
+  <data name="MotionGuideStyle" xml:space="preserve"><value>Visual style</value></data>
+  <data name="MotionGuideTech" xml:space="preserve"><value>Pure tech</value></data>
+  <data name="MotionGuideAnime" xml:space="preserve"><value>Anime</value></data>
+  <data name="MotionGuideComedy" xml:space="preserve"><value>Comedy</value></data>
+  <data name="MotionGuideSpectacle" xml:space="preserve"><value>Spectacle</value></data>
+  <data name="MotionGuideBrief" xml:space="preserve"><value>Copyable production brief</value></data>
+  <data name="MotionGuideCopy" xml:space="preserve"><value>Copy brief</value></data>
+  <data name="MotionGuideCopied" xml:space="preserve"><value>Brief copied.</value></data>
+  <data name="MotionGuideClipboardBusy" xml:space="preserve"><value>The clipboard is busy. Try Copy brief again, or select and copy the text.</value></data>
+  <data name="MotionGuideExample" xml:space="preserve"><value>A fictional spacecraft ignites in a cool-blue orbital hangar and recedes into the stars.</value></data>
+  <data name="MotionGuideTemplate" xml:space="preserve"><value>Create a {2}-second opening motion from this idea
+{0}
+
+Visual style — {1}
+
+Storyboard and generation prompts
+0–{3} s. Establish the setting, lighting and recognizable subject. Keep the subject centered as the viewer discovers the scene.
+{3}–{4} s. Show one clear action tied to the idea. Use an intentional camera move, consistent subject design and readable motion.
+{4}–{2} s. Resolve the action and hold a clean final composition briefly. Keep the opening and closing beats inside the requested duration.
+
+Composition
+Keep important details in the middle of the frame. Leave room for centered cropping and check both a small window and full screen. Avoid hard-to-read text, sudden flashes and long black frames. Use original or appropriately licensed characters, images, marks and sound.
+
+Export
+MP4 with one H.264 video track, 8-bit SDR, square pixels, up to 30 fps. Choose the Baseline, Main or High profile with 4:2:0 color (yuv420p). Export at most 1920×1080 landscape or 1080×1920 portrait. Bake in rotation. Use one optional AAC audio track. Keep the file at or below 64 MiB. Target {2} seconds of usable footage. Studio applies short fades.
+
+Verify in Studio
+Import MP4, check the measured duration, choose picture fit and preview. Original audio defaults off. Save in My motions, bind to an app and test one cold launch.</value></data>
 </root>

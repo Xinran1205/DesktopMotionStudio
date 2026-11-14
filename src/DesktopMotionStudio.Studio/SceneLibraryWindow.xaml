@@ -9,6 +9,7 @@
         <DockPanel Grid.Row="1" Margin="0,0,0,16">
             <Button x:Name="RefreshButton" Content="{loc:Text Refresh3}" AutomationProperties.Name="{loc:Text RefreshMotionLibrary}" DockPanel.Dock="Right" Click="OnRefresh" Margin="12,0,0,0"/>
             <Button x:Name="ImportButton" Content="{loc:Text ImportMp4}" DockPanel.Dock="Right" Click="OnImport" Visibility="Collapsed" Margin="12,0,0,0"/>
+            <Button x:Name="MotionGuideButton" Content="{loc:Text MotionGuideTitle}" DockPanel.Dock="Right" Click="OnMotionGuide" Visibility="Collapsed" Margin="12,0,0,0"/>
             <CheckBox x:Name="MyMotions" Content="{loc:Text MyMotions}" DockPanel.Dock="Left" Checked="OnSection" Unchecked="OnSection" Visibility="Collapsed" VerticalAlignment="Center" Margin="0,0,16,0"/>
             <TextBox x:Name="SearchBox" AutomationProperties.Name="{loc:Text SearchWorks}" ToolTip="{loc:Text SearchByWorkName}" TextChanged="OnSearch"/>
         </DockPanel>

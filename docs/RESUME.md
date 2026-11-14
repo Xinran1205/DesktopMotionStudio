@@ -1,12 +1,14 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
-## 当前断点 — F23 首套原创 MP4 动效已验收
+## 当前断点 — MP4 动效工作流已验收
 
 0.20.0 候选包已验证 Studio 视频预览、测试启动和真实桌面快捷方式。10 秒视频在窗口退场后才放行冷启动，带 AAC 素材已通过实际声音与静音测试。候选包位于 `artifacts/f21/release-0.20.0/setup`。[F21 验收证据](../specs/022-mp4-playback/evidence.md)
 
 0.21.0 候选包已验证导入、预览、保存、原件移走后播放、双应用绑定、改名和移除。[F22 验收证据](../specs/023-local-mp4-import/evidence.md)
 
-0.22.0 候选包加入「轨道点火」，已验证中英文目录、全屏与小窗、Esc、同一素材导入和真实启动。安装包位于 `artifacts/f23/release-0.22.0/setup`。下一阶段是 AI 制作指南。[F23 验收证据](../specs/024-first-mp4-work/evidence.md) · [F24 规格](../specs/025-ai-motion-guide/spec.md)
+「轨道点火」已验证中英文目录、全屏与小窗、Esc、同一素材导入和真实启动。[F23 验收证据](../specs/024-first-mp4-work/evidence.md)
+
+0.23.0 候选包加入中英文 AI 动效制作指南，已验证即时简报、复制，以及样片的导入、预览和绑定。最新安装包位于 `artifacts/f24/verified-0.23.0/setup`。[F24 验收证据](../specs/025-ai-motion-guide/evidence.md)
 
 ## 已安装版本 — 0.19.0
 

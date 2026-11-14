@@ -1,0 +1,55 @@
+<Window x:Class="DesktopMotionStudio.Studio.MotionGuideWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:DesktopMotionStudio.Studio"
+        Title="{loc:Text MotionGuideTitle}" Width="650" Height="660" MinWidth="480" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="{loc:Text MotionGuideTitle}" FontSize="24" FontWeight="SemiBold"/>
+        <StackPanel Grid.Row="1" Margin="0,14,0,12">
+            <TextBlock Text="{loc:Text MotionGuideIdea}" Margin="0,0,0,4"/>
+            <TextBox x:Name="Idea" AutomationProperties.AutomationId="GuideIdea"
+                     AutomationProperties.Name="{loc:Text MotionGuideIdea}" MaxLength="240" TextChanged="OnInput"/>
+        </StackPanel>
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="{loc:Text MotionGuideStyle}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="StyleChoice" AutomationProperties.Name="{loc:Text MotionGuideStyle}"
+                          AutomationProperties.AutomationId="GuideStyle" SelectedIndex="0" SelectionChanged="OnInput">
+                    <ComboBoxItem Content="{loc:Text MotionGuideTech}"/>
+                    <ComboBoxItem Content="{loc:Text MotionGuideAnime}"/>
+                    <ComboBoxItem Content="{loc:Text MotionGuideComedy}"/>
+                    <ComboBoxItem Content="{loc:Text MotionGuideSpectacle}"/>
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="{loc:Text ImportDuration}" Margin="0,0,0,4"/>
+                <ComboBox x:Name="DurationChoice" AutomationProperties.Name="{loc:Text ImportDuration}"
+                          AutomationProperties.AutomationId="GuideDuration" SelectedIndex="1" SelectionChanged="OnInput">
+                    <ComboBoxItem Content="5"/>
+                    <ComboBoxItem Content="6"/>
+                    <ComboBoxItem Content="8"/>
+                    <ComboBoxItem Content="10"/>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+        <TextBox Grid.Row="3" x:Name="Brief" IsReadOnly="True" TextWrapping="Wrap"
+                 AutomationProperties.Name="{loc:Text MotionGuideBrief}" AutomationProperties.AutomationId="GuideBrief"
+                 VerticalScrollBarVisibility="Auto"/>
+        <TextBlock Grid.Row="4" x:Name="CopyStatus" AutomationProperties.AutomationId="GuideCopyStatus"
+                   AutomationProperties.LiveSetting="Polite" TextWrapping="Wrap" Margin="0,10,0,0"/>
+        <WrapPanel Grid.Row="5" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="{loc:Text MotionGuideCopy}" Click="OnCopy" Style="{DynamicResource AccentButtonStyle}"/>
+            <Button Content="{loc:Text ImportCancel}" IsCancel="True"/>
+        </WrapPanel>
+    </Grid>
+</Window>

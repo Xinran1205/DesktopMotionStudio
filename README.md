@@ -12,7 +12,9 @@ Desktop Motion Studio adds short launch animations to apps on Windows 11 x64. Pi
 4. Open **Settings → Interface language** (设置 → 界面语言), choose **English** or **简体中文**, save, and reopen Studio. Saved app names stay exactly as entered.
 5. Choose **Settings → Animation display area** to use a work's recommended area, a compact or large centered window, or full screen. This applies from the next playback.
 
-**Zero Boundary** is an original two-second tech sequence with an ice-blue window frame. Studio Pulse is also available as a development work. For a cold launch, the app starts after the animation closes. Press **Esc** to skip the animation and start immediately. An app already running can reuse its existing window, and renderer failures fall back to opening the app normally.
+**Zero Boundary** is an original two-second tech sequence, **Orbit Ignition** is a six-second spacecraft launch, and **Studio Pulse** is a development work. For a cold launch, the app starts after the animation closes. Press **Esc** to skip the animation. An app already running can reuse its existing window, and renderer failures fall back to opening the app normally.
+
+Use **Motion library → Import MP4** to add your own video. Choose a duration up to 10 seconds, picture fit, and whether to play its original audio. **AI motion guide** creates a brief you can copy to your preferred AI tool or editor.
 
 See the [Chinese user guide](docs/USER_GUIDE.zh-CN.md) for installation, shortcuts, and troubleshooting.
 
@@ -28,7 +30,7 @@ dotnet build .\src\DesktopMotionStudio.Studio -c Release -r win-x64
 To build a self-contained Setup, run the following command with a new output directory. [Installer and validation guide](specs/013-installer-upgrade/quickstart.md)
 
 ```powershell
-& .\installer\Build-Setup.ps1 -Version 0.19.0 -OutputDirectory (Join-Path $PWD 'artifacts/local-0.19.0')
+& .\installer\Build-Setup.ps1 -Version 0.23.0 -OutputDirectory (Join-Path $PWD 'artifacts/local-0.23.0')
 ```
 
 ## Project development
