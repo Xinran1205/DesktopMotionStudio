@@ -10,6 +10,7 @@ internal static class SceneUiText
     {
         "zero-boundary" when item.DisplayName == ProductText.Get("ZeroBoundaryName", ProductText.DefaultLanguage) => "ZeroBoundary",
         "studio-pulse" when item.DisplayName == ProductText.Get("StudioPulseName", ProductText.DefaultLanguage) => "StudioPulse",
+        "orbit-ignition" when item.DisplayName == ProductText.Get("OrbitIgnitionName", ProductText.DefaultLanguage) => "OrbitIgnition",
         _ => null
     };
 

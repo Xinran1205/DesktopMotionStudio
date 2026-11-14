@@ -15,7 +15,8 @@ using static StudioUiChecks;
 
 internal static class F10UiChecks
 {
-    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null, bool import = false)
+    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null, bool import = false,
+        bool orbit = false)
     {
         if (!File.Exists(delayedTarget)) return 2;
         string studio = RequiredPath("DMS_F08_STUDIO_PATH");
@@ -29,8 +30,8 @@ internal static class F10UiChecks
         string delayCopy = Path.Combine(root, "Delayed", Path.GetFileName(delayedTarget));
         string otherCopy = Path.Combine(root, "Other", Path.GetFileName(otherTarget));
         string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
-        bool video = videoFixtures is not null;
-        string sceneId = video ? F21VideoChecks.SceneId : legacy ? "studio-pulse" : "zero-boundary";
+        bool video = videoFixtures is not null || orbit;
+        string sceneId = orbit ? "orbit-ignition" : video ? F21VideoChecks.SceneId : legacy ? "studio-pulse" : "zero-boundary";
         const string expectedCold = "Completed";
         int failures = 0;
         void Check(string name, bool passed) => Program.Record("F13 launch UI " + name, passed, ref failures);
@@ -150,7 +151,7 @@ internal static class F10UiChecks
                 Check("removal preserves the link bytes and native target", File.ReadAllBytes(link.Path!).SequenceEqual(linkBytes) &&
                     fallback is { Scene: null, Instance: "WindowReady", Host: null });
             }
-            else if (video)
+            else if (video && !orbit)
             {
                 string held = videoWorker + ".f21-probe";
                 File.Move(videoWorker, held);
@@ -172,7 +173,7 @@ internal static class F10UiChecks
                 Check("missing video asset preserves the shortcut and launches natively",
                     missing is { Scene: null, Instance: "WindowReady", Host: null });
             }
-            else if (!legacy)
+            else if (!legacy && !orbit)
             {
                 string renderer = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
                 string held = renderer + ".f13-probe";

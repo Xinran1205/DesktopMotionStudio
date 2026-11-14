@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "orbit-ignition",
+  "sceneVersion": "1.0.0",
+  "name": "轨道点火",
+  "displayMode": "full",
+  "assets": ["scene.video.json", "orbit-ignition.mp4", "cover.png"]
+}

@@ -27,6 +27,8 @@ internal static class Program
         if (args is ["--f22-import-ui", var uiMedia]) return F22ImportChecks.RunUi(uiMedia);
         if (args is ["--f22-launch-ui", var importTarget, var importedMedia])
             return F10UiChecks.RunTechLaunch(importTarget, videoFixtures: importedMedia, import: true);
+        if (args is ["--f23-orbit-ui"]) return F23OrbitChecks.Run();
+        if (args is ["--f23-orbit-launch", var orbitTarget]) return F10UiChecks.RunTechLaunch(orbitTarget, orbit: true);
         if (args is ["--f21-video-timeouts", var media]) return F21VideoChecks.CheckTimeouts(media);
         if (args is ["--f21-reduced-motion", var reducedMedia]) return F21VideoChecks.CheckReducedMotion(reducedMedia);
         if (args.Length is 4 or 6 && args[0] == "--pipe") return F21VideoChecks.RunStalledWorker(args);

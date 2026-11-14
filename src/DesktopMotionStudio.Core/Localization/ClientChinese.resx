@@ -1144,4 +1144,8 @@
   <data name="ImportErrorBusy" xml:space="preserve"><value>动效正在使用，请停止播放后重试。</value></data>
   <data name="ImportErrorNoSpace" xml:space="preserve"><value>磁盘空间不足，无法保存动效副本。</value></data>
   <data name="ImportErrorStorageUnavailable" xml:space="preserve"><value>无法访问本地动效目录，请检查权限后重试。</value></data>
+  <data name="OrbitIgnitionName" xml:space="preserve"><value>轨道点火</value></data>
+  <data name="OrbitIgnitionDescription" xml:space="preserve"><value>冷蓝机库中，飞行器点燃琥珀色尾焰，掠过轨道环，在星空中收成一点微光。全片约六秒。</value></data>
+  <data name="OrbitIgnitionStyle" xml:space="preserve"><value>纯科技 · 轨道发射</value></data>
+  <data name="OrbitIgnitionTheme" xml:space="preserve"><value>冷蓝与琥珀</value></data>
 </root>

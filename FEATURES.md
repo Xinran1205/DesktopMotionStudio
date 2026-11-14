@@ -28,7 +28,7 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 19 | Renderer / F20 Local MP4 feasibility | Real native playback, first frame, fixed fades and ordering in an isolated probe | F18, F19 | [Verified probe](specs/021-mp4-feasibility/evidence.md) |
 | 20 | Renderer / F21 Production MP4 playback | A packaged video session with the existing preview and launch experience | F20 | [Verified on Windows](specs/022-mp4-playback/evidence.md) |
 | 21 | Studio / F22 Local MP4 import | Local video library, validation, persistence and three playback options | F21 | [Verified on Windows](specs/023-local-mp4-import/evidence.md) |
-| 22 | Content / F23 First curated MP4 work | An original six-second performance and verified release assets | F21, F22 | [Spec](specs/024-first-mp4-work/spec.md) |
+| 22 | Content / F23 First curated MP4 work | An original six-second performance and verified release assets | F21, F22 | [Verified on Windows](specs/024-first-mp4-work/evidence.md) |
 | 23 | Studio / F24 AI motion creation guide | Copyable production prompts and verified MP4 export guidance | F22, F23 | [Spec](specs/025-ai-motion-guide/spec.md) |
 | Later | Content / F14 Second licensed scene | A visually distinct work using rights-cleared licensed content | F13, F23 and rights clearance | [Spec baseline](specs/015-second-licensed-scene/spec.md) |
 
