@@ -6,21 +6,28 @@ using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Studio;
 
-internal sealed class SceneWorkspace(string root)
+internal sealed class SceneWorkspace(string root, ImportedVideoStore? imports = null)
 {
     internal string Root { get; } = root;
-    internal SceneLibrarySnapshot Scan() => new SceneLibrary().Scan(Root);
-    internal SceneLibraryItem? FindPlayable(string sceneId) => Scan().Items.SingleOrDefault(item =>
-        item.IsPlayable && string.Equals(item.Catalog.Manifest?.SceneId, sceneId, StringComparison.OrdinalIgnoreCase));
+    internal ImportedVideoStore? Imports { get; } = imports;
+    internal SceneLibrarySnapshot Scan()
+    {
+        var builtIn = new SceneLibrary().Scan(Root);
+        if (Imports is null) return builtIn;
+        return builtIn with
+        {
+            Items = builtIn.Items.Where(item => !ImportedVideoWork.IsId(item.Catalog.Manifest?.SceneId))
+                .Concat(Imports.ListLibraryItems()).ToArray()
+        };
+    }
+    internal SceneLibraryItem? FindPlayable(string sceneId)
+    {
+        if (Imports is not null && ImportedVideoWork.IsId(sceneId)) return Imports.Find(sceneId)?.ToLibraryItem();
+        return new SceneLibrary().Scan(Root).Items.SingleOrDefault(item =>
+            item.IsPlayable && string.Equals(item.Catalog.Manifest?.SceneId, sceneId, StringComparison.OrdinalIgnoreCase));
+    }
 
     internal BindingService CreateBindings(IStudioStateStore store) => new(store,
-        () => new BuiltInSceneCatalog().Scan(Root), ApplicationRegistry.GetTarget, sceneEligibility: CurrentPlayback);
-
-    private static bool CurrentPlayback(SceneCatalogItem item)
-    {
-        if (item.Manifest is null) return false;
-        if (VideoSceneReader.UsesVideo(item.Manifest)) return VideoSceneReader.Read(item).Error == SceneDataError.None;
-        SceneAssetReadResult read = SceneAssetResolver.ReadFile(item.DirectoryPath, "scene.playback.json", ScenePlaybackReader.MaximumBytes);
-        return read.Error == SceneAssetError.None && ScenePlaybackReader.Read(read.Bytes!, item.Manifest).Error == SceneDataError.None;
-    }
+        () => new BuiltInSceneCatalog().Scan(Root), ApplicationRegistry.GetTarget,
+        sceneResolver: sceneId => FindPlayable(sceneId)?.Catalog.Manifest);
 }

@@ -7,3 +7,5 @@ Use an isolated Windows profile directory and the generated AAC and silent files
 3. Rename and edit the work, then verify both old bindings. Remove it and verify the same links open their targets without playback.
 4. Repeat the relevant operation with a malformed file, read-only destination, unsafe path, interrupted copy or pending playback. Check for visible partial work and compare the existing profile, media and shortcut bytes.
 5. Switch language and verify the import prompts and an error. The imported name should keep its original text.
+
+The Windows checks accept `--f22-inspection <fixtures>`, `--f22-import <fixtures>`, `--f22-import-ui <fixtures>` and `--f22-launch-ui <delayed-target.exe> <fixtures>` in Studio Checks. Use the F21 quickstart to set the packaged Studio, fixture Launcher and target paths. Run `--f22-import-storage` in Core Checks for the interrupted-process and atomic publication tests.

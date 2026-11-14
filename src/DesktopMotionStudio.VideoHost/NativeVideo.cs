@@ -26,19 +26,20 @@ internal sealed class NativeVideo : IDisposable
     internal double Duration => _silent?.Duration ?? _engine!.GetDuration();
     internal double Position => _silent?.Position ?? _engine!.GetCurrentTime();
     internal bool ReachedEnd => _silent?.ReachedEnd ?? _engine!.IsEnded();
+    internal bool HasAudio { get; private set; }
 
-    internal void Open(string path, bool sound)
+    internal void Open(string path, bool sound, bool inspect = false)
     {
         PInvoke.MFStartup(PInvoke.MF_VERSION, 0).ThrowOnFailure();
         _started = true;
-        bool hasAudio = VideoMediaProfile.HasAudio(path);
-        if (!sound && hasAudio)
+        HasAudio = VideoMediaProfile.HasAudio(path);
+        if (inspect || !sound && HasAudio)
         {
             _silent = new SilentVideo();
             _silent.Open(path);
             return;
         }
-        _sound = sound && hasAudio;
+        _sound = sound && HasAudio;
         PInvoke.MFCreateAttributes(out IMFAttributes attributes, 2).ThrowOnFailure();
         IMFMediaEngineClassFactory? factory = null;
         try

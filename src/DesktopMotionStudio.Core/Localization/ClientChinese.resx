@@ -1114,4 +1114,34 @@
   <data name="ZeroBoundaryTheme" xml:space="preserve">
     <value>石墨黑与冰蓝</value>
   </data>
+  <data name="ImportMp4" xml:space="preserve"><value>导入 MP4</value></data>
+  <data name="MyMotions" xml:space="preserve"><value>我的动效</value></data>
+  <data name="EditImport" xml:space="preserve"><value>编辑视频</value></data>
+  <data name="RemoveImport" xml:space="preserve"><value>移除视频</value></data>
+  <data name="NoImportedMotions" xml:space="preserve"><value>导入一个本地 MP4 即可开始。</value></data>
+  <data name="RemoveImportConfirm" xml:space="preserve"><value>从「我的动效」移除“{0}”？已绑定的应用仍可正常启动。</value></data>
+  <data name="ImportName" xml:space="preserve"><value>作品名称</value></data>
+  <data name="ImportDuration" xml:space="preserve"><value>播放时长（秒）</value></data>
+  <data name="ImportDurationLimit" xml:space="preserve"><value>可设置 1 到 {0} 秒。</value></data>
+  <data name="ImportFit" xml:space="preserve"><value>画面适配</value></data>
+  <data name="ImportComplete" xml:space="preserve"><value>完整显示</value></data>
+  <data name="ImportFill" xml:space="preserve"><value>居中填充</value></data>
+  <data name="ImportSound" xml:space="preserve"><value>播放原声</value></data>
+  <data name="ImportSave" xml:space="preserve"><value>保存动效</value></data>
+  <data name="ImportCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="ImportChecking" xml:space="preserve"><value>正在检查视频…</value></data>
+  <data name="ImportedMotion" xml:space="preserve"><value>导入动效</value></data>
+  <data name="ImportPreviewing" xml:space="preserve"><value>正在预览…</value></data>
+  <data name="ImportErrorUnsafePath" xml:space="preserve"><value>请选择可读取的本地 MP4 文件。</value></data>
+  <data name="ImportErrorEmpty" xml:space="preserve"><value>文件为空，请选择其他 MP4。</value></data>
+  <data name="ImportErrorTooLarge" xml:space="preserve"><value>视频超过 64 MB，请导出较小的 MP4。</value></data>
+  <data name="ImportErrorInvalidMedia" xml:space="preserve"><value>无法解码此文件。请使用 H.264 MP4，音轨使用 AAC 或留空。</value></data>
+  <data name="ImportErrorDecoderUnavailable" xml:space="preserve"><value>视频播放器不可用，请检查软件安装和 Windows 媒体功能。</value></data>
+  <data name="ImportErrorTimedOut" xml:space="preserve"><value>视频检查超时，请重试或选择其他文件。</value></data>
+  <data name="ImportErrorInvalidOptions" xml:space="preserve"><value>请输入作品名称，并将时长设在显示的范围内。</value></data>
+  <data name="ImportErrorMissing" xml:space="preserve"><value>文件或动效已找不到，请刷新后重试。</value></data>
+  <data name="ImportErrorChanged" xml:space="preserve"><value>动效已被修改，请重新打开后再保存或移除。</value></data>
+  <data name="ImportErrorBusy" xml:space="preserve"><value>动效正在使用，请停止播放后重试。</value></data>
+  <data name="ImportErrorNoSpace" xml:space="preserve"><value>磁盘空间不足，无法保存动效副本。</value></data>
+  <data name="ImportErrorStorageUnavailable" xml:space="preserve"><value>无法访问本地动效目录，请检查权限后重试。</value></data>
 </root>

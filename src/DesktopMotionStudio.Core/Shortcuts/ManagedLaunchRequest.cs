@@ -25,7 +25,7 @@ public sealed record ManagedLaunchPlan(
     public VideoClip? Video { get; init; }
 }
 
-public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalogRoot)
+public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalogRoot, ImportedVideoStore? imports = null)
 {
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
     private static readonly string[] ComponentNames =
@@ -88,6 +88,17 @@ public sealed class ManagedLaunchRequest(IStudioStateStore store, string catalog
 
         var native = new ManagedLaunchPlan(ManagedLaunchStatus.Ready, app.AppId, target, DisplayName: app.DisplayName);
         if (!binding.Enabled) return native with { PlaybackStatus = ManagedPlaybackStatus.Disabled };
+        if (ImportedVideoWork.IsId(binding.SceneId))
+        {
+            if (imports?.Find(binding.SceneId) is not { } work) return native;
+            var clip = work.Clip;
+            return native with
+            {
+                Scene = work.ToLibraryItem().Catalog.Manifest,
+                Video = clip with { Sound = clip.Sound && !state.Settings.Muted },
+                PlaybackStatus = ManagedPlaybackStatus.Ready
+            };
+        }
         SceneCatalogItem? item = new BuiltInSceneCatalog().Scan(catalogRoot).Items.FirstOrDefault(candidate =>
             candidate.IsAvailable && string.Equals(candidate.Manifest?.SceneId, binding.SceneId, StringComparison.OrdinalIgnoreCase));
         if (item?.Manifest is not SceneManifest manifest) return native;

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Automation;
 using DesktopMotionStudio.Core.Applications;
+using DesktopMotionStudio.Core.Bindings;
 using DesktopMotionStudio.Core.Diagnostics;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
@@ -14,7 +15,7 @@ using static StudioUiChecks;
 
 internal static class F10UiChecks
 {
-    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null)
+    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null, bool import = false)
     {
         if (!File.Exists(delayedTarget)) return 2;
         string studio = RequiredPath("DMS_F08_STUDIO_PATH");
@@ -42,6 +43,20 @@ internal static class F10UiChecks
                 File.Copy(Path.Combine(Path.GetDirectoryName(launcher)!, name), Path.Combine(bundle, "Launcher", name), overwrite: true);
             CopyTree(Path.GetDirectoryName(delayedTarget)!, Path.GetDirectoryName(delayCopy)!);
             CopyTree(Path.GetDirectoryName(otherTarget)!, Path.GetDirectoryName(otherCopy)!);
+            string videoWorker = Path.Combine(bundle, "MotionHost", VideoPlaybackRequest.WorkerName);
+            var imports = import ? ImportedVideoStore.ForProfile(profile) : null;
+            ImportedVideoWork? imported = null;
+            if (imports is not null)
+            {
+                string source = Path.Combine(root, "source.mp4");
+                File.Copy(Path.Combine(videoFixtures!, "landscape.mp4"), source);
+                var draftResult = imports.PrepareAsync(source, new VideoInspector(videoWorker)).GetAwaiter().GetResult();
+                using var draft = draftResult.Value ?? throw new InvalidOperationException($"Import failed: {draftResult.Error}.");
+                var saved = draft.Save(new("F22 imported motion", 1800, VideoFit.Fill, false));
+                imported = saved.Value ?? throw new InvalidOperationException($"Save failed: {saved.Error}.");
+                sceneId = imported.Id;
+                File.Move(source, Path.Combine(root, "moved.mp4"));
+            }
             var store = new StudioStateRepository(profile);
             var state = StudioState.Empty with
             {
@@ -50,22 +65,33 @@ internal static class F10UiChecks
                     new("delay-app", "A Delayed fixture", delayCopy, new(ApplicationTargetKind.Executable, delayCopy, ["--target", "2750"])),
                     new("other-app", "B Other fixture", otherCopy, new(ApplicationTargetKind.Executable, otherCopy, []))
                 ],
-                Bindings = [new("f13-test", "delay-app", sceneId, true), new("f13-shell", "other-app", sceneId, true)]
+                Bindings = import ? [] : [new("f13-test", "delay-app", sceneId, true), new("f13-shell", "other-app", sceneId, true)]
             };
-            Require(store.Save(state) == RepositoryError.None && store.Save(state) == RepositoryError.None, "Isolated profiles could not be saved.");
+            string catalog = Path.Combine(bundle, "Scenes");
+            Require(store.Save(state) == RepositoryError.None, "Isolated profile could not be saved.");
+            string shellBindingId = "f13-shell";
+            if (import)
+            {
+                var bindings = new SceneWorkspace(catalog, imports).CreateBindings(store);
+                var first = bindings.Bind("delay-app", sceneId);
+                var second = bindings.Bind("other-app", sceneId);
+                Require(first.Status == BindingMutationStatus.Applied && second is { Status: BindingMutationStatus.Applied, Binding: not null },
+                    "Studio could not bind the saved work to both applications.");
+                shellBindingId = second.Binding!.BindingId;
+                state = store.Load().State!;
+            }
+            Require(store.Save(state) == RepositoryError.None, "Isolated profile backup could not be saved.");
             byte[] original = File.ReadAllBytes(profile), backup = File.ReadAllBytes(profile + ".bak");
             Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", profile);
-            string catalog = Path.Combine(bundle, "Scenes");
-            if (videoFixtures is not null) F21VideoChecks.AddScene(catalog, videoFixtures);
-            string videoWorker = Path.Combine(bundle, "MotionHost", VideoPlaybackRequest.WorkerName);
-            var shortcuts = new ManagedShortcutService(store, catalog, Path.Combine(root, "receipts"), isolatedLauncher, () => desktop);
+            if (videoFixtures is not null && !import) F21VideoChecks.AddScene(catalog, videoFixtures);
+            var shortcuts = new ManagedShortcutService(store, catalog, Path.Combine(root, "receipts"), isolatedLauncher, () => desktop, imports);
             var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             StudioTheme.Apply(application, "dark");
             application.Resources.MergedDictionaries.Add(new ResourceDictionary
             {
                 Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
             });
-            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher)) { Topmost = true };
+            var home = new MainWindow(store, catalog, shortcuts: shortcuts, testLaunch: new(isolatedLauncher), imports: imports) { Topmost = true };
             F09WindowChecks.Pump(async () =>
             {
                 home.Show();
@@ -107,12 +133,24 @@ internal static class F10UiChecks
                 }
                 finally { home.Close(); }
             }, deadline: TimeSpan.FromSeconds(28));
-            ShortcutResult link = shortcuts.Create("f13-shell");
+            ShortcutResult link = shortcuts.Create(shellBindingId);
             Require(link is { Status: ManagedShortcutStatus.Created, Path: not null }, "Could not create isolated Shell Link.");
             LaunchTrace shell = Activate(link.Path!, profile, otherCopy, video ? videoWorker : null);
             Check("the managed Windows shortcut opens a different real target with the same work",
                 shell is { Instance: "WindowReady", Host: "Completed", HostError: null } && shell.Scene == sceneId);
-            if (video)
+            if (imports is not null && imported is not null)
+            {
+                byte[] linkBytes = File.ReadAllBytes(link.Path!);
+                var renamed = imports.Edit(sceneId, imported.Revision, imported.Options with { Name = "Renamed imported motion" });
+                Require(renamed.Value is not null, "Could not rename the imported motion.");
+                LaunchTrace renamedTrace = Activate(link.Path!, profile, otherCopy, videoWorker);
+                Check("the original link still plays after an imported work is renamed", renamedTrace.Scene == sceneId && renamedTrace.Host == "Completed");
+                Require(imports.Remove(sceneId, renamed.Value!.Revision) == ImportError.None, "Could not remove the imported motion.");
+                LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                Check("removal preserves the link bytes and native target", File.ReadAllBytes(link.Path!).SequenceEqual(linkBytes) &&
+                    fallback is { Scene: null, Instance: "WindowReady", Host: null });
+            }
+            else if (video)
             {
                 string held = videoWorker + ".f21-probe";
                 File.Move(videoWorker, held);
@@ -159,7 +197,7 @@ internal static class F10UiChecks
                 finally { File.WriteAllBytes(playback, originalPlayback); }
             }
             Check("the temporary shortcut is removable and old state stays byte-identical",
-                shortcuts.Remove("f13-shell").Status == ManagedShortcutStatus.Removed && SameState(profile, original, backup));
+                shortcuts.Remove(shellBindingId).Status == ManagedShortcutStatus.Removed && SameState(profile, original, backup));
         }
         catch (Exception ex) { Console.WriteLine($"FAIL F13 launch UI: {ex.GetType().Name}: {ex.Message}"); failures++; }
         finally

@@ -48,7 +48,7 @@ public partial class MainWindow : Window
 
     internal MainWindow(IStudioStateStore store, string catalogRoot, IPreviewSessionFactory? previewFactory = null,
         ManagedShortcutService? shortcuts = null, DiagnosticLogStore? diagnostics = null, TestLaunchClient? testLaunch = null,
-        StudioLanguagePreference? language = null, MotionDisplayPreference? display = null)
+        StudioLanguagePreference? language = null, MotionDisplayPreference? display = null, ImportedVideoStore? imports = null)
     {
         InitializeComponent();
         _shortcuts = shortcuts;
@@ -60,7 +60,7 @@ public partial class MainWindow : Window
         TestLaunchPanel.Visibility = testLaunch is null ? Visibility.Collapsed : Visibility.Visible;
         DiagnosticsButton.Visibility = diagnostics is null ? Visibility.Collapsed : Visibility.Visible;
         _registry = new ApplicationRegistry(store);
-        _store = store; _workspace = new SceneWorkspace(catalogRoot); _bindings = _workspace.CreateBindings(store);
+        _store = store; _workspace = new SceneWorkspace(catalogRoot, imports); _bindings = _workspace.CreateBindings(store);
         string tools = Path.Combine(AppContext.BaseDirectory, "MotionHost");
         var nativePreviews = new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
             Path.Combine(tools, "DesktopMotionStudio.MotionHost.exe"), ProductText.Language, display));
@@ -70,7 +70,11 @@ public partial class MainWindow : Window
         _presenter = new(_previews, this, PreviewStatusText, StopPreviewButton);
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));
         Height = Math.Min(Height, Math.Max(MinHeight, SystemParameters.WorkArea.Height - 60));
-        Loaded += async (_, _) => await RefreshAsync();
+        Loaded += async (_, _) =>
+        {
+            if (_workspace.Imports is { } imported) await Task.Run(imported.RecoverDrafts);
+            await RefreshAsync();
+        };
         Closing += async (_, e) =>
         {
             if (_allowClose) return;
@@ -318,7 +322,7 @@ public partial class MainWindow : Window
         if (_busy || _closing || _diagnostics is null) return;
         ApplicationRow? selected = Selected;
         var window = new DiagnosticsWindow(_store, _workspace.Root, _diagnostics, _shortcuts,
-            selected?.Binding.Binding?.BindingId)
+            selected?.Binding.Binding?.BindingId, imports: _workspace.Imports)
         { Owner = this };
         window.ShowDialog();
         if (window.Repaired && !_closed && !_closing) await RefreshAsync(selected?.Profile.AppId);

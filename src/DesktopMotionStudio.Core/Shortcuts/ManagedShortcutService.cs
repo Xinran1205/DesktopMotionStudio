@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using DesktopMotionStudio.Core.IO;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Core.Shortcuts;
 
@@ -15,10 +16,11 @@ public enum ShortcutStatus
 public sealed record ShortcutResult(ShortcutStatus Status, string? Path = null);
 
 public sealed class ManagedShortcutService(
-    IStudioStateStore state, string catalogRoot, string receiptDirectory, string launcherPath, Func<string> desktop)
+    IStudioStateStore state, string catalogRoot, string receiptDirectory, string launcherPath, Func<string> desktop,
+    ImportedVideoStore? imports = null)
 {
     private readonly ShortcutReceiptStore _receipts = new(receiptDirectory);
-    private readonly ManagedLaunchRequest _requests = new(state, catalogRoot);
+    private readonly ManagedLaunchRequest _requests = new(state, catalogRoot, imports);
 
     public ShortcutResult Inspect(string bindingId) => Run(bindingId, Operation.Inspect);
     public ShortcutResult Create(string bindingId) => Run(bindingId, Operation.Create);

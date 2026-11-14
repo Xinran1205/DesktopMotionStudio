@@ -1114,4 +1114,34 @@ The work is unavailable. The binding has been kept.</value>
   <data name="ZeroBoundaryTheme" xml:space="preserve">
     <value>Graphite and ice blue</value>
   </data>
+  <data name="ImportMp4" xml:space="preserve"><value>Import MP4</value></data>
+  <data name="MyMotions" xml:space="preserve"><value>My motions</value></data>
+  <data name="EditImport" xml:space="preserve"><value>Edit video</value></data>
+  <data name="RemoveImport" xml:space="preserve"><value>Remove video</value></data>
+  <data name="NoImportedMotions" xml:space="preserve"><value>Import a local MP4 to get started.</value></data>
+  <data name="RemoveImportConfirm" xml:space="preserve"><value>Remove “{0}” from My motions? Its linked apps will still open normally.</value></data>
+  <data name="ImportName" xml:space="preserve"><value>Work name</value></data>
+  <data name="ImportDuration" xml:space="preserve"><value>Playback duration (seconds)</value></data>
+  <data name="ImportDurationLimit" xml:space="preserve"><value>Choose from 1 to {0} seconds.</value></data>
+  <data name="ImportFit" xml:space="preserve"><value>Picture fit</value></data>
+  <data name="ImportComplete" xml:space="preserve"><value>Show entire video</value></data>
+  <data name="ImportFill" xml:space="preserve"><value>Fill and crop from center</value></data>
+  <data name="ImportSound" xml:space="preserve"><value>Play original audio</value></data>
+  <data name="ImportSave" xml:space="preserve"><value>Save motion</value></data>
+  <data name="ImportCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ImportChecking" xml:space="preserve"><value>Checking the video…</value></data>
+  <data name="ImportedMotion" xml:space="preserve"><value>Imported motion</value></data>
+  <data name="ImportPreviewing" xml:space="preserve"><value>Playing preview…</value></data>
+  <data name="ImportErrorUnsafePath" xml:space="preserve"><value>Choose a readable local MP4 file.</value></data>
+  <data name="ImportErrorEmpty" xml:space="preserve"><value>The file is empty. Choose another MP4.</value></data>
+  <data name="ImportErrorTooLarge" xml:space="preserve"><value>The video exceeds 64 MB. Export a smaller MP4.</value></data>
+  <data name="ImportErrorInvalidMedia" xml:space="preserve"><value>The file could not be decoded. Use H.264 MP4 with AAC audio or no audio.</value></data>
+  <data name="ImportErrorDecoderUnavailable" xml:space="preserve"><value>The video player is unavailable. Check the installation and Windows media features.</value></data>
+  <data name="ImportErrorTimedOut" xml:space="preserve"><value>Video validation timed out. Try again or choose another file.</value></data>
+  <data name="ImportErrorInvalidOptions" xml:space="preserve"><value>Enter a name and a duration within the displayed range.</value></data>
+  <data name="ImportErrorMissing" xml:space="preserve"><value>The file or motion is missing. Refresh and try again.</value></data>
+  <data name="ImportErrorChanged" xml:space="preserve"><value>The motion changed while you were working. Reopen it before saving or removing it.</value></data>
+  <data name="ImportErrorBusy" xml:space="preserve"><value>The motion is in use. Stop playback and try again.</value></data>
+  <data name="ImportErrorNoSpace" xml:space="preserve"><value>There is insufficient disk space for the motion copy.</value></data>
+  <data name="ImportErrorStorageUnavailable" xml:space="preserve"><value>The local motion folder could not be accessed. Check permissions and try again.</value></data>
 </root>

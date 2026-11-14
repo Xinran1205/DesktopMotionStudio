@@ -1,0 +1,25 @@
+<Window x:Class="DesktopMotionStudio.Studio.ImportMotionWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="clr-namespace:DesktopMotionStudio.Studio"
+        Title="{loc:Text ImportMp4}" AutomationProperties.AutomationId="ImportMotionEditor" SizeToContent="Height" Width="490" ResizeMode="NoResize" WindowStartupLocation="CenterOwner">
+    <StackPanel Margin="24">
+        <TextBlock x:Name="Heading" Text="{loc:Text ImportMp4}" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,14"/>
+        <StackPanel x:Name="Fields" IsEnabled="False">
+            <TextBlock Text="{loc:Text ImportName}" Margin="0,0,0,4"/>
+            <TextBox x:Name="WorkName" MaxLength="80" AutomationProperties.Name="{loc:Text ImportName}" AutomationProperties.AutomationId="ImportWorkName"/>
+            <TextBlock Text="{loc:Text ImportDuration}" Margin="0,12,0,4"/>
+            <TextBox x:Name="Duration" MaxLength="8" AutomationProperties.Name="{loc:Text ImportDuration}" AutomationProperties.AutomationId="ImportDuration"/>
+            <TextBlock x:Name="DurationHint" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
+            <TextBlock Text="{loc:Text ImportFit}" Margin="0,12,0,4"/>
+            <ComboBox x:Name="Fit" AutomationProperties.Name="{loc:Text ImportFit}" AutomationProperties.AutomationId="ImportFit" SelectedIndex="0">
+                <ComboBoxItem Content="{loc:Text ImportComplete}"/>
+                <ComboBoxItem Content="{loc:Text ImportFill}"/>
+            </ComboBox>
+            <CheckBox x:Name="Sound" Content="{loc:Text ImportSound}" Margin="0,14,0,0"/>
+        </StackPanel>
+        <TextBlock x:Name="Status" TextWrapping="Wrap" AutomationProperties.AutomationId="ImportStatus" Margin="0,14,0,14"/>
+        <WrapPanel HorizontalAlignment="Right">
+            <Button x:Name="Preview" Content="{loc:Text PreviewWork2}" Click="OnPreview" IsEnabled="False"/>
+            <Button x:Name="Save" Content="{loc:Text ImportSave}" Click="OnSave" IsEnabled="False" Style="{DynamicResource AccentButtonStyle}"/>
+            <Button Content="{loc:Text ImportCancel}" Click="OnCancel"/>
+        </WrapPanel>
+    </StackPanel>
+</Window>

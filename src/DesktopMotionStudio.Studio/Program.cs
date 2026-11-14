@@ -5,6 +5,7 @@ using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.Diagnostics;
 using DesktopMotionStudio.Core.Distribution;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -34,10 +35,12 @@ internal static class Program
         var language = new StudioLanguagePreference(profile);
         ProductText.UseLanguage(language.Read());
         var store = new StudioStateRepository(profile);
+        var imports = ImportedVideoStore.ForProfile(profile);
         ManagedShortcutService? shortcuts = stateFile is not null && desktopRoot is null ? null : new(
             store, catalogRoot, Path.Combine(Path.GetDirectoryName(profile)!, "managed-shortcuts"),
             InstalledLayout.LauncherForBundle(AppContext.BaseDirectory),
-            () => desktopRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify));
+            () => desktopRoot ?? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify),
+            imports);
 
         var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
         SettingsResult preferences = new StudioSettingsService(store).Read();
@@ -51,7 +54,7 @@ internal static class Program
         TestLaunchClient? testLaunch = stateFile is null && !seen.Contains("--catalog-root")
             ? new(InstalledLayout.LauncherForBundle(AppContext.BaseDirectory)) : null;
         return app.Run(new MainWindow(store, catalogRoot, shortcuts: shortcuts, diagnostics: diagnostics,
-            testLaunch: testLaunch, language: language, display: new MotionDisplayPreference(profile)));
+            testLaunch: testLaunch, language: language, display: new MotionDisplayPreference(profile), imports: imports));
     }
 
     private static bool IsFixtureDesktop(string stateFile, string desktop)

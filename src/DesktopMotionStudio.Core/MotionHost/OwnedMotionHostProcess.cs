@@ -27,7 +27,7 @@ internal sealed class OwnedMotionHostProcess : IDisposable
 
     // The internal observer allows real pre-resume fault/parent-death acceptance. Production passes none.
     internal static OwnedMotionHostProcess Start(string executable, string pipeName, Guid requestId,
-        Action<OwnedMotionHostProcess>? onSuspended = null, bool english = false)
+        Action<OwnedMotionHostProcess>? onSuspended = null, bool english = false, bool inspectVideo = false)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("MotionHost requires Windows.");
         if (!Path.IsPathFullyQualified(executable) || executable.Contains('"') || requestId == Guid.Empty || pipeName != $"dms-motionhost-{requestId:N}")
@@ -37,7 +37,7 @@ internal sealed class OwnedMotionHostProcess : IDisposable
         Process? process = null;
         try
         {
-            native = CreateSuspended(job, executable, pipeName, requestId, english);
+            native = CreateSuspended(job, executable, pipeName, requestId, english, inspectVideo);
             process = Process.GetProcessById(checked((int)native.ProcessId));
             _ = process.SafeHandle; // Secure a managed identity handle while the initial thread is suspended.
             var owned = new OwnedMotionHostProcess(job, process);
@@ -80,7 +80,7 @@ internal sealed class OwnedMotionHostProcess : IDisposable
         return job;
     }
 
-    private static ProcessInformation CreateSuspended(SafeJobHandle job, string executable, string pipeName, Guid requestId, bool english)
+    private static ProcessInformation CreateSuspended(SafeJobHandle job, string executable, string pipeName, Guid requestId, bool english, bool inspectVideo)
     {
         nuint bytes = 0;
         _ = InitializeProcThreadAttributeList(0, 1, 0, ref bytes);
@@ -101,6 +101,7 @@ internal sealed class OwnedMotionHostProcess : IDisposable
             // Explicit application path; all arguments are generated identifiers, never user command text.
             var command = new StringBuilder($"\"{executable}\" --pipe {pipeName} --request-id {requestId:D}");
             if (english) command.Append(" --language ").Append(ProductText.English);
+            if (inspectVideo) command.Append(" --inspect-video");
             const uint extendedStartup = 0x00080000, noWindow = 0x08000000, suspended = 0x00000004;
             if (!CreateProcessW(executable, command, 0, 0, false, extendedStartup | noWindow | suspended, 0,
                     Path.GetDirectoryName(executable)!, ref startup, out ProcessInformation process))

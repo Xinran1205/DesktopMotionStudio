@@ -6,6 +6,7 @@ using DesktopMotionStudio.Core.Launch;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Studio;
 
@@ -23,11 +24,11 @@ public partial class DiagnosticsWindow : Window
     internal bool Repaired { get; private set; }
 
     internal DiagnosticsWindow(IStudioStateStore state, string catalogRoot, DiagnosticLogStore logs,
-        ManagedShortcutService? shortcuts, string? bindingId, Action<string>? copyReport = null)
+        ManagedShortcutService? shortcuts, string? bindingId, Action<string>? copyReport = null, ImportedVideoStore? imports = null)
     {
         InitializeComponent();
         _state = state;
-        _requests = new(state, catalogRoot);
+        _requests = new(state, catalogRoot, imports);
         _logs = logs;
         _shortcuts = shortcuts;
         _bindingId = bindingId;

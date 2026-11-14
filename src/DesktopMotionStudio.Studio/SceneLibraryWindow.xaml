@@ -8,6 +8,8 @@
         </DockPanel>
         <DockPanel Grid.Row="1" Margin="0,0,0,16">
             <Button x:Name="RefreshButton" Content="{loc:Text Refresh3}" AutomationProperties.Name="{loc:Text RefreshMotionLibrary}" DockPanel.Dock="Right" Click="OnRefresh" Margin="12,0,0,0"/>
+            <Button x:Name="ImportButton" Content="{loc:Text ImportMp4}" DockPanel.Dock="Right" Click="OnImport" Visibility="Collapsed" Margin="12,0,0,0"/>
+            <CheckBox x:Name="MyMotions" Content="{loc:Text MyMotions}" DockPanel.Dock="Left" Checked="OnSection" Unchecked="OnSection" Visibility="Collapsed" VerticalAlignment="Center" Margin="0,0,16,0"/>
             <TextBox x:Name="SearchBox" AutomationProperties.Name="{loc:Text SearchWorks}" ToolTip="{loc:Text SearchByWorkName}" TextChanged="OnSearch"/>
         </DockPanel>
         <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="290"/><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -25,6 +27,10 @@
                     <TextBlock x:Name="DescriptionText" Text="{loc:Text ChooseAWorkOnTheLeftToSee}" TextWrapping="Wrap" Margin="0,0,0,14"/>
                     <TextBlock x:Name="AvailabilityText" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" TextWrapping="Wrap" Margin="0,0,0,16"/>
                     <WrapPanel><Button x:Name="PreviewButton" Content="{loc:Text PreviewWork}" AutomationProperties.Name="{loc:Text PreviewWork2}" Style="{DynamicResource AccentButtonStyle}" ContentTemplate="{StaticResource AccessButtonContent}" Click="OnPreview" IsEnabled="False"/><Button x:Name="BindButton" Content="{loc:Text BindToApp}" AutomationProperties.Name="{loc:Text BindToApp2}" Click="OnBind" IsEnabled="False"/></WrapPanel>
+                    <WrapPanel x:Name="ManageImport" Visibility="Collapsed" Margin="0,10,0,0">
+                        <Button Content="{loc:Text EditImport}" Click="OnEditImport"/>
+                        <Button Content="{loc:Text RemoveImport}" Click="OnRemoveImport"/>
+                    </WrapPanel>
                 </StackPanel></ScrollViewer>
             </Border>
         </Grid>

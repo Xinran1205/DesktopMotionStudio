@@ -11,19 +11,22 @@ public sealed class BindingService
     private readonly Func<ApplicationProfile, LaunchTarget?> _targetProvider;
     private readonly Func<LaunchTarget, LaunchTargetResolution> _validateTarget;
     private readonly Func<SceneCatalogItem, bool> _sceneEligibility;
+    private readonly Func<string, SceneManifest?>? _sceneResolver;
 
     public BindingService(
         IStudioStateStore store,
         Func<SceneCatalogScanResult> catalogProvider,
         Func<ApplicationProfile, LaunchTarget?> targetProvider,
         Func<LaunchTarget, LaunchTargetResolution>? validateTarget = null,
-        Func<SceneCatalogItem, bool>? sceneEligibility = null)
+        Func<SceneCatalogItem, bool>? sceneEligibility = null,
+        Func<string, SceneManifest?>? sceneResolver = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _catalogProvider = catalogProvider ?? throw new ArgumentNullException(nameof(catalogProvider));
         _targetProvider = targetProvider ?? throw new ArgumentNullException(nameof(targetProvider));
         _validateTarget = validateTarget ?? new LaunchTargetIdentityResolver().Resolve;
         _sceneEligibility = sceneEligibility ?? (_ => true);
+        _sceneResolver = sceneResolver;
     }
 
     public BindingMutationResult Bind(string appId, string sceneId)
@@ -123,17 +126,20 @@ public sealed class BindingService
     {
         try
         {
+            if (_sceneResolver is not null) return ValidateScene(_sceneResolver(sceneId));
             SceneCatalogScanResult catalog = _catalogProvider();
             if (!catalog.RootAvailable) return null;
             SceneCatalogItem[] matches = catalog.Items.Where(item =>
                 item.Manifest is not null && string.Equals(item.Manifest.SceneId, sceneId, StringComparison.OrdinalIgnoreCase)).ToArray();
             if (matches.Length != 1 || !matches[0].IsAvailable || !_sceneEligibility(matches[0])) return null;
-            SceneManifest scene = matches[0].Manifest!;
-            return scene.SchemaVersion == 1 && SceneManifestReader.IsValidSceneVersion(scene.SceneVersion) &&
-                   scene.DisplayMode is SceneDisplayMode.Full or SceneDisplayMode.Centered ? scene : null;
+            return ValidateScene(matches[0].Manifest);
         }
         catch (Exception) { return null; }
     }
+
+    private static SceneManifest? ValidateScene(SceneManifest? scene) =>
+        scene is { SchemaVersion: 1, DisplayMode: SceneDisplayMode.Full or SceneDisplayMode.Centered } &&
+        SceneManifestReader.IsValidSceneVersion(scene.SceneVersion) ? scene : null;
 
     private static bool SameApp(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
     private static bool ValidAppId(string? appId) => !string.IsNullOrWhiteSpace(appId) && appId.Length <= 128;

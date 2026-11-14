@@ -56,6 +56,8 @@ if (args is ["--f12-cleanup-checks"]) return F12CleanupChecks.Run();
 if (args is ["--f12-uninstall-checks"]) return F12InstallChecks.RunRemoval();
 if (args is ["--f12-uninstall-worker", var removeFixture, var removeInterrupt]) return F12InstallChecks.RemoveWorker(removeFixture, removeInterrupt);
 if (args is ["--f12-built-lifecycle", var packageA, var packageB]) return F12InstallChecks.RunBuiltLifecycle(packageA, packageB);
+if (args is ["--f22-import-storage"]) return F22ImportChecks.Run();
+if (args is ["--f22-interrupt-worker", var importRoot]) return F22ImportChecks.RunWorker(importRoot);
 if (args is ["--f16-built-lifecycle", var baselinePackage, var candidatePackage])
     return F12InstallChecks.RunBuiltLifecycle(baselinePackage, candidatePackage, checkBranding: true);
 if (args.Length == 2 && args[0] == "--f09-catalog-check")

@@ -4,6 +4,7 @@ using DesktopMotionStudio.Core.Instances;
 using DesktopMotionStudio.Core.MotionHost;
 using DesktopMotionStudio.Core.Shortcuts;
 using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
 
 namespace DesktopMotionStudio.Launcher;
 
@@ -31,7 +32,7 @@ internal static class FixtureProgram
                 Window = (long)(instance.WindowHandle ?? 0),
                 Host = host?.HostOutcome.ToString(),
                 HostError = host?.HostError?.ToString()
-            })), diagnostics, display: new MotionDisplayPreference(profile));
+            })), diagnostics, display: new MotionDisplayPreference(profile), imports: ImportedVideoStore.ForProfile(profile));
     }
 
     private static int DiagnosticMappingCheck()

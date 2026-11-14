@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DesktopMotionStudio.Core.Video;
 using DesktopMotionStudio.Core.Preview;
 using DesktopMotionStudio.Core.Scenes;
 using DesktopMotionStudio.Core.State;
@@ -33,6 +34,12 @@ public partial class SceneLibraryWindow : Window
         InitializeComponent(); _store = store; _workspace = workspace; _previews = previews; _preferredScene = sceneId; _appId = appId;
         _intents = intents ?? new(previews, workspace.FindPlayable);
         _presenter = new(previews, this, PreviewStatusText, StopPreviewButton);
+        if (workspace.Imports is not null)
+        {
+            MyMotions.Visibility = ImportButton.Visibility = Visibility.Visible;
+            MyMotions.IsChecked = ImportedVideoWork.IsId(sceneId);
+            _preferredScene = sceneId;
+        }
         Width = Math.Min(Width, Math.Max(MinWidth, SystemParameters.WorkArea.Width - 60));
         Height = Math.Min(Height, Math.Max(MinHeight, SystemParameters.WorkArea.Height - 60));
         Loaded += async (_, _) => await RefreshAsync();
@@ -76,10 +83,13 @@ public partial class SceneLibraryWindow : Window
     private void Filter()
     {
         string query = SearchBox.Text.Trim();
-        SceneRow[] visible = _rows.Where(row => row.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+        bool imports = MyMotions?.IsChecked == true;
+        var section = _rows.Where(row => ImportedVideoWork.IsId(row.Id) == imports).ToArray();
+        SceneRow[] visible = section.Where(row => row.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)).ToArray();
         SceneList.ItemsSource = visible;
         SceneList.SelectedItem = _preferredScene is null ? visible.FirstOrDefault() : visible.FirstOrDefault(row => string.Equals(row.Id, _preferredScene, StringComparison.OrdinalIgnoreCase));
-        EmptyText.Text = _rows.Length == 0 ? ProductText.Get("NoWorksAvailableRefreshOrReturnToMy") : ProductText.Get("NoWorksMatchTheSearch");
+        EmptyText.Text = section.Length == 0 ? ProductText.Get(imports ? "NoImportedMotions" : "NoWorksAvailableRefreshOrReturnToMy")
+            : ProductText.Get("NoWorksMatchTheSearch");
         EmptyText.Visibility = visible.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateDetails();
     }
@@ -106,6 +116,8 @@ public partial class SceneLibraryWindow : Window
     private void UpdateActions()
     {
         PreviewButton.IsEnabled = BindButton.IsEnabled = !_loading && !_closing && Selected?.Item.IsPlayable == true;
+        ManageImport.Visibility = !_loading && !_closing && ImportedVideoWork.IsId(Selected?.Id)
+            ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private async void OnPreview(object sender, RoutedEventArgs e)
@@ -149,4 +161,56 @@ public partial class SceneLibraryWindow : Window
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
     private void OnHome(object sender, RoutedEventArgs e) => Close();
     private async void OnStop(object sender, RoutedEventArgs e) => await _intents.StopAsync();
+    private void OnSection(object sender, RoutedEventArgs e)
+    {
+        if (SceneList is null) return;
+        _preferredScene = null;
+        Filter();
+    }
+
+    private async void OnImport(object sender, RoutedEventArgs e)
+    {
+        if (_workspace.Imports is not { } imports) return;
+        var picker = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = ProductText.Get("ImportMp4"), Filter = "MP4 (*.mp4)|*.mp4", CheckFileExists = true
+        };
+        if (picker.ShowDialog(this) != true) return;
+        await _intents.StopAsync();
+        if (_closing) return;
+        var editor = new ImportMotionWindow(imports, _previews, picker.FileName) { Owner = this };
+        if (editor.ShowDialog() != true) return;
+        MyMotions.IsChecked = true;
+        SearchBox.Clear();
+        _preferredScene = editor.SavedId;
+        await RefreshAsync();
+    }
+
+    private async void OnEditImport(object sender, RoutedEventArgs e)
+    {
+        if (Selected?.Id is not { } id || _workspace.Imports is not { } imports) return;
+        await _intents.StopAsync();
+        if (_closing) return;
+        var work = await Task.Run(() => imports.Find(id));
+        if (_closing) return;
+        if (work is null) { await RefreshAsync(); return; }
+        var editor = new ImportMotionWindow(imports, _previews, "", work) { Owner = this };
+        if (editor.ShowDialog() == true) await RefreshAsync();
+    }
+
+    private async void OnRemoveImport(object sender, RoutedEventArgs e)
+    {
+        if (Selected?.Id is not { } id || _workspace.Imports is not { } imports) return;
+        var work = await Task.Run(() => imports.Find(id));
+        if (_closing || Selected?.Id != id) return;
+        if (work is null) { await RefreshAsync(); return; }
+        if (MessageBox.Show(this, ProductText.Format("RemoveImportConfirm", work.Options.Name), ProductText.Get("RemoveImport"),
+            MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        await _intents.StopAsync();
+        if (_closing) return;
+        var error = await Task.Run(() => imports.Remove(id, work.Revision));
+        if (_closing) return;
+        if (error == ImportError.None) { _preferredScene = null; await RefreshAsync(); }
+        else StatusText.Text = ImportMotionWindow.ErrorText(error);
+    }
 }

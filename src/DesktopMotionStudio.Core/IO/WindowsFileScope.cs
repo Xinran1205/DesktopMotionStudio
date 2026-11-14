@@ -238,6 +238,14 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         if (_stage is not null) _stage.Files[identity] = name;
     }
 
+    internal void ReplaceFile(SafeFileHandle staged, string name)
+    {
+        _ = Child(name);
+        if (!ReadInfo(staged).IsSingleRegularFile)
+            throw new InvalidDataException("Replacement must be a single regular file.");
+        Rename(staged, name, replace: true);
+    }
+
     internal static FileInfo ReadInfo(SafeFileHandle handle) =>
         GetFileInformationByHandle(handle, out FileInfo info) ? info : throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -347,16 +355,16 @@ internal sealed class WindowsFileScope(string path, List<SafeFileHandle> pins) :
         }
     }
 
-    private static void Rename(SafeFileHandle file, string destination)
+    private static void Rename(SafeFileHandle file, string destination, bool replace = false)
     {
-        // FILE_RENAME_INFORMATION layout on Windows x64, with replacement disabled.
+        // FILE_RENAME_INFORMATION layout on Windows x64.
         byte[] name = Encoding.Unicode.GetBytes(destination + "\0");
         const int nameOffset = 20;
         int size = nameOffset + name.Length;
         nint info = Marshal.AllocHGlobal(size);
         try
         {
-            Marshal.WriteInt64(info, 0);
+            Marshal.WriteInt64(info, replace ? 1 : 0);
             Marshal.WriteIntPtr(info, 8, 0);
             Marshal.WriteInt32(info, 16, name.Length - 2);
             Marshal.Copy(name, 0, info + nameOffset, name.Length);

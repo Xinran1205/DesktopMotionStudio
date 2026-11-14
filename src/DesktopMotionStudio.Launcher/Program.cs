@@ -20,12 +20,12 @@ internal static class Program
         ProductText.UseLanguage(new StudioLanguagePreference(profile).Read());
         return Run(args, StudioStateRepository.ForCurrentUser, ReportLaunchError,
             diagnostics: static events => new DiagnosticLogStore(DiagnosticLogStore.CurrentUserDirectory()).Append(events),
-            display: new MotionDisplayPreference(profile));
+            display: new MotionDisplayPreference(profile), imports: ImportedVideoStore.ForProfile(profile));
     }
 
     internal static int Run(string[] args, Func<IStudioStateStore> openState, Func<string, int, int> reportError,
         Action<ManagedLaunchPlan, InstanceResult, MotionHostLifecycleResult?>? observe = null,
-        Action<DiagnosticEvent[]>? diagnostics = null, MotionDisplayPreference? display = null)
+        Action<DiagnosticEvent[]>? diagnostics = null, MotionDisplayPreference? display = null, ImportedVideoStore? imports = null)
     {
         bool test = args.Length > 0 && args[0] == TestLaunchProtocol.Command;
         if (!test && (args.Length == 0 || args[0] != "--binding")) return 2;
@@ -42,7 +42,7 @@ internal static class Program
         try
         {
             string bundle = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
-            var requests = new ManagedLaunchRequest(openState(), Path.Combine(bundle, "Scenes"));
+            var requests = new ManagedLaunchRequest(openState(), Path.Combine(bundle, "Scenes"), imports);
             ManagedLaunchPlan plan = requests.Resolve(bindingId);
             if (plan is not { Status: ManagedLaunchStatus.Ready, AppId: not null, Target: not null })
             {
