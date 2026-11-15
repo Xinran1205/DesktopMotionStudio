@@ -18,6 +18,8 @@
     <ProjectReference Include="../DesktopMotionStudio.VideoHost/DesktopMotionStudio.VideoHost.csproj" ReferenceOutputAssembly="false" Private="false" />
     <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
     <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="MotionDirector\MetaPrompt.en.md" LogicalName="MotionDirector.MetaPrompt.en.md" WithCulture="false" />
+    <EmbeddedResource Include="MotionDirector\MetaPrompt.zh-CN.md" LogicalName="MotionDirector.MetaPrompt.zh-CN.md" WithCulture="false" />
     <Resource Include="../Branding/DesktopMotionStudio.ico" Link="Branding/DesktopMotionStudio.ico" />
     <Resource Include="../Branding/BrandMark.png" Link="Branding/BrandMark.png" />
   </ItemGroup>

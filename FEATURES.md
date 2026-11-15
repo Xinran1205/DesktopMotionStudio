@@ -30,6 +30,7 @@ The repository began with requirements documents only. F00–F12 are complete un
 | 21 | Studio / F22 Local MP4 import | Local video library, validation, persistence and three playback options | F21 | [Verified on Windows](specs/023-local-mp4-import/evidence.md) |
 | 22 | Content / F23 First curated MP4 work | An original six-second performance and verified release assets | F21, F22 | [Verified on Windows](specs/024-first-mp4-work/evidence.md) |
 | 23 | Studio / F24 AI motion creation guide | Copyable production prompts and verified MP4 export guidance | F22, F23 | [Verified on Windows](specs/025-ai-motion-guide/evidence.md) |
+| 24 | Studio / F24 revision · AI Motion Director V1.1 | Bilingual director instructions with official asset research, a video production handoff, copy, and Markdown export | F24 | [Windows verification](specs/026-ai-motion-director/evidence.md) |
 | Later | Content / F14 Second licensed scene | A visually distinct work using rights-cleared licensed content | F13, F23 and rights clearance | [Spec baseline](specs/015-second-licensed-scene/spec.md) |
 
 ## Selection for first feature

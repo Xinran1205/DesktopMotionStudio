@@ -28,7 +28,8 @@ internal static class Program
         if (args is ["--f22-launch-ui", var importTarget, var importedMedia])
             return F10UiChecks.RunTechLaunch(importTarget, videoFixtures: importedMedia, import: true);
         if (args is ["--f23-orbit-ui"]) return F23OrbitChecks.Run();
-        if (args is ["--f24-guide-ui"]) return F24GuideChecks.Run();
+        if (args is ["--f24-director"]) return F24DirectorChecks.RunComposer();
+        if (args is ["--f24-director-ui"] or ["--f24-guide-ui"]) return F24DirectorChecks.RunUi();
         if (args is ["--f24-sample-launch", var sampleTarget]) return F10UiChecks.RunTechLaunch(sampleTarget, import: true, orbit: true);
         if (args is ["--f23-orbit-launch", var orbitTarget]) return F10UiChecks.RunTechLaunch(orbitTarget, orbit: true);
         if (args is ["--f21-video-timeouts", var media]) return F21VideoChecks.CheckTimeouts(media);

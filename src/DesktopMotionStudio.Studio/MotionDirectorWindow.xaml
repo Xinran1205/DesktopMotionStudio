@@ -1,0 +1,46 @@
+<Window x:Class="DesktopMotionStudio.Studio.MotionDirectorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:DesktopMotionStudio.Studio"
+        Title="{loc:Text MotionDirectorTitle}" Width="750" Height="740" MinWidth="460" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock Text="{loc:Text MotionDirectorTitle}" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="{loc:Text MotionDirectorIntro}" Style="{StaticResource Caption}"
+                       TextWrapping="Wrap" Margin="0,4,0,12"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <Label Target="{Binding ElementName=ApplicationName}" Content="{loc:Text MotionDirectorAppName}" Padding="0,0,0,4"/>
+            <TextBox x:Name="ApplicationName" AutomationProperties.AutomationId="DirectorAppName"
+                     AutomationProperties.Name="{loc:Text MotionDirectorAppName}" TextChanged="OnInputChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2">
+            <Label Target="{Binding ElementName=Idea}" Content="{loc:Text MotionDirectorIdea}" Padding="0,0,0,4"/>
+            <TextBox x:Name="Idea" AcceptsReturn="True" Height="68" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.Name="{loc:Text MotionDirectorIdea}" AutomationProperties.AutomationId="DirectorIdea"
+                     TextChanged="OnInputChanged"/>
+        </StackPanel>
+        <Button Grid.Row="3" Content="{loc:Text MotionDirectorGenerate}" HorizontalAlignment="Left" Margin="0,10,0,10"
+                Click="OnGenerate" IsDefault="True" Style="{DynamicResource AccentButtonStyle}"/>
+        <TextBox Grid.Row="4" x:Name="Instruction" IsReadOnly="True" TextWrapping="Wrap" MinHeight="50"
+                 AutomationProperties.Name="{loc:Text MotionDirectorResult}" AutomationProperties.AutomationId="DirectorResult"
+                 VerticalScrollBarVisibility="Auto"/>
+        <TextBlock Grid.Row="5" x:Name="Status" AutomationProperties.AutomationId="DirectorStatus"
+                   AutomationProperties.LiveSetting="Polite" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        <WrapPanel Grid.Row="6" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button x:Name="CopyButton" Content="{loc:Text MotionDirectorCopy}" Click="OnCopy" IsEnabled="False"/>
+            <Button x:Name="SaveButton" Content="{loc:Text MotionDirectorSave}" Click="OnSave" IsEnabled="False"/>
+            <Button Content="{loc:Text MotionDirectorClose}" IsCancel="True"/>
+        </WrapPanel>
+    </Grid>
+</Window>

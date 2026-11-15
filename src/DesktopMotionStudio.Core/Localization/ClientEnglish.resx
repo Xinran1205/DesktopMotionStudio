@@ -1148,34 +1148,25 @@ The work is unavailable. The binding has been kept.</value>
   <data name="OrbitIgnitionDescription" xml:space="preserve"><value>In a blue-lit hangar, an amber plume lifts a vehicle past an orbital ring. It dwindles to a point among the stars in this six-second motion.</value></data>
   <data name="OrbitIgnitionStyle" xml:space="preserve"><value>Tech · Orbital launch</value></data>
   <data name="OrbitIgnitionTheme" xml:space="preserve"><value>Cool blue and amber</value></data>
-  <data name="MotionGuideTitle" xml:space="preserve"><value>AI motion guide</value></data>
-  <data name="MotionGuideIdea" xml:space="preserve"><value>Motion idea</value></data>
-  <data name="MotionGuideStyle" xml:space="preserve"><value>Visual style</value></data>
-  <data name="MotionGuideTech" xml:space="preserve"><value>Pure tech</value></data>
-  <data name="MotionGuideAnime" xml:space="preserve"><value>Anime</value></data>
-  <data name="MotionGuideComedy" xml:space="preserve"><value>Comedy</value></data>
-  <data name="MotionGuideSpectacle" xml:space="preserve"><value>Spectacle</value></data>
-  <data name="MotionGuideBrief" xml:space="preserve"><value>Copyable production brief</value></data>
-  <data name="MotionGuideCopy" xml:space="preserve"><value>Copy brief</value></data>
-  <data name="MotionGuideCopied" xml:space="preserve"><value>Brief copied.</value></data>
-  <data name="MotionGuideClipboardBusy" xml:space="preserve"><value>The clipboard is busy. Try Copy brief again, or select and copy the text.</value></data>
-  <data name="MotionGuideExample" xml:space="preserve"><value>A fictional spacecraft ignites in a cool-blue orbital hangar and recedes into the stars.</value></data>
-  <data name="MotionGuideTemplate" xml:space="preserve"><value>Create a {2}-second opening motion from this idea
-{0}
-
-Visual style — {1}
-
-Storyboard and generation prompts
-0–{3} s. Establish the setting, lighting and recognizable subject. Keep the subject centered as the viewer discovers the scene.
-{3}–{4} s. Show one clear action tied to the idea. Use an intentional camera move, consistent subject design and readable motion.
-{4}–{2} s. Resolve the action and hold a clean final composition briefly. Keep the opening and closing beats inside the requested duration.
-
-Composition
-Keep important details in the middle of the frame. Leave room for centered cropping and check both a small window and full screen. Avoid hard-to-read text, sudden flashes and long black frames. Use original or appropriately licensed characters, images, marks and sound.
-
-Export
-MP4 with one H.264 video track, 8-bit SDR, square pixels, up to 30 fps. Choose the Baseline, Main or High profile with 4:2:0 color (yuv420p). Export at most 1920×1080 landscape or 1080×1920 portrait. Bake in rotation. Use one optional AAC audio track. Keep the file at or below 64 MiB. Target {2} seconds of usable footage. Studio applies short fades.
-
-Verify in Studio
-Import MP4, check the measured duration, choose picture fit and preview. Original audio defaults off. Save in My motions, bind to an app and test one cold launch.</value></data>
+  <data name="MotionDirectorTitle" xml:space="preserve"><value>AI Motion Director</value></data>
+  <data name="MotionDirectorIntro" xml:space="preserve"><value>Give this instruction to a web-enabled AI for the reference and shot plan, then follow that plan in your video tool.</value></data>
+  <data name="MotionDirectorAppName" xml:space="preserve"><value>Application name (required)</value></data>
+  <data name="MotionDirectorIdea" xml:space="preserve"><value>Creative idea (optional)</value></data>
+  <data name="MotionDirectorGenerate" xml:space="preserve"><value>Generate instruction</value></data>
+  <data name="MotionDirectorResult" xml:space="preserve"><value>Generated instruction</value></data>
+  <data name="MotionDirectorCopy" xml:space="preserve"><value>Copy instruction</value></data>
+  <data name="MotionDirectorSave" xml:space="preserve"><value>Download instruction</value></data>
+  <data name="MotionDirectorClose" xml:space="preserve"><value>Close</value></data>
+  <data name="MotionDirectorNameRequired" xml:space="preserve"><value>Enter the application name.</value></data>
+  <data name="MotionDirectorNameTooLong" xml:space="preserve"><value>The application name is too long. Use up to 100 characters.</value></data>
+  <data name="MotionDirectorIdeaTooLong" xml:space="preserve"><value>The creative idea is too long. Use up to 1,200 characters.</value></data>
+  <data name="MotionDirectorInvalidText" xml:space="preserve"><value>Use a single line for the application name and remove invalid control characters.</value></data>
+  <data name="MotionDirectorRegenerate" xml:space="preserve"><value>Input changed. Generate again to use your edits.</value></data>
+  <data name="MotionDirectorGenerated" xml:space="preserve"><value>Instruction ready to copy or download.</value></data>
+  <data name="MotionDirectorCopied" xml:space="preserve"><value>Instruction copied.</value></data>
+  <data name="MotionDirectorClipboardBusy" xml:space="preserve"><value>The clipboard is busy. Try again or select and copy the instruction manually.</value></data>
+  <data name="MotionDirectorMarkdownFilter" xml:space="preserve"><value>Markdown file (*.md)|*.md</value></data>
+  <data name="MotionDirectorSaved" xml:space="preserve"><value>Markdown instruction saved.</value></data>
+  <data name="MotionDirectorSaveFailed" xml:space="preserve"><value>Could not save the file. Check the destination or choose a different folder.</value></data>
+  <data name="MotionDirectorDeferredIdea" xml:space="preserve"><value>No special requirements. Create an original concept based on the application's brand and purpose.</value></data>
 </root>

@@ -36,7 +36,7 @@ public partial class SceneLibraryWindow : Window
         _presenter = new(previews, this, PreviewStatusText, StopPreviewButton);
         if (workspace.Imports is not null)
         {
-            MyMotions.Visibility = ImportButton.Visibility = MotionGuideButton.Visibility = Visibility.Visible;
+            MyMotions.Visibility = ImportButton.Visibility = MotionDirectorButton.Visibility = Visibility.Visible;
             MyMotions.IsChecked = ImportedVideoWork.IsId(sceneId);
             _preferredScene = sceneId;
         }
@@ -161,7 +161,7 @@ public partial class SceneLibraryWindow : Window
     private async void OnRefresh(object sender, RoutedEventArgs e) => await RefreshAsync();
     private void OnHome(object sender, RoutedEventArgs e) => Close();
     private async void OnStop(object sender, RoutedEventArgs e) => await _intents.StopAsync();
-    private void OnMotionGuide(object sender, RoutedEventArgs e) => new MotionGuideWindow { Owner = this }.ShowDialog();
+    private void OnMotionDirector(object sender, RoutedEventArgs e) => new MotionDirectorWindow { Owner = this }.ShowDialog();
     private void OnSection(object sender, RoutedEventArgs e)
     {
         if (SceneList is null) return;
