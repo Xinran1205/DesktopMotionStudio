@@ -1148,34 +1148,25 @@
   <data name="OrbitIgnitionDescription" xml:space="preserve"><value>冷蓝机库中，飞行器点燃琥珀色尾焰，掠过轨道环，在星空中收成一点微光。全片约六秒。</value></data>
   <data name="OrbitIgnitionStyle" xml:space="preserve"><value>纯科技 · 轨道发射</value></data>
   <data name="OrbitIgnitionTheme" xml:space="preserve"><value>冷蓝与琥珀</value></data>
-  <data name="MotionGuideTitle" xml:space="preserve"><value>AI 动效制作指南</value></data>
-  <data name="MotionGuideIdea" xml:space="preserve"><value>动效创意</value></data>
-  <data name="MotionGuideStyle" xml:space="preserve"><value>视觉风格</value></data>
-  <data name="MotionGuideTech" xml:space="preserve"><value>纯科技</value></data>
-  <data name="MotionGuideAnime" xml:space="preserve"><value>二次元</value></data>
-  <data name="MotionGuideComedy" xml:space="preserve"><value>搞笑</value></data>
-  <data name="MotionGuideSpectacle" xml:space="preserve"><value>炫酷</value></data>
-  <data name="MotionGuideBrief" xml:space="preserve"><value>可复制的制作简报</value></data>
-  <data name="MotionGuideCopy" xml:space="preserve"><value>复制简报</value></data>
-  <data name="MotionGuideCopied" xml:space="preserve"><value>制作简报已复制。</value></data>
-  <data name="MotionGuideClipboardBusy" xml:space="preserve"><value>剪贴板正忙。请重试，或选中文本手动复制。</value></data>
-  <data name="MotionGuideExample" xml:space="preserve"><value>虚构飞行器在冷蓝轨道机库点火升空，最后消失在星空中。</value></data>
-  <data name="MotionGuideTemplate" xml:space="preserve"><value>请按以下创意制作一段 {2} 秒的启动动效
-{0}
-
-视觉风格 · {1}
-
-分镜与生成提示
-0–{3} 秒。建立场景、灯光和清楚的主体，让观众从画面中央认出主体。
-{3}–{4} 秒。表现一个与创意直接相关的动作。镜头运动有明确方向，主体造型保持一致，动作清晰可读。
-{4}–{2} 秒。完成主要动作，短暂停留在干净的构图上。开场和收尾均包含在设定时长内。
-
-构图与素材
-主体和关键细节放在画面中部，给居中裁切留出余量，并检查小窗和全屏。避免难读的文字、突然闪烁和长黑场。人物、画面、标识和音轨应使用原创或获得适用授权的素材。
-
-导出
-MP4，单条 H.264 视频轨，8-bit SDR，方形像素，最高 30 fps。编码档位选 Baseline、Main 或 High，色度采样选 4:2:0（yuv420p）。横屏最高 1920×1080，竖屏最高 1080×1920。把旋转直接写进画面。可以有一条 AAC 音轨。文件不超过 64 MiB。保留 {2} 秒可用画面，Studio 会自动加短淡入和淡出。
-
-在 Studio 验证
-导入 MP4，核对实际时长，设置画面适配并预览。原声默认关闭。保存到「我的动效」，绑定应用并测试一次冷启动。</value></data>
+  <data name="MotionDirectorTitle" xml:space="preserve"><value>AI 动效导演</value></data>
+  <data name="MotionDirectorIntro" xml:space="preserve"><value>把导演指令交给可联网的 AI 获取素材和方案，再按方案用视频工具制作。</value></data>
+  <data name="MotionDirectorAppName" xml:space="preserve"><value>应用名称（必填）</value></data>
+  <data name="MotionDirectorIdea" xml:space="preserve"><value>创意想法（选填）</value></data>
+  <data name="MotionDirectorGenerate" xml:space="preserve"><value>生成指令</value></data>
+  <data name="MotionDirectorResult" xml:space="preserve"><value>生成的指令</value></data>
+  <data name="MotionDirectorCopy" xml:space="preserve"><value>复制指令</value></data>
+  <data name="MotionDirectorSave" xml:space="preserve"><value>下载指令</value></data>
+  <data name="MotionDirectorClose" xml:space="preserve"><value>关闭</value></data>
+  <data name="MotionDirectorNameRequired" xml:space="preserve"><value>请输入应用名称。</value></data>
+  <data name="MotionDirectorNameTooLong" xml:space="preserve"><value>应用名称过长，请控制在 100 字符以内。</value></data>
+  <data name="MotionDirectorIdeaTooLong" xml:space="preserve"><value>创意想法过长，请控制在 1,200 字符以内。</value></data>
+  <data name="MotionDirectorInvalidText" xml:space="preserve"><value>应用名称请使用单行文本，并移除无效控制字符。</value></data>
+  <data name="MotionDirectorRegenerate" xml:space="preserve"><value>输入已修改，请重新生成指令。</value></data>
+  <data name="MotionDirectorGenerated" xml:space="preserve"><value>指令已生成，可以复制或下载。</value></data>
+  <data name="MotionDirectorCopied" xml:space="preserve"><value>指令已复制。</value></data>
+  <data name="MotionDirectorClipboardBusy" xml:space="preserve"><value>剪贴板正忙。请重试，或选中指令手动复制。</value></data>
+  <data name="MotionDirectorMarkdownFilter" xml:space="preserve"><value>Markdown 文件 (*.md)|*.md</value></data>
+  <data name="MotionDirectorSaved" xml:space="preserve"><value>指令已保存为 Markdown 文件。</value></data>
+  <data name="MotionDirectorSaveFailed" xml:space="preserve"><value>无法保存文件，请检查保存位置或换一个文件夹。</value></data>
+  <data name="MotionDirectorDeferredIdea" xml:space="preserve"><value>无特别要求，请根据应用品牌自主创作。</value></data>
 </root>

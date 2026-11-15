@@ -14,7 +14,7 @@ Desktop Motion Studio adds short launch animations to apps on Windows 11 x64. Pi
 
 **Zero Boundary** is an original two-second tech sequence, **Orbit Ignition** is a six-second spacecraft launch, and **Studio Pulse** is a development work. For a cold launch, the app starts after the animation closes. Press **Esc** to skip the animation. An app already running can reuse its existing window, and renderer failures fall back to opening the app normally.
 
-Use **Motion library → Import MP4** to add your own video. Choose a duration up to 10 seconds, picture fit, and whether to play its original audio. **AI motion guide** creates a brief you can copy to your preferred AI tool or editor.
+Use **Motion library → Import MP4** to add your own video. Choose a duration up to 10 seconds, picture fit, and whether to play its original audio. In **AI Motion Director**, enter an app name and an optional idea, then copy or download the instruction. Give it to a web-enabled AI for a shot plan, a source for the app's visual reference, and an English prompt. Follow its reference and upload directions in your video tool before using the prompt.
 
 See the [Chinese user guide](docs/USER_GUIDE.zh-CN.md) for installation, shortcuts, and troubleshooting.
 

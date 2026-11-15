@@ -1,5 +1,9 @@
 # Desktop Motion Studio — 暂停与恢复断点
 
+## 当前源码 — AI 动效导演 V1.1
+
+「动效作品库」可按应用名称和可选创意生成导演指令，支持复制和 Markdown 下载。新版指令要求下游 AI 核验应用与官方素材、指定素材用法并给出视频生成和定版检查。[规格](../specs/026-ai-motion-director/spec.md) · [验收](../specs/026-ai-motion-director/evidence.md)
+
 ## 当前断点 — MP4 动效工作流已验收
 
 0.20.0 候选包已验证 Studio 视频预览、测试启动和真实桌面快捷方式。10 秒视频在窗口退场后才放行冷启动，带 AAC 素材已通过实际声音与静音测试。候选包位于 `artifacts/f21/release-0.20.0/setup`。[F21 验收证据](../specs/022-mp4-playback/evidence.md)
@@ -10,9 +14,11 @@
 
 0.23.0 候选包加入中英文 AI 动效制作指南，已验证即时简报、复制，以及样片的导入、预览和绑定。最新安装包位于 `artifacts/f24/verified-0.23.0/setup`。[F24 验收证据](../specs/025-ai-motion-guide/evidence.md)
 
-## 已安装版本 — 0.19.0
+## 本机安装基线 — 0.24.1
 
-0.19.0 提供作品推荐、居中小窗、居中大画幅和当前屏幕全屏四档。冷启动在动效退场后开始，Esc 会跳过动效并放行启动。最新候选安装包在 `artifacts/f19/verified-0.19.0/setup`。见 [使用指南](USER_GUIDE.zh-CN.md)、[F18 验收](../specs/019-motion-display/evidence.md)和 [F19 验收](../specs/020-motion-before-launch/evidence.md)。
+0.24.1 已从本机的 0.24.0 就地升级，安装包在 `artifacts/f24-director/local-install/final-0.24.1/setup`。[安装与验收记录](../specs/026-ai-motion-director/evidence.md#revision-11--installed-build-0241)
+
+0.19.0 建立了四档显示区域和动效退场后冷启动的行为。[F18 验收](../specs/019-motion-display/evidence.md) · [F19 验收](../specs/020-motion-before-launch/evidence.md)
 
 0.17.0 加入英文默认 README 和客户端中英文切换。见 [F17 验收记录](../specs/018-bilingual-client/evidence.md)。
 
