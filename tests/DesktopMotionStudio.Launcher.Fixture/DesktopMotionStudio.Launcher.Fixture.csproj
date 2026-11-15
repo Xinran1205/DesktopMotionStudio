@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <AssemblyName>DesktopMotionStudio.Launcher</AssemblyName>
+    <StartupObject>DesktopMotionStudio.Launcher.FixtureProgram</StartupObject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
+    <Compile Include="../../src/DesktopMotionStudio.Launcher/Program.cs" Link="ProductionLauncher.cs" />
+  </ItemGroup>
+</Project>

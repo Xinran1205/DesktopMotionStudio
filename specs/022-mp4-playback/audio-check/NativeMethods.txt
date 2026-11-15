@@ -1,0 +1,5 @@
+MMDeviceEnumerator
+IMMDeviceEnumerator
+IAudioSessionManager2
+IAudioSessionControl2
+IAudioMeterInformation

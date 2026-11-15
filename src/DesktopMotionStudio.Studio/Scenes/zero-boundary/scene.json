@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "zero-boundary",
+  "sceneVersion": "1.0.0",
+  "name": "零界",
+  "displayMode": "centered",
+  "assets": ["scene.playback.json"]
+}

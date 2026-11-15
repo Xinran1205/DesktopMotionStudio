@@ -1,0 +1,593 @@
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Automation;
+using DesktopMotionStudio.Core.Applications;
+using DesktopMotionStudio.Core.Bindings;
+using DesktopMotionStudio.Core.Diagnostics;
+using DesktopMotionStudio.Core.MotionHost;
+using DesktopMotionStudio.Core.Preview;
+using DesktopMotionStudio.Core.Shortcuts;
+using DesktopMotionStudio.Core.State;
+using DesktopMotionStudio.Core.Video;
+using DesktopMotionStudio.Studio;
+using ManagedShortcutStatus = DesktopMotionStudio.Core.Shortcuts.ShortcutStatus;
+using static StudioUiChecks;
+
+internal static class F10UiChecks
+{
+    internal static int RunTechLaunch(string delayedTarget, bool legacy = false, string? videoFixtures = null, bool import = false,
+        bool orbit = false)
+    {
+        if (!File.Exists(delayedTarget)) return 2;
+        string studio = RequiredPath("DMS_F08_STUDIO_PATH");
+        string launcher = RequiredPath("DMS_F10_FIXTURE_LAUNCHER_PATH");
+        string otherTarget = RequiredPath("DMS_F06_TARGET_PATH");
+        var fixture = Directory.CreateTempSubdirectory("dms-f13-launch-");
+        string root = fixture.FullName;
+        string bundle = Path.Combine(root, "Bundle");
+        string profile = Path.Combine(root, "state.json");
+        string desktop = Directory.CreateDirectory(Path.Combine(root, "Desktop")).FullName;
+        string delayCopy = Path.Combine(root, "Delayed", Path.GetFileName(delayedTarget));
+        string otherCopy = Path.Combine(root, "Other", Path.GetFileName(otherTarget));
+        string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
+        bool video = videoFixtures is not null || orbit;
+        string sceneId = orbit ? "orbit-ignition" : video ? F21VideoChecks.SceneId : legacy ? "studio-pulse" : "zero-boundary";
+        const string expectedCold = "Completed";
+        int failures = 0;
+        void Check(string name, bool passed) => Program.Record("F13 launch UI " + name, passed, ref failures);
+        try
+        {
+            CopyTree(Path.GetDirectoryName(studio)!, bundle);
+            string isolatedLauncher = Path.Combine(bundle, "Launcher", Path.GetFileName(launcher));
+            foreach (string name in new[] { "DesktopMotionStudio.Launcher.exe", "DesktopMotionStudio.Launcher.dll",
+                "DesktopMotionStudio.Launcher.deps.json", "DesktopMotionStudio.Launcher.runtimeconfig.json", "DesktopMotionStudio.Core.dll" })
+                File.Copy(Path.Combine(Path.GetDirectoryName(launcher)!, name), Path.Combine(bundle, "Launcher", name), overwrite: true);
+            CopyTree(Path.GetDirectoryName(delayedTarget)!, Path.GetDirectoryName(delayCopy)!);
+            CopyTree(Path.GetDirectoryName(otherTarget)!, Path.GetDirectoryName(otherCopy)!);
+            string videoWorker = Path.Combine(bundle, "MotionHost", VideoPlaybackRequest.WorkerName);
+            var imports = import ? ImportedVideoStore.ForProfile(profile) : null;
+            ImportedVideoWork? imported = null;
+            if (imports is not null)
+            {
+                string source = Path.Combine(root, "source.mp4");
+                string input = orbit ? Path.Combine(bundle, "Scenes", "orbit-ignition", "orbit-ignition.mp4")
+                    : Path.Combine(videoFixtures!, "landscape.mp4");
+                File.Copy(input, source);
+                var draftResult = imports.PrepareAsync(source, new VideoInspector(videoWorker)).GetAwaiter().GetResult();
+                using var draft = draftResult.Value ?? throw new InvalidOperationException($"Import failed: {draftResult.Error}.");
+                var saved = draft.Save(new(orbit ? "F24 imported Orbit Ignition" : "F22 imported motion",
+                    orbit ? 3000 : 1800, VideoFit.Fill, false));
+                imported = saved.Value ?? throw new InvalidOperationException($"Save failed: {saved.Error}.");
+                sceneId = imported.Id;
+                File.Move(source, Path.Combine(root, "moved.mp4"));
+            }
+            var store = new StudioStateRepository(profile);
+            var state = StudioState.Empty with
+            {
+                Applications =
+                [
+                    new("delay-app", "A Delayed fixture", delayCopy, new(ApplicationTargetKind.Executable, delayCopy, ["--target", "2750"])),
+                    new("other-app", "B Other fixture", otherCopy, new(ApplicationTargetKind.Executable, otherCopy, []))
+                ],
+                Bindings = import ? [] : [new("f13-test", "delay-app", sceneId, true), new("f13-shell", "other-app", sceneId, true)]
+            };
+            string catalog = Path.Combine(bundle, "Scenes");
+            Require(store.Save(state) == RepositoryError.None, "Isolated profile could not be saved.");
+            string shellBindingId = "f13-shell";
+            if (import)
+            {
+                var bindings = new SceneWorkspace(catalog, imports).CreateBindings(store);
+                var first = bindings.Bind("delay-app", sceneId);
+                var second = bindings.Bind("other-app", sceneId);
+                Require(first.Status == BindingMutationStatus.Applied && second is { Status: BindingMutationStatus.Applied, Binding: not null },
+                    "Studio could not bind the saved work to both applications.");
+                shellBindingId = second.Binding!.BindingId;
+                state = store.Load().State!;
+            }
+            Require(store.Save(state) == RepositoryError.None, "Isolated profile backup could not be saved.");
+            byte[] original = File.ReadAllBytes(profile), backup = File.ReadAllBytes(profile + ".bak");
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", profile);
+            if (videoFixtures is not null && !import) F21VideoChecks.AddScene(catalog, videoFixtures);
+            var shortcuts = new ManagedShortcutService(store, catalog, Path.Combine(root, "receipts"), isolatedLauncher, () => desktop, imports);
+            var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            StudioTheme.Apply(application, "dark");
+            application.Resources.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = new Uri("/DesktopMotionStudio.Studio;component/Styles.xaml", UriKind.Relative)
+            });
+            IPreviewSessionFactory? previewFactory = import && orbit
+                ? new VideoAwarePreviewFactory(
+                    new MotionHostPreviewSessionFactory(new WindowsMotionHostProcessFactory(
+                        Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe"))),
+                    new VideoPlaybackSessionFactory(videoWorker), store)
+                : null;
+            var home = new MainWindow(store, catalog, previewFactory: previewFactory, shortcuts: shortcuts,
+                testLaunch: new(isolatedLauncher), imports: imports) { Topmost = true };
+            F09WindowChecks.Pump(async () =>
+            {
+                home.Show();
+                try
+                {
+                    await Task.Run(() =>
+                    {
+                        using Process current = Process.GetCurrentProcess();
+                        nint handle = Window(current, "Desktop Motion Studio");
+                        var element = AutomationElement.FromHandle(handle);
+                        if (import && orbit)
+                        {
+                            Require(Program.WaitFor(() => Enabled(element, "预览当前绑定作品")), "The imported sample cannot be previewed.");
+                            Invoke(element, "预览当前绑定作品");
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, "Desktop Motion Studio — Video preview") != 0),
+                                "The imported sample preview did not show.");
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, "Desktop Motion Studio — Video preview") == 0,
+                                TimeSpan.FromSeconds(6)), "The imported sample preview did not close.");
+                            Check("the imported Orbit Ignition sample previews without opening its bound app", OwnedTargets(delayCopy) == 0);
+                        }
+                        Require(Program.WaitFor(() => Enabled(element, "测试启动")), "Real test action is unavailable.");
+                        bool usedKeyboard = true;
+                        try { Keys(handle, 0x12, 0x54); }
+                        catch (InvalidOperationException) when (GetForegroundWindow() != handle)
+                        {
+                            usedKeyboard = false;
+                            Invoke(element, "测试启动");
+                        }
+                        if (video)
+                        {
+                            Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, F21VideoChecks.LaunchTitle) != 0),
+                                "The actual Test launch video did not show.");
+                            Check("the delayed target is absent while the video is visible", OwnedTargets(delayCopy) == 0);
+                        }
+                        Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus") == "已打开目标应用。",
+                            TimeSpan.FromSeconds(video ? 18 : 15)), "Test Launch did not open its delayed target.");
+                        LaunchTrace cold = ReadTrace(profile);
+                        Check($"{(usedKeyboard ? "Alt+T" : "Accessible Test launch")} for {sceneId} reports {expectedCold} and one real delayed target", cold is
+                            { Instance: "WindowReady", HostError: null, TargetPid: int pid } && cold.Scene == sceneId && cold.Host == expectedCold &&
+                            IsTarget(pid, delayCopy) && OwnedTargets(delayCopy) == 1);
+                        Invoke(element, "测试启动");
+                        Require(Program.WaitFor(() => NamedStatus(element, "TestLaunchStatus").Contains("目标已运行", StringComparison.Ordinal)),
+                            "The warm test did not report existing target reuse.");
+                        LaunchTrace warm = ReadTrace(profile);
+                        Check("test launch reuses the existing target without creating a shortcut", warm.TargetPid == cold.TargetPid &&
+                            warm.Host == "NotStarted" && OwnedTargets(delayCopy) == 1 && !Directory.EnumerateFileSystemEntries(desktop).Any() &&
+                            SameState(profile, original, backup));
+                    });
+                }
+                finally { home.Close(); }
+            }, deadline: TimeSpan.FromSeconds(28));
+            ShortcutResult link = shortcuts.Create(shellBindingId);
+            Require(link is { Status: ManagedShortcutStatus.Created, Path: not null }, "Could not create isolated Shell Link.");
+            LaunchTrace shell = Activate(link.Path!, profile, otherCopy, video ? videoWorker : null);
+            Check("the managed Windows shortcut opens a different real target with the same work",
+                shell is { Instance: "WindowReady", Host: "Completed", HostError: null } && shell.Scene == sceneId);
+            if (imports is not null && imported is not null)
+            {
+                byte[] linkBytes = File.ReadAllBytes(link.Path!);
+                var renamed = imports.Edit(sceneId, imported.Revision, imported.Options with { Name = "Renamed imported motion" });
+                Require(renamed.Value is not null, "Could not rename the imported motion.");
+                LaunchTrace renamedTrace = Activate(link.Path!, profile, otherCopy, videoWorker);
+                Check("the original link still plays after an imported work is renamed", renamedTrace.Scene == sceneId && renamedTrace.Host == "Completed");
+                Require(imports.Remove(sceneId, renamed.Value!.Revision) == ImportError.None, "Could not remove the imported motion.");
+                LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                Check("removal preserves the link bytes and native target", File.ReadAllBytes(link.Path!).SequenceEqual(linkBytes) &&
+                    fallback is { Scene: null, Instance: "WindowReady", Host: null });
+            }
+            else if (video && !orbit)
+            {
+                string held = videoWorker + ".f21-probe";
+                File.Move(videoWorker, held);
+                try
+                {
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("missing video player releases native launch exactly once",
+                        fallback.Scene == sceneId && fallback is { Instance: "WindowReady", Host: "Failed", HostError: "StartFailed" });
+                }
+                finally { File.Move(held, videoWorker); }
+
+                string asset = Path.Combine(catalog, sceneId, "clip.mp4");
+                File.Copy(Path.Combine(videoFixtures!, "malformed.mp4"), asset, overwrite: true);
+                LaunchTrace invalid = Activate(link.Path!, profile, otherCopy);
+                Check("malformed video releases native launch exactly once",
+                    invalid.Scene == sceneId && invalid is { Instance: "WindowReady", Host: "Failed", HostError: "UnsupportedPlayback" });
+                File.Delete(asset);
+                LaunchTrace missing = Activate(link.Path!, profile, otherCopy);
+                Check("missing video asset preserves the shortcut and launches natively",
+                    missing is { Scene: null, Instance: "WindowReady", Host: null });
+            }
+            else if (!legacy && !orbit)
+            {
+                string renderer = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+                string held = renderer + ".f13-probe";
+                File.Move(renderer, held);
+                try
+                {
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("an unavailable renderer still lets the shortcut open its target once",
+                        fallback is { Scene: "zero-boundary", Instance: "WindowReady", Host: "Failed", HostError: "StartFailed" });
+                }
+                finally { File.Move(held, renderer); }
+
+                string playback = Path.Combine(catalog, "zero-boundary", "scene.playback.json");
+                byte[] originalPlayback = File.ReadAllBytes(playback);
+                try
+                {
+                    File.WriteAllText(playback, "{");
+                    LaunchTrace fallback = Activate(link.Path!, profile, otherCopy);
+                    Check("invalid work data preserves the shortcut and launches natively",
+                        fallback is { Scene: null, Instance: "WindowReady", Host: null });
+                }
+                finally { File.WriteAllBytes(playback, originalPlayback); }
+            }
+            Check("the temporary shortcut is removable and old state stays byte-identical",
+                shortcuts.Remove(shellBindingId).Status == ManagedShortcutStatus.Removed && SameState(profile, original, backup));
+        }
+        catch (Exception ex) { Console.WriteLine($"FAIL F13 launch UI: {ex.GetType().Name}: {ex.Message}"); failures++; }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", previous);
+            StopOwnedTargets(delayCopy);
+            StopOwnedTargets(otherCopy);
+            fixture.Delete(recursive: true);
+        }
+        return failures == 0 ? 0 : 1;
+    }
+
+    internal static int Run(bool diagnostics = false, bool settingsAndRecovery = false)
+    {
+        string studio = RequiredPath("DMS_F08_STUDIO_PATH");
+        string launcher = RequiredPath("DMS_F10_FIXTURE_LAUNCHER_PATH");
+        string target = RequiredPath("DMS_F06_TARGET_PATH");
+        DirectoryInfo fixture = Directory.CreateTempSubdirectory("dms-f10-ui-");
+        string root = fixture.FullName;
+        string bundle = Path.Combine(root, "Bundle");
+        string desktop = Directory.CreateDirectory(Path.Combine(root, "Desktop")).FullName;
+        string state = Path.Combine(root, "state.json");
+        string targetCopy = Path.Combine(root, "Target", Path.GetFileName(target));
+        int failures = 0;
+        Process? studioProcess = null;
+        string? previous = Environment.GetEnvironmentVariable("DMS_F10_FIXTURE_STATE");
+        string? previousLogMode = Environment.GetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE");
+        var logs = new DiagnosticLogStore(Path.Combine(root, "logs"));
+        void Check(string description, bool passed) => Program.Record("F10 UI " + description, passed, ref failures);
+
+        try
+        {
+            CopyTree(Path.GetDirectoryName(studio)!, bundle);
+            string bundledLauncher = Path.Combine(bundle, "Launcher", Path.GetFileName(launcher));
+            foreach (string name in new[]
+            {
+                "DesktopMotionStudio.Launcher.exe", "DesktopMotionStudio.Launcher.dll", "DesktopMotionStudio.Launcher.deps.json",
+                "DesktopMotionStudio.Launcher.runtimeconfig.json", "DesktopMotionStudio.Core.dll"
+            })
+                File.Copy(Path.Combine(Path.GetDirectoryName(launcher)!, name), Path.Combine(bundle, "Launcher", name), overwrite: true);
+            Require(File.Exists(bundledLauncher), "Fixture Launcher was not staged.");
+            CopyTree(Path.GetDirectoryName(target)!, Path.GetDirectoryName(targetCopy)!);
+            string catalog = Path.Combine(bundle, "Scenes");
+            F09WindowChecks.WriteScene(catalog, "scene-one", "First work");
+            F09WindowChecks.WriteScene(catalog, "scene-two", "Second work");
+            var store = new StudioStateRepository(state);
+            var saved = new ApplicationProfile("fixture", "Fixture app", targetCopy,
+                new(ApplicationTargetKind.Executable, targetCopy, [], Path.GetDirectoryName(targetCopy)));
+            var binding = new ApplicationBinding("旧版 fixture", saved.AppId, "scene-one", true);
+            StudioState initial = StudioState.Empty with { Applications = [saved], Bindings = [binding] };
+            Require(store.Save(initial) == RepositoryError.None && store.Save(initial) == RepositoryError.None, "Fixture state save failed.");
+            byte[] initialBytes = File.ReadAllBytes(state), initialBackup = File.ReadAllBytes(state + ".bak");
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", state, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", diagnostics ? "record" : null, EnvironmentVariableTarget.Process);
+            string unrelated = Path.Combine(desktop, "Existing.lnk");
+            File.WriteAllText(unrelated, "foreign original");
+            string studioCopy = Path.Combine(bundle, Path.GetFileName(studio));
+            string realDesktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory, Environment.SpecialFolderOption.DoNotVerify);
+            Check("fixture switches reject real profile and real desktop",
+                Rejects(studioCopy, "--state-file", StudioStateRepository.CurrentUserPath(), "--desktop-root", desktop) &&
+                (string.IsNullOrEmpty(realDesktop) || Rejects(studioCopy, "--state-file", state, "--desktop-root", realDesktop)));
+
+            studioProcess = StartStudio(studioCopy, state, catalog, desktop);
+            nint hwnd = Window(studioProcess, "Desktop Motion Studio");
+            var home = AutomationElement.FromHandle(hwnd);
+            Require(Program.WaitFor(() => Enabled(home, "创建桌面入口")), "Create action did not load.");
+            Console.WriteLine($"  Studio PID={studioProcess.Id} HWND=0x{hwnd:X} DPI={GetDpiForWindow(hwnd)}");
+            if (Environment.GetEnvironmentVariable("DMS_F10_WAIT_FOR_FOCUS") == "1")
+            {
+                Console.WriteLine("  Waiting for activation of the owned F10 Studio window.");
+                Require(Program.WaitFor(() => GetForegroundWindow() == hwnd, TimeSpan.FromSeconds(45)), "Owned Studio window not activated.");
+            }
+            if (settingsAndRecovery)
+            {
+                Keys(hwnd, 0x12, 0x47); // Alt+G
+                nint settingsHandle = Window(studioProcess, "设置");
+                var settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Settings did not load.");
+                Find(settings, "主题").SetFocus();
+                Keys(settingsHandle, 0x23); // End selects dark.
+                Find(settings, "全局静音").SetFocus();
+                Keys(settingsHandle, 0x20);
+                Keys(settingsHandle, 0x12, 0x53);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings did not close after save.");
+                Check("F11 actual keyboard saves dark and mute", store.Load().State?.Settings == new StudioSettings("dark", true));
+                initialBytes = File.ReadAllBytes(state);
+                initialBackup = File.ReadAllBytes(state + ".bak");
+                Keys(hwnd, 0x12, 0x47);
+                settingsHandle = Window(studioProcess, "设置");
+                settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Reopened settings did not load.");
+                Find(settings, "主题").SetFocus();
+                Keys(settingsHandle, 0x24); // Home selects system, then cancel.
+                Keys(settingsHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings cancel did not close.");
+                Check("F11 actual cancel preserves exact preference bytes", SameState(state, initialBytes, initialBackup));
+            }
+            Check("reading home makes no shortcut", Directory.GetFiles(desktop, "*.lnk").SequenceEqual([unrelated]));
+            Keys(hwnd, 0x12, 0x43); // Alt+C
+            Require(Program.WaitFor(() => Enabled(home, "移除桌面入口")), "Shortcut creation was not verified.");
+            string link = Directory.GetFiles(desktop, "*.lnk").Single(path => path != unrelated);
+            Check("keyboard create is explicit and preserves original link and state",
+                File.ReadAllText(unrelated) == "foreign original" && SameState(state, initialBytes, initialBackup));
+            File.Delete(link);
+            Invoke(home, "刷新应用");
+            Require(Program.WaitFor(() => Enabled(home, "修复桌面入口")), "Missing entry did not become repairable.");
+            Keys(hwnd, 0x12, 0x45); // Alt+E
+            Require(Program.WaitFor(() => Enabled(home, "移除桌面入口") && File.Exists(link)), "Repair did not restore entry.");
+            Check("keyboard repair restores only registered path", Directory.GetFiles(desktop, "*.lnk").Length == 2);
+            studioProcess.CloseMainWindow();
+            Require(studioProcess.WaitForExit(5000), "Studio did not exit.");
+            Check("Studio has exited before Shell activation", studioProcess.HasExited);
+            studioProcess.Dispose();
+            studioProcess = null;
+
+            string hostExe = Path.Combine(bundle, "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+            byte[] linkBytes = File.ReadAllBytes(link);
+            var first = Activate(link, state, targetCopy);
+            Check("actual shortcut opens the target after the first selected work",
+                first is { Scene: "scene-one", Instance: "WindowReady", Host: "Completed", Window: not 0 });
+            string logPrimary = Path.Combine(logs.DirectoryPath, "records", "events.json");
+            if (diagnostics)
+            {
+                DiagnosticSnapshot firstLog = logs.Read();
+                Check("F11 diagnostic target and animation completion share one request",
+                    firstLog is { Status: DiagnosticStatus.Ready, Events.Count: 2 } &&
+                    firstLog.Events[0] is { Stage: DiagnosticStage.Target, Result: DiagnosticResultCode.WindowReady } &&
+                    firstLog.Events[1] is { Stage: DiagnosticStage.Animation, Result: DiagnosticResultCode.Completed } &&
+                    firstLog.Events[0].RequestId == firstLog.Events[1].RequestId);
+            }
+            Require(store.Update(current => current with { Bindings = [binding with { SceneId = "scene-two" }] }).IsSuccess, "Replacement failed.");
+            LaunchTrace replaced;
+            if (diagnostics)
+            {
+                byte[] beforeBusy = File.ReadAllBytes(logPrimary);
+                using var busy = File.Open(Path.Combine(logs.DirectoryPath, "locks", "events.lock"),
+                    FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                replaced = Activate(link, state, targetCopy);
+                Check("F11 busy diagnostic log preserves bytes and handoff",
+                    File.ReadAllBytes(logPrimary).SequenceEqual(beforeBusy) && replaced.Host == "Completed");
+            }
+            else replaced = Activate(link, state, targetCopy);
+            Check("same shortcut uses replacement work", replaced is { Scene: "scene-two", Host: "Completed", Window: not 0 });
+            Require(store.Update(current => current with { Bindings = [binding with { Enabled = false }] }).IsSuccess, "Disable failed.");
+            var disabled = Activate(link, state, targetCopy);
+            Check("disabled motion opens native target without a renderer",
+                disabled is { Scene: null, Host: null, Instance: "WindowReady", Window: not 0 });
+            if (diagnostics)
+                Check("F11 disabled motion is distinct from a target failure",
+                    logs.Read().Events.LastOrDefault() is { Stage: DiagnosticStage.Animation, Fallback: DiagnosticFallback.AnimationDisabled });
+            Require(store.Update(current => current with { Bindings = [binding] }).IsSuccess, "Re-enable failed.");
+            File.Move(hostExe, hostExe + ".missing");
+            try
+            {
+                var failed = Activate(link, state, targetCopy);
+                Check("missing renderer fails open to one target",
+                    failed is { Scene: "scene-one", Host: "Failed", HostError: "StartFailed", Instance: "WindowReady", Window: not 0 });
+            }
+            finally { File.Move(hostExe + ".missing", hostExe); }
+            if (diagnostics)
+            {
+                Check("F11 renderer fallback has its own typed result",
+                    logs.Read().Events.LastOrDefault() is { Result: DiagnosticResultCode.RendererFailed, Fallback: DiagnosticFallback.RendererUnavailable });
+                string originalLog = File.ReadAllText(logPrimary);
+                File.WriteAllText(logPrimary, "{\"schemaVersion\":5,\"future\":true}");
+                LaunchTrace future = Activate(link, state, targetCopy);
+                Check("F11 future log remains byte-exact while target still opens after playback", future.Host == "Completed" &&
+                    File.ReadAllText(logPrimary) == "{\"schemaVersion\":5,\"future\":true}");
+                File.WriteAllText(logPrimary, originalLog);
+                Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", "throw", EnvironmentVariableTarget.Process);
+                LaunchTrace throwing = Activate(link, state, targetCopy);
+                Check("F11 throwing diagnostic sink cannot change a successful dispatch",
+                    throwing is { Instance: "WindowReady", Host: "Completed" } && File.ReadAllText(logPrimary) == originalLog);
+                Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", "record", EnvironmentVariableTarget.Process);
+                Require(store.Update(current => current with { Bindings = [] }).IsSuccess, "Missing-binding fixture failed.");
+                Check("F11 missing binding is diagnosed before dispatch",
+                    ShellExit(link) == 3 && OwnedTargets(targetCopy) == 0 &&
+                    logs.Read().Events.LastOrDefault() is { Stage: DiagnosticStage.Request, Result: DiagnosticResultCode.BindingMissing });
+                Require(store.Update(current => current with { Bindings = [binding] }).IsSuccess, "Binding fixture restore failed.");
+                string raw = File.ReadAllText(logPrimary);
+                string summary = DiagnosticReport.Format(logs.Read().Events);
+                string[] privateValues = [root, binding.BindingId, "scene-one", "Fixture app", "launch-trace"];
+                Check("F11 raw diagnostics and share text omit application and fixture data", privateValues.All(value =>
+                    !raw.Contains(JsonSerializer.Serialize(value)[1..^1], StringComparison.Ordinal) &&
+                    !summary.Contains(value, StringComparison.Ordinal)));
+            }
+            Check("normal Shell activation leaves shortcut bytes unchanged", File.ReadAllBytes(link).SequenceEqual(linkBytes));
+
+            byte[] beforeRemove = File.ReadAllBytes(state), beforeRemoveBackup = File.ReadAllBytes(state + ".bak");
+            studioProcess = StartStudio(studioCopy, state, catalog, desktop);
+            hwnd = Window(studioProcess, "Desktop Motion Studio");
+            home = AutomationElement.FromHandle(hwnd);
+            Require(Program.WaitFor(() => Enabled(home, "移除桌面入口")), "Owned entry was not verified on reopen.");
+            if (settingsAndRecovery)
+            {
+                Keys(hwnd, 0x12, 0x47);
+                nint settingsHandle = Window(studioProcess, "设置");
+                var settings = AutomationElement.FromHandle(settingsHandle);
+                Require(Program.WaitFor(() => Enabled(settings, "保存设置")), "Reopened preferences did not load.");
+                var toggle = (TogglePattern)Find(settings, "全局静音").GetCurrentPattern(TogglePattern.Pattern);
+                var theme = (SelectionPattern)Find(settings, "主题").GetCurrentPattern(SelectionPattern.Pattern);
+                Check("F11 restarted Studio restores saved dark and mute controls",
+                    toggle.Current.ToggleState == ToggleState.On && theme.Current.GetSelection().Single().Current.Name == "深色");
+                Keys(settingsHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "设置") == 0), "Settings did not close.");
+                File.Delete(link);
+                Keys(hwnd, 0x12, 0x49); // Alt+I
+                nint diagnosticHandle = Window(studioProcess, "本地诊断");
+                var view = AutomationElement.FromHandle(diagnosticHandle);
+                Require(Program.WaitFor(() => Enabled(view, "诊断修复入口")), "Diagnostic recovery did not become available.");
+                var recent = (ValuePattern)Find(view, "最近诊断记录").GetCurrentPattern(ValuePattern.Pattern);
+                Check("F11 actual diagnostics distinguishes renderer fallback and missing binding",
+                    recent.Current.Value.Contains("渲染器不可用", StringComparison.Ordinal) &&
+                    recent.Current.Value.Contains("找不到绑定", StringComparison.Ordinal));
+                Keys(diagnosticHandle, 0x12, 0x52);
+                Require(Program.WaitFor(() => File.Exists(link) && NamedStatus(view, "DiagnosticEntry").Contains("有效", StringComparison.Ordinal)),
+                    "Diagnostic repair did not restore the owned link.");
+                Keys(diagnosticHandle, 0x1B);
+                Require(Program.WaitFor(() => FindWindow(studioProcess.Id, "本地诊断") == 0 &&
+                    Enabled(home, "移除桌面入口")), "Diagnostic repair did not refresh home.");
+                Check("F11 actual diagnostic repair keeps profile and foreign link intact",
+                    SameState(state, beforeRemove, beforeRemoveBackup) && File.ReadAllText(unrelated) == "foreign original");
+            }
+            Keys(hwnd, 0x12, 0x4D); // Alt+M
+            Require(Program.WaitFor(() => Enabled(home, "创建桌面入口") && !File.Exists(link)), "Remove did not clear the owned link.");
+            Check("keyboard remove preserves binding, backup and foreign entry",
+                SameState(state, beforeRemove, beforeRemoveBackup) && File.ReadAllText(unrelated) == "foreign original");
+            File.WriteAllText(link, "foreign collision");
+            Invoke(home, "刷新应用");
+            Require(Program.WaitFor(() => ShortcutStatus(home).Contains("冲突", StringComparison.Ordinal)), "Collision not shown.");
+            Check("same-name collision offers no unsafe mutation",
+                !Enabled(home, "创建桌面入口") && !Enabled(home, "修复桌面入口") && !Enabled(home, "移除桌面入口") &&
+                File.ReadAllText(link) == "foreign collision");
+        }
+        catch (Exception ex) { Console.WriteLine($"FAIL F10 UI {ex.GetType().Name}: {ex.Message}"); failures++; }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DMS_F10_FIXTURE_STATE", previous, EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable("DMS_F11_FIXTURE_LOG_MODE", previousLogMode, EnvironmentVariableTarget.Process);
+            if (studioProcess is not null) Stop(studioProcess);
+            StopOwnedTargets(targetCopy);
+            string parent = Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetTempPath()));
+            if (string.Equals(fixture.Parent?.FullName, parent, StringComparison.OrdinalIgnoreCase) &&
+                fixture.Name.StartsWith("dms-f10-ui-", StringComparison.Ordinal))
+                fixture.Delete(recursive: true);
+        }
+        return failures;
+    }
+
+    private static int ShellExit(string link)
+    {
+        using Process process = Process.Start(new ProcessStartInfo(link) { UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden }) ??
+            throw new InvalidOperationException("Shell did not start the fixture.");
+        try { return process.WaitForExit(8000) ? process.ExitCode : -1; }
+        finally { if (!process.HasExited) { process.Kill(); process.WaitForExit(5000); } }
+    }
+
+    private static LaunchTrace Activate(string link, string state, string target, string? videoWorker = null)
+    {
+        string tracePath = state + ".launch-trace";
+        File.Delete(tracePath);
+        byte[] bytes = File.ReadAllBytes(state), backup = File.ReadAllBytes(state + ".bak");
+        var start = new ProcessStartInfo(link) { UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden };
+        using Process launcher = Process.Start(start) ?? throw new InvalidOperationException("Shell did not return the Launcher process.");
+        try
+        {
+            if (videoWorker is not null)
+            {
+                Require(Program.WaitFor(() => FindOwnedMotionWindow(videoWorker, F21VideoChecks.LaunchTitle) != 0),
+                    "The actual shortcut video did not show.");
+                Require(OwnedTargets(target) == 0, "The shortcut target started during video playback.");
+            }
+            Require(launcher.WaitForExit(videoWorker is null ? 10000 : 16000) && launcher.ExitCode == 0,
+                "Fixture Launcher failed or timed out.");
+            LaunchTrace result = ReadTrace(state);
+            Console.WriteLine($"  Launcher PID={launcher.Id}, target PID={result.TargetPid}, HWND=0x{result.Window:X}, scene={result.Scene}, target={result.Instance}, host={result.Host}/{result.HostError}");
+            Require(result.TargetPid is int pid && IsTarget(pid, target) && OwnedTargets(target) == 1,
+                "Expected exactly one verified target process.");
+            string host = Path.Combine(Path.GetDirectoryName(state)!, "Bundle", "MotionHost", "DesktopMotionStudio.MotionHost.exe");
+            Require(Program.WaitFor(() => OwnedTargets(host) == 0, TimeSpan.FromSeconds(2)), "Owned renderer did not exit.");
+            if (videoWorker is not null)
+                Require(OwnedTargets(videoWorker) == 0, "Owned video worker did not exit.");
+            Require(SameState(state, bytes, backup), "Launcher changed state or backup.");
+            return result;
+        }
+        finally
+        {
+            if (!launcher.HasExited) { launcher.Kill(); launcher.WaitForExit(5000); }
+            StopOwnedTargets(target);
+        }
+    }
+
+    private static LaunchTrace ReadTrace(string state) =>
+        JsonSerializer.Deserialize<LaunchTrace>(File.ReadAllText(state + ".launch-trace")) ?? throw new IOException("No launch trace.");
+
+    private static Process StartStudio(string executable, string state, string catalog, string desktop)
+    {
+        var start = new ProcessStartInfo(executable) { UseShellExecute = false };
+        foreach (string arg in new[] { "--state-file", state, "--catalog-root", catalog, "--desktop-root", desktop })
+            start.ArgumentList.Add(arg);
+        return Process.Start(start) ?? throw new InvalidOperationException("Studio did not start.");
+    }
+
+    private static bool Rejects(string executable, params string[] args)
+    {
+        var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
+        foreach (string arg in args) start.ArgumentList.Add(arg);
+        using Process process = Process.Start(start) ?? throw new InvalidOperationException("Studio probe did not start.");
+        try { return process.WaitForExit(3000) && process.ExitCode == 2; }
+        finally { if (!process.HasExited) { process.Kill(); process.WaitForExit(5000); } }
+    }
+
+    private static void CopyTree(string source, string destination)
+    {
+        Directory.CreateDirectory(destination);
+        foreach (string file in Directory.GetFiles(source)) File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
+        foreach (string child in Directory.GetDirectories(source)) CopyTree(child, Path.Combine(destination, Path.GetFileName(child)));
+    }
+
+    private static string RequiredPath(string variable) => Environment.GetEnvironmentVariable(variable) is string path && File.Exists(path)
+        ? Path.GetFullPath(path) : throw new InvalidOperationException($"Set {variable} to the built fixture path.");
+
+    private static bool SameState(string state, byte[] bytes, byte[] backup) =>
+        File.ReadAllBytes(state).SequenceEqual(bytes) && File.ReadAllBytes(state + ".bak").SequenceEqual(backup);
+
+    private static bool Enabled(AutomationElement root, string name) => Find(root, name).Current.IsEnabled;
+    private static string ShortcutStatus(AutomationElement root) => NamedStatus(root, "ShortcutHealth");
+    private static string NamedStatus(AutomationElement root, string id) =>
+        root.FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, id))?.Current.Name ?? "";
+    private static void Invoke(AutomationElement root, string name) =>
+        ((InvokePattern)Find(root, name).GetCurrentPattern(InvokePattern.Pattern)).Invoke();
+
+    private static int OwnedTargets(string path)
+    {
+        int count = 0;
+        foreach (Process process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(path)))
+            using (process) if (IsTarget(process, path)) count++;
+        return count;
+    }
+
+    private static bool IsTarget(int pid, string path)
+    {
+        try { using var process = Process.GetProcessById(pid); return IsTarget(process, path); }
+        catch (ArgumentException) { return false; }
+    }
+
+    private static bool IsTarget(Process process, string path)
+    {
+        try
+        {
+            _ = process.SafeHandle;
+            return !process.HasExited && string.Equals(process.MainModule?.FileName, path, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { return false; }
+    }
+
+    private static void StopOwnedTargets(string path)
+    {
+        foreach (Process process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(path)))
+            if (IsTarget(process, path)) Stop(process);
+            else process.Dispose();
+    }
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException(message);
+    }
+
+    private sealed record LaunchTrace(string? Scene, string Instance, int? TargetPid, long Window, string? Host, string? HostError);
+}

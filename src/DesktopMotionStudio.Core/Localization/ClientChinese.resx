@@ -1,0 +1,1181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AddAnAppChooseAMotionAndTest" xml:space="preserve">
+    <value>添加后可选择动效、预览，再尝试真实启动。</value>
+  </data>
+  <data name="AddAnAppToGetStarted" xml:space="preserve">
+    <value>先添加一个应用</value>
+  </data>
+  <data name="AddApp" xml:space="preserve">
+    <value>添加应用</value>
+  </data>
+  <data name="AddApp2" xml:space="preserve">
+    <value>添加应用(_A)</value>
+  </data>
+  <data name="AddingAnAppSavesItsLaunchEntry" xml:space="preserve">
+    <value>添加只保存启动入口，不会运行所选应用。</value>
+  </data>
+  <data name="AdvancedLaunchOptions" xml:space="preserve">
+    <value>高级启动选项</value>
+  </data>
+  <data name="AnimationOff" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="AnimationOn" xml:space="preserve">
+    <value>开启</value>
+  </data>
+  <data name="AnotherOperationChangedTheConfigurationRefreshAndCheck" xml:space="preserve">
+    <value>配置已被另一项操作改变，请刷新后核对。</value>
+  </data>
+  <data name="AppDisplayName" xml:space="preserve">
+    <value>应用显示名称</value>
+  </data>
+  <data name="AppLaunch" xml:space="preserve">
+    <value>目标启动</value>
+  </data>
+  <data name="AppList" xml:space="preserve">
+    <value>应用列表</value>
+  </data>
+  <data name="AppSettings" xml:space="preserve">
+    <value>应用设置</value>
+  </data>
+  <data name="AppWindowReady" xml:space="preserve">
+    <value>目标窗口就绪</value>
+  </data>
+  <data name="ApplicationPath" xml:space="preserve">
+    <value>应用路径(_P)</value>
+  </data>
+  <data name="ApplicationPath2" xml:space="preserve">
+    <value>应用路径</value>
+  </data>
+  <data name="AppsCouldNotBeLoaded" xml:space="preserve">
+    <value>暂时无法读取应用</value>
+  </data>
+  <data name="BindAWorkToCreateADesktopShortcut" xml:space="preserve">
+    <value>绑定作品后可创建桌面入口。</value>
+  </data>
+  <data name="BindAWorkToTestLaunch" xml:space="preserve">
+    <value>绑定动效后可测试启动。</value>
+  </data>
+  <data name="BindMotionToAnApp" xml:space="preserve">
+    <value>绑定动效到应用</value>
+  </data>
+  <data name="BindToApp" xml:space="preserve">
+    <value>绑定到应用(_B)</value>
+  </data>
+  <data name="BindToApp2" xml:space="preserve">
+    <value>绑定到应用</value>
+  </data>
+  <data name="BindingNotFound" xml:space="preserve">
+    <value>找不到绑定</value>
+  </data>
+  <data name="BindingSavedThisWorkIsCurrentlyUnavailable" xml:space="preserve">
+    <value>绑定已保存；作品当前不可用。</value>
+  </data>
+  <data name="BindingSavedThisWorkIsCurrentlyUnavailableRefresh" xml:space="preserve">
+    <value>绑定已保存；作品当前不可用，请刷新作品库。</value>
+  </data>
+  <data name="BindingSelectedWork" xml:space="preserve">
+    <value>所选作品：{0}</value>
+  </data>
+  <data name="BindingStateDisabled" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="BindingStateEnabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="BoundWorkState" xml:space="preserve">
+    <value>{0} · {1}</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>浏览…</value>
+  </data>
+  <data name="BrowseApplicationFiles" xml:space="preserve">
+    <value>浏览应用文件</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="CancelAddingApp" xml:space="preserve">
+    <value>取消添加</value>
+  </data>
+  <data name="CancelBinding" xml:space="preserve">
+    <value>取消绑定</value>
+  </data>
+  <data name="CancelSettings" xml:space="preserve">
+    <value>取消设置</value>
+  </data>
+  <data name="ChangeThisAppSLaunchEntryAndKeep" xml:space="preserve">
+    <value>更换此应用的启动入口，保留已有绑定。</value>
+  </data>
+  <data name="CheckThatTheBoundWorkIsAvailableIn" xml:space="preserve">
+    <value>在作品库确认所绑定的作品可用。</value>
+  </data>
+  <data name="CheckTheBindingAndManagedShortcutUnderMy" xml:space="preserve">
+    <value>在应用列表中检查绑定和受管桌面入口。</value>
+  </data>
+  <data name="CheckTheConfigurationInStudioBeforeTryingAgain" xml:space="preserve">
+    <value>在 Studio 检查配置状态，配置可读后重试。</value>
+  </data>
+  <data name="CheckTheNameAndLaunchEntrySomeValues" xml:space="preserve">
+    <value>输入不完整或超出允许范围，请检查名称与启动入口。</value>
+  </data>
+  <data name="CheckTheRendererAndWindowsAnimationSettingsUnder" xml:space="preserve">
+    <value>在组件状态中检查渲染器和系统动画设置。</value>
+  </data>
+  <data name="CheckTheRendererUnderComponentsAndReopenStudio" xml:space="preserve">
+    <value>在组件状态中检查渲染器，重开 Studio 后重试。</value>
+  </data>
+  <data name="CheckTheTargetUnderMyAppsAndConfirm" xml:space="preserve">
+    <value>在应用列表中检查目标，确认目标可直接打开。</value>
+  </data>
+  <data name="CheckingAndRepairingTheDesktopShortcut" xml:space="preserve">
+    <value>正在验证并修复桌面入口…</value>
+  </data>
+  <data name="CheckingDesktopShortcut" xml:space="preserve">
+    <value>正在检查桌面入口…</value>
+  </data>
+  <data name="ChooseACompleteWorkPreviewItAndBind" xml:space="preserve">
+    <value>选择完整作品，预览后为应用设置动效。</value>
+  </data>
+  <data name="ChooseALaunchEntryFirst" xml:space="preserve">
+    <value>请先选择一个启动入口。</value>
+  </data>
+  <data name="ChooseALocalEntryOrSelectAnApp" xml:space="preserve">
+    <value>选择本地入口，或从此设备的应用列表中添加。</value>
+  </data>
+  <data name="ChooseASavedApp" xml:space="preserve">
+    <value>选择已保存的应用</value>
+  </data>
+  <data name="ChooseASavedAppWithAWorkingLaunch" xml:space="preserve">
+    <value>选择一个已保存且入口可用的应用。</value>
+  </data>
+  <data name="ChooseAWork" xml:space="preserve">
+    <value>请选择作品</value>
+  </data>
+  <data name="ChooseAWorkOnTheLeftToSee" xml:space="preserve">
+    <value>从左侧选择作品查看详情。</value>
+  </data>
+  <data name="ChooseAWorkToSeeItsCover" xml:space="preserve">
+    <value>选择作品后显示封面</value>
+  </data>
+  <data name="ChooseAndConfirmAnEntryTypeTheOriginal" xml:space="preserve">
+    <value>原始入口已保留。请选择并确认目标类型。</value>
+  </data>
+  <data name="ChooseMotionB" xml:space="preserve">
+    <value>选择动效(_B)</value>
+  </data>
+  <data name="ClearAppSearch" xml:space="preserve">
+    <value>清除应用搜索</value>
+  </data>
+  <data name="ClearSearch" xml:space="preserve">
+    <value>清除搜索</value>
+  </data>
+  <data name="ClearTheSearchToChooseAnAppAgain" xml:space="preserve">
+    <value>清除搜索后可重新选择应用。</value>
+  </data>
+  <data name="ClipboardUnavailableTryAgain" xml:space="preserve">
+    <value>剪贴板不可用，请稍后重试。</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="CloseDiagnostics" xml:space="preserve">
+    <value>关闭诊断</value>
+  </data>
+  <data name="CloseTheTargetAppBeforeTryingAgain" xml:space="preserve">
+    <value>确认目标已退出后重试。</value>
+  </data>
+  <data name="ClosedAfterARenderFailure" xml:space="preserve">
+    <value> · 渲染失败后退出</value>
+  </data>
+  <data name="CompleteMotionWorks" xml:space="preserve">
+    <value>完整动效作品</value>
+  </data>
+  <data name="ConfigurationUnavailable" xml:space="preserve">
+    <value>配置不可用</value>
+  </data>
+  <data name="ConfirmAWorkingLaunchEntryUnderMyApps" xml:space="preserve">
+    <value>需要在我的应用中确认可用的启动入口</value>
+  </data>
+  <data name="ConfirmBinding" xml:space="preserve">
+    <value>确认绑定</value>
+  </data>
+  <data name="ConfirmEntry" xml:space="preserve">
+    <value>确认入口(_R)</value>
+  </data>
+  <data name="ConfirmLaunchEntry" xml:space="preserve">
+    <value>确认启动入口</value>
+  </data>
+  <data name="ConfirmTheLaunchEntryFirst" xml:space="preserve">
+    <value>请先确认启动入口。</value>
+  </data>
+  <data name="ConfirmTheLaunchEntryFirst2" xml:space="preserve">
+    <value>
+请先确认启动入口。</value>
+  </data>
+  <data name="CopyDiagnosticSummary" xml:space="preserve">
+    <value>复制诊断摘要</value>
+  </data>
+  <data name="CopySummary" xml:space="preserve">
+    <value>复制摘要(_C)</value>
+  </data>
+  <data name="CouldNotConfirmPreviewCleanupCloseStudioAnd" xml:space="preserve">
+    <value>无法确认预览已清理。请关闭工作室后重试。</value>
+  </data>
+  <data name="CouldNotConfirmThatTheTargetAppOpened" xml:space="preserve">
+    <value>未能确认目标应用已打开，请检查启动入口。</value>
+  </data>
+  <data name="CouldNotConfirmTheRepairRefreshToCheck" xml:space="preserve">
+    <value>无法确认修复结果，请刷新。</value>
+  </data>
+  <data name="CouldNotConfirmTheResultCheckTheTarget" xml:space="preserve">
+    <value>测试启动结果未确认，请检查目标应用。</value>
+  </data>
+  <data name="CouldNotConfirmTheSaveTryAgain" xml:space="preserve">
+    <value>无法确认设置已保存，请重试。</value>
+  </data>
+  <data name="CouldNotConfirmTheShortcutOperationRefreshAnd" xml:space="preserve">
+    <value>桌面入口操作未确认，请刷新后重试。</value>
+  </data>
+  <data name="CouldNotFinishBindingOrReloadTheConfiguration" xml:space="preserve">
+    <value>无法完成绑定或重新读取配置，请刷新后核对。</value>
+  </data>
+  <data name="CouldNotLoadLocalDiagnostics" xml:space="preserve">
+    <value>无法读取本地诊断。</value>
+  </data>
+  <data name="CouldNotLoadTheAppsOrWorksRefresh" xml:space="preserve">
+    <value>无法读取应用或作品，请刷新重试。</value>
+  </data>
+  <data name="CouldNotLoadTheConfigurationRefreshAndTry" xml:space="preserve">
+    <value>读取配置未完成，请刷新重试。</value>
+  </data>
+  <data name="CouldNotLoadTheLibraryRefreshAndTry" xml:space="preserve">
+    <value>无法读取作品库，请刷新重试。</value>
+  </data>
+  <data name="CouldNotOpenTheLocalLogFolder" xml:space="preserve">
+    <value>无法打开本地日志目录。</value>
+  </data>
+  <data name="CouldNotReadOrSaveTheShortcutOwnership" xml:space="preserve">
+    <value>无法读取或保存所有权记录，请检查配置。</value>
+  </data>
+  <data name="CouldNotReadOrWriteTheConfigurationCheck" xml:space="preserve">
+    <value>无法读写配置，请检查文件权限和可用空间后重试。</value>
+  </data>
+  <data name="CouldNotReadTheBindingRefreshAndTry" xml:space="preserve">
+    <value>无法读取绑定，请刷新后重试。</value>
+  </data>
+  <data name="CouldNotReadTheConfigurationKeepTheOriginal" xml:space="preserve">
+    <value>配置内容无法读取。请保留当前文件，并检查可用备份。</value>
+  </data>
+  <data name="CouldNotReadTheConfigurationRefreshAndCheck" xml:space="preserve">
+    <value>无法读取配置，请刷新后检查配置状态。</value>
+  </data>
+  <data name="CouldNotReadTheLibraryCheckTheInstallation" xml:space="preserve">
+    <value>无法读取作品库，请检查安装内容后刷新。</value>
+  </data>
+  <data name="CouldNotReloadTheBindingRefreshAndCheck" xml:space="preserve">
+    <value>无法重新读取绑定，请刷新后核对配置。</value>
+  </data>
+  <data name="CouldNotSaveTheMotionSettingTryAgain" xml:space="preserve">
+    <value>动效状态未能保存，请重试。</value>
+  </data>
+  <data name="CoverOfTheBoundWork" xml:space="preserve">
+    <value>当前绑定作品封面</value>
+  </data>
+  <data name="CreateDesktopShortcut" xml:space="preserve">
+    <value>创建桌面入口</value>
+  </data>
+  <data name="CreateShortcut" xml:space="preserve">
+    <value>创建入口(_C)</value>
+  </data>
+  <data name="CurrentApp" xml:space="preserve">
+    <value>当前应用</value>
+  </data>
+  <data name="Dark" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="DesktopShortcutConflictExistingFilesHaveBeenKept" xml:space="preserve">
+    <value>桌面入口冲突。现有文件已保留。</value>
+  </data>
+  <data name="DesktopShortcutForTheSelectedApp" xml:space="preserve">
+    <value>所选应用的桌面入口</value>
+  </data>
+  <data name="DesktopShortcutRecordRemoved" xml:space="preserve">
+    <value>已清理桌面入口记录。</value>
+  </data>
+  <data name="DesktopShortcutSavedAndVerified" xml:space="preserve">
+    <value>桌面入口已保存并验证。</value>
+  </data>
+  <data name="DisableMotion" xml:space="preserve">
+    <value>停用动效</value>
+  </data>
+  <data name="DiscoveredApps" xml:space="preserve">
+    <value>发现的应用</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>显示名称(_N)</value>
+  </data>
+  <data name="DisplayName2" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="EnableAnAvailableWorkAndConfirmTheApp" xml:space="preserve">
+    <value>请先启用可用的动效绑定并确认应用入口。</value>
+  </data>
+  <data name="EnableMotion" xml:space="preserve">
+    <value>启用动效</value>
+  </data>
+  <data name="EntriesFoundCheckTheNameAndIdentityBefore" xml:space="preserve">
+    <value>找到 {0} 个入口。选择前请核对名称与身份。</value>
+  </data>
+  <data name="EntryAvailable" xml:space="preserve">
+    <value>入口可用</value>
+  </data>
+  <data name="EntryType" xml:space="preserve">
+    <value>入口类型(_T)</value>
+  </data>
+  <data name="EntryType2" xml:space="preserve">
+    <value>入口类型</value>
+  </data>
+  <data name="EntryUnavailable" xml:space="preserve">
+    <value>入口不可用</value>
+  </data>
+  <data name="FollowSystem" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="HostLaunchFooter" xml:space="preserve">
+    <value>应用正在打开 · 可随时跳过动画</value>
+  </data>
+  <data name="HostLaunchHelp" xml:space="preserve">
+    <value>按 Esc 跳过动效，或按 Tab 显示跳过按钮。</value>
+  </data>
+  <data name="HostLaunchName" xml:space="preserve">
+    <value>启动动画</value>
+  </data>
+  <data name="HostLaunchWindow" xml:space="preserve">
+    <value>Desktop Motion Studio 启动动效</value>
+  </data>
+  <data name="HostPreLaunchFooter" xml:space="preserve">
+    <value>动效结束后打开应用 · 可随时跳过</value>
+  </data>
+  <data name="HostPreparing" xml:space="preserve">
+    <value>正在打开应用</value>
+  </data>
+  <data name="HostPreparingDetail" xml:space="preserve">
+    <value>即使跳过动效或动效不可用，应用仍会继续打开。</value>
+  </data>
+  <data name="HostPreviewFooter" xml:space="preserve">
+    <value>预览 · 模拟交接，不会启动应用</value>
+  </data>
+  <data name="HostPreviewHelp" xml:space="preserve">
+    <value>按 Esc 停止预览，或按 Tab 显示停止按钮。</value>
+  </data>
+  <data name="HostPreviewName" xml:space="preserve">
+    <value>预览模拟交接</value>
+  </data>
+  <data name="HostPreviewWindow" xml:space="preserve">
+    <value>Desktop Motion Studio 场景预览</value>
+  </data>
+  <data name="HostAnimationStatus" xml:space="preserve">
+    <value>动效状态</value>
+  </data>
+  <data name="HostScene" xml:space="preserve">
+    <value>场景画面</value>
+  </data>
+  <data name="HostSkip" xml:space="preserve">
+    <value>跳过</value>
+  </data>
+  <data name="HostSkipAnimation" xml:space="preserve">
+    <value>跳过动效</value>
+  </data>
+  <data name="HostSkipDescription" xml:space="preserve">
+    <value>关闭动效并继续打开应用。</value>
+  </data>
+  <data name="HostSkipEsc" xml:space="preserve">
+    <value>跳过 / Esc</value>
+  </data>
+  <data name="HostStop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="HostStopEsc" xml:space="preserve">
+    <value>停止 / Esc</value>
+  </data>
+  <data name="HostStopPreview" xml:space="preserve">
+    <value>停止预览</value>
+  </data>
+  <data name="IdentityFormatIsValid" xml:space="preserve">
+    <value>身份格式有效</value>
+  </data>
+  <data name="InstalledApps" xml:space="preserve">
+    <value>已安装应用</value>
+  </data>
+  <data name="InvalidRequest" xml:space="preserve">
+    <value>请求无效</value>
+  </data>
+  <data name="InvalidSettings" xml:space="preserve">
+    <value>设置值无效。</value>
+  </data>
+  <data name="LanguageLabel" xml:space="preserve">
+    <value>界面语言</value>
+  </data>
+  <data name="LanguageNote" xml:space="preserve">
+    <value>保存后，重新打开 Studio 即可切换界面语言。</value>
+  </data>
+  <data name="LanguageSaveFailed" xml:space="preserve">
+    <value>无法保存界面语言。请重试。</value>
+  </data>
+  <data name="LanguageSaved" xml:space="preserve">
+    <value>语言已保存。请重新打开 Studio 应用新语言。</value>
+  </data>
+  <data name="LatestLaunchResult" xml:space="preserve">
+    <value>最近启动结果</value>
+  </data>
+  <data name="LaunchArguments" xml:space="preserve">
+    <value>启动参数</value>
+  </data>
+  <data name="LaunchArgumentsOnePerLineSavedAsEntered" xml:space="preserve">
+    <value>启动参数（每行一个，按原样保存）</value>
+  </data>
+  <data name="LauncherBindingMissing" xml:space="preserve">
+    <value>找不到此快捷方式的绑定。请打开 Desktop Motion Studio 检查桌面入口。</value>
+  </data>
+  <data name="LauncherConfigurationUnavailable" xml:space="preserve">
+    <value>无法读取应用配置。请打开 Desktop Motion Studio 检查配置状态。</value>
+  </data>
+  <data name="LauncherOpenUnconfirmed" xml:space="preserve">
+    <value>未能确认应用已打开。请检查目标应用或使用其原有入口。</value>
+  </data>
+  <data name="LauncherRecursiveTarget" xml:space="preserve">
+    <value>此快捷方式的目标指向 Desktop Motion Studio 的组件。</value>
+  </data>
+  <data name="LauncherTargetUnavailable" xml:space="preserve">
+    <value>无法打开已绑定的应用。请在 Desktop Motion Studio 中检查应用路径。</value>
+  </data>
+  <data name="LauncherUnexpectedError" xml:space="preserve">
+    <value>启动过程中出现错误。请检查目标应用或使用其原有入口。</value>
+  </data>
+  <data name="Light" xml:space="preserve">
+    <value>浅色</value>
+  </data>
+  <data name="LoadedThisDeviceSSavedApps" xml:space="preserve">
+    <value>已读取此设备上的应用配置。</value>
+  </data>
+  <data name="LoadingApps" xml:space="preserve">
+    <value>正在读取应用…</value>
+  </data>
+  <data name="LoadingAppsAndWorks" xml:space="preserve">
+    <value>正在读取应用和作品…</value>
+  </data>
+  <data name="LoadingConfiguration" xml:space="preserve">
+    <value>正在读取配置…</value>
+  </data>
+  <data name="LoadingDiagnostics" xml:space="preserve">
+    <value>正在读取诊断…</value>
+  </data>
+  <data name="LoadingSettings" xml:space="preserve">
+    <value>正在读取设置…</value>
+  </data>
+  <data name="LoadingWorks" xml:space="preserve">
+    <value>正在读取作品…</value>
+  </data>
+  <data name="LocalDiagnostics" xml:space="preserve">
+    <value>本地诊断</value>
+  </data>
+  <data name="LocalDiagnostics2" xml:space="preserve">
+    <value>本地诊断(_I)</value>
+  </data>
+  <data name="LocalFile" xml:space="preserve">
+    <value>本地文件</value>
+  </data>
+  <data name="LocalLogsAreUnavailable" xml:space="preserve">
+    <value>本地日志不可用。</value>
+  </data>
+  <data name="LocalProgram" xml:space="preserve">
+    <value>本地程序</value>
+  </data>
+  <data name="LocalRecordsYouCanCopyASummary" xml:space="preserve">
+    <value>本机保留 {0} 条记录，摘要可手动复制。</value>
+  </data>
+  <data name="LookingForLocalApps" xml:space="preserve">
+    <value>正在发现本地应用…</value>
+  </data>
+  <data name="ManagedDesktopShortcut" xml:space="preserve">
+    <value>受管理桌面入口</value>
+  </data>
+  <data name="MotionBindingSaved" xml:space="preserve">
+    <value>动效绑定已保存。</value>
+  </data>
+  <data name="MotionDisabled" xml:space="preserve">
+    <value> · 动效已停用</value>
+  </data>
+  <data name="MotionDisplayLabel" xml:space="preserve">
+    <value>动效显示区域</value>
+  </data>
+  <data name="MotionDisplayRecommended" xml:space="preserve">
+    <value>作品推荐</value>
+  </data>
+  <data name="MotionDisplayCompact" xml:space="preserve">
+    <value>居中小窗</value>
+  </data>
+  <data name="MotionDisplayLarge" xml:space="preserve">
+    <value>居中大画幅</value>
+  </data>
+  <data name="MotionDisplayFull" xml:space="preserve">
+    <value>当前屏幕全屏</value>
+  </data>
+  <data name="MotionDisplayHint" xml:space="preserve">
+    <value>保存后对下次播放生效。自选区域使用鼠标所在屏幕。</value>
+  </data>
+  <data name="MotionDisplaySaveFailed" xml:space="preserve">
+    <value>无法保存动效显示区域。请重试。</value>
+  </data>
+  <data name="MotionHandedOff" xml:space="preserve">
+    <value>动效已交接</value>
+  </data>
+  <data name="MotionLibrary" xml:space="preserve">
+    <value>动效作品库(_L)</value>
+  </data>
+  <data name="MotionLibrary2" xml:space="preserve">
+    <value>动效作品库</value>
+  </data>
+  <data name="MotionPreferenceSaved" xml:space="preserve">
+    <value>动效状态已保存。</value>
+  </data>
+  <data name="MuteAllMotion" xml:space="preserve">
+    <value>全局静音(_M)</value>
+  </data>
+  <data name="MuteAllMotion2" xml:space="preserve">
+    <value>全局静音</value>
+  </data>
+  <data name="MyApps" xml:space="preserve">
+    <value>我的应用</value>
+  </data>
+  <data name="NoAppsAddedAddAnAppAndConfirm" xml:space="preserve">
+    <value>尚未添加应用。
+返回我的应用添加并确认入口后，再来绑定。</value>
+  </data>
+  <data name="NoAppsAddedAddAnAppAndConfirm2" xml:space="preserve">
+    <value>尚未添加应用。
+返回我的应用添加并确认入口后，再来绑定。</value>
+  </data>
+  <data name="NoAppsYetSelectAddAppToGet" xml:space="preserve">
+    <value>还没有添加应用。
+选择“添加应用”开始配置。</value>
+  </data>
+  <data name="NoCoverAvailable" xml:space="preserve">
+    <value>暂无作品封面</value>
+  </data>
+  <data name="NoDescriptionAvailable" xml:space="preserve">
+    <value>暂无作品介绍。</value>
+  </data>
+  <data name="NoDesktopShortcutYet" xml:space="preserve">
+    <value>未创建桌面入口。</value>
+  </data>
+  <data name="NoEntriesFoundYouCanChooseOneUnder" xml:space="preserve">
+    <value>未找到应用入口，可切换到“本地文件”手动选择。</value>
+  </data>
+  <data name="NoLaunchDiagnosticsYet" xml:space="preserve">
+    <value>还没有启动诊断记录。</value>
+  </data>
+  <data name="NoMatchingApps" xml:space="preserve">
+    <value>没有匹配的应用</value>
+  </data>
+  <data name="NoMatchingSavedApps" xml:space="preserve">
+    <value>没有匹配的已保存应用。</value>
+  </data>
+  <data name="NoMotionBound" xml:space="preserve">
+    <value>未绑定动效</value>
+  </data>
+  <data name="NoSavedAppsMatchTheSearch" xml:space="preserve">
+    <value>没有找到匹配的已添加应用。</value>
+  </data>
+  <data name="NoTargetWindowWasConfirmedInTimeCheck" xml:space="preserve">
+    <value>未在等待时间内确认目标窗口，请检查应用是否已打开。</value>
+  </data>
+  <data name="NoWorkBound" xml:space="preserve">
+    <value>未绑定作品</value>
+  </data>
+  <data name="NoWorksAvailableRefreshOrReturnToMy" xml:space="preserve">
+    <value>暂无可显示作品。
+可刷新或返回我的应用。</value>
+  </data>
+  <data name="NoWorksMatchTheSearch" xml:space="preserve">
+    <value>没有匹配的作品。</value>
+  </data>
+  <data name="NotStarted" xml:space="preserve">
+    <value>未启动</value>
+  </data>
+  <data name="OpenLocalDiagnostics" xml:space="preserve">
+    <value>打开本地诊断</value>
+  </data>
+  <data name="OpenLogFolder" xml:space="preserve">
+    <value>打开日志目录(_O)</value>
+  </data>
+  <data name="OpenLogFolder2" xml:space="preserve">
+    <value>打开日志目录</value>
+  </data>
+  <data name="OpenMotionLibrary" xml:space="preserve">
+    <value>打开动效作品库</value>
+  </data>
+  <data name="OpenSettings" xml:space="preserve">
+    <value>打开设置</value>
+  </data>
+  <data name="PackagedApp" xml:space="preserve">
+    <value>打包应用</value>
+  </data>
+  <data name="Playable" xml:space="preserve">
+    <value> · 可播放</value>
+  </data>
+  <data name="Playable2" xml:space="preserve">
+    <value>可播放</value>
+  </data>
+  <data name="PreparingPreview" xml:space="preserve">
+    <value>正在准备预览…</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>预览(_P)</value>
+  </data>
+  <data name="PreviewComplete" xml:space="preserve">
+    <value>预览已完成。</value>
+  </data>
+  <data name="PreviewDidNotFinishRefreshTheWorkAnd" xml:space="preserve">
+    <value>预览未完成，请刷新作品后重试。</value>
+  </data>
+  <data name="PreviewPlaysOnlyTheMotion" xml:space="preserve">
+    <value>预览不会启动任何应用。</value>
+  </data>
+  <data name="PreviewSkipped" xml:space="preserve">
+    <value>预览已跳过。</value>
+  </data>
+  <data name="PreviewStopped" xml:space="preserve">
+    <value>预览已停止。</value>
+  </data>
+  <data name="PreviewTheBoundWork" xml:space="preserve">
+    <value>预览当前绑定作品</value>
+  </data>
+  <data name="PreviewWork" xml:space="preserve">
+    <value>预览作品(_P)</value>
+  </data>
+  <data name="PreviewWork2" xml:space="preserve">
+    <value>预览作品</value>
+  </data>
+  <data name="PreviewingSimulatedHandoffNoAppWillOpen" xml:space="preserve">
+    <value>正在预览 · 模拟交接，不会启动应用。</value>
+  </data>
+  <data name="ProgramExe" xml:space="preserve">
+    <value>程序 (.exe)</value>
+  </data>
+  <data name="ProgramsAndShortcutsExeLnkProgramsExeShortcuts" xml:space="preserve">
+    <value>程序与快捷方式|*.exe;*.lnk|程序|*.exe|快捷方式|*.lnk</value>
+  </data>
+  <data name="ReadyToBind" xml:space="preserve">
+    <value> · 可绑定</value>
+  </data>
+  <data name="ReadyToPreviewAndBindToMultipleApps" xml:space="preserve">
+    <value>可预览 · 可绑定到多个应用</value>
+  </data>
+  <data name="RecentDiagnosticRecords" xml:space="preserve">
+    <value>最近诊断记录</value>
+  </data>
+  <data name="RedactedSummaryCopied" xml:space="preserve">
+    <value>已复制脱敏摘要。</value>
+  </data>
+  <data name="Refresh" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="Refresh2" xml:space="preserve">
+    <value>刷新(_F)</value>
+  </data>
+  <data name="Refresh3" xml:space="preserve">
+    <value>刷新(_R)</value>
+  </data>
+  <data name="RefreshApps" xml:space="preserve">
+    <value>刷新应用</value>
+  </data>
+  <data name="RefreshAppsForBinding" xml:space="preserve">
+    <value>刷新绑定应用</value>
+  </data>
+  <data name="RefreshDiagnostics" xml:space="preserve">
+    <value>刷新诊断</value>
+  </data>
+  <data name="RefreshMotionLibrary" xml:space="preserve">
+    <value>刷新作品库</value>
+  </data>
+  <data name="RefreshTheConfigurationOrCheckLocalDiagnostics" xml:space="preserve">
+    <value>可尝试刷新配置，或在本地诊断查看状态。</value>
+  </data>
+  <data name="RemoveAndItsMotionBinding" xml:space="preserve">
+    <value>移除“{0}”及其动效绑定配置？{1}</value>
+  </data>
+  <data name="RemoveAnyManagedShortcutFromThisPageFirst" xml:space="preserve">
+    <value>
+如已创建桌面入口，请先在本页移除入口。移除绑定后，原入口将失效。</value>
+  </data>
+  <data name="RemoveAppConfiguration" xml:space="preserve">
+    <value>移除应用配置</value>
+  </data>
+  <data name="RemoveAppD" xml:space="preserve">
+    <value>移除应用配置(_D)</value>
+  </data>
+  <data name="RemoveDesktopShortcut" xml:space="preserve">
+    <value>移除桌面入口</value>
+  </data>
+  <data name="RemoveShortcut" xml:space="preserve">
+    <value>移除入口(_M)</value>
+  </data>
+  <data name="RendererCapability" xml:space="preserve">
+    <value>内置 GDI+ 矢量渲染 · Windows 动画效果{0}</value>
+  </data>
+  <data name="RendererCleanupIssue" xml:space="preserve">
+    <value> · 渲染清理异常</value>
+  </data>
+  <data name="RendererFailed" xml:space="preserve">
+    <value>渲染失败</value>
+  </data>
+  <data name="RendererUnavailable" xml:space="preserve">
+    <value> · 渲染器不可用</value>
+  </data>
+  <data name="Rendering" xml:space="preserve">
+    <value>渲染</value>
+  </data>
+  <data name="RepairDesktopShortcut" xml:space="preserve">
+    <value>修复桌面入口</value>
+  </data>
+  <data name="RepairLaunchEntry" xml:space="preserve">
+    <value>修复启动入口</value>
+  </data>
+  <data name="RepairShortcut" xml:space="preserve">
+    <value>修复入口(_R)</value>
+  </data>
+  <data name="RepairShortcut2" xml:space="preserve">
+    <value>修复入口(_E)</value>
+  </data>
+  <data name="RepairShortcutFromDiagnostics" xml:space="preserve">
+    <value>诊断修复入口</value>
+  </data>
+  <data name="ReplaceMotionB" xml:space="preserve">
+    <value>替换动效(_B)</value>
+  </data>
+  <data name="ReplaceTheBoundWork" xml:space="preserve">
+    <value>替换绑定作品</value>
+  </data>
+  <data name="Request" xml:space="preserve">
+    <value>请求</value>
+  </data>
+  <data name="Rescan" xml:space="preserve">
+    <value>重新发现</value>
+  </data>
+  <data name="RescanInstalledApps" xml:space="preserve">
+    <value>重新发现应用</value>
+  </data>
+  <data name="ReturnToMyApps" xml:space="preserve">
+    <value>返回我的应用</value>
+  </data>
+  <data name="ReturnToMyAppsH" xml:space="preserve">
+    <value>返回我的应用(_H)</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>保存(_S)</value>
+  </data>
+  <data name="SaveApp" xml:space="preserve">
+    <value>保存应用(_S)</value>
+  </data>
+  <data name="SaveApp2" xml:space="preserve">
+    <value>保存应用</value>
+  </data>
+  <data name="SaveAppName" xml:space="preserve">
+    <value>保存应用名称</value>
+  </data>
+  <data name="SaveBinding" xml:space="preserve">
+    <value>确认绑定(_S)</value>
+  </data>
+  <data name="SaveName" xml:space="preserve">
+    <value>保存名称(_S)</value>
+  </data>
+  <data name="SaveSettings" xml:space="preserve">
+    <value>保存设置</value>
+  </data>
+  <data name="Saved" xml:space="preserve">
+    <value>已保存。</value>
+  </data>
+  <data name="SavedApps" xml:space="preserve">
+    <value>已添加应用</value>
+  </data>
+  <data name="SavedApps2" xml:space="preserve">
+    <value>{0} 个已添加应用</value>
+  </data>
+  <data name="SavedAppsAvailableForBinding" xml:space="preserve">
+    <value>可选择的已保存应用</value>
+  </data>
+  <data name="SavingBinding" xml:space="preserve">
+    <value>正在保存绑定…</value>
+  </data>
+  <data name="SavingConfigurationWaitBeforeClosing" xml:space="preserve">
+    <value>正在保存配置，请稍候再关闭。</value>
+  </data>
+  <data name="SavingSettings" xml:space="preserve">
+    <value>正在保存设置…</value>
+  </data>
+  <data name="ScanCancelled" xml:space="preserve">
+    <value>发现已取消。</value>
+  </data>
+  <data name="SearchAppsToBind" xml:space="preserve">
+    <value>搜索绑定应用</value>
+  </data>
+  <data name="SearchByWorkName" xml:space="preserve">
+    <value>按作品名称搜索</value>
+  </data>
+  <data name="SearchInstalledApps" xml:space="preserve">
+    <value>搜索已安装应用</value>
+  </data>
+  <data name="SearchSavedApps" xml:space="preserve">
+    <value>搜索已添加应用</value>
+  </data>
+  <data name="SearchWorks" xml:space="preserve">
+    <value>搜索作品</value>
+  </data>
+  <data name="SelectAnAppToViewItsConfiguration" xml:space="preserve">
+    <value>选择一个应用查看配置</value>
+  </data>
+  <data name="SelectAnAppWithAMotionBindingTo" xml:space="preserve">
+    <value>选择一个有动效绑定的应用后可查看入口。</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>设置(_G)</value>
+  </data>
+  <data name="Settings2" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="SettingsChangedInAnotherWindowTheCurrentValues" xml:space="preserve">
+    <value>设置已在另一窗口更新。已载入当前值，请重新选择。</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>设置已保存。</value>
+  </data>
+  <data name="SettingsSavedReopenStudioToApplyTheTheme" xml:space="preserve">
+    <value>主题偏好已保存。重新打开 Studio 后应用。</value>
+  </data>
+  <data name="Shortcut" xml:space="preserve">
+    <value>快捷方式</value>
+  </data>
+  <data name="ShortcutLnk" xml:space="preserve">
+    <value>快捷方式 (.lnk)</value>
+  </data>
+  <data name="SomeOlderEntriesNeedConfirmationTheirOriginalValues" xml:space="preserve">
+    <value>部分旧配置需要确认启动入口，原始内容已保留。</value>
+  </data>
+  <data name="StopHomePreview" xml:space="preserve">
+    <value>停止首页预览</value>
+  </data>
+  <data name="StopPreview" xml:space="preserve">
+    <value>停止预览</value>
+  </data>
+  <data name="StoppingPreview" xml:space="preserve">
+    <value>正在停止预览…</value>
+  </data>
+  <data name="StudioPulseDescription" xml:space="preserve">
+    <value>原创中性开发作品，用于验证共享时间线、预览隔离与窗口交接。正式发行作品将在内容阶段交付。</value>
+  </data>
+  <data name="StudioPulseName" xml:space="preserve">
+    <value>Studio Pulse（开发作品）</value>
+  </data>
+  <data name="StudioPulseStyle" xml:space="preserve">
+    <value>光环 · 几何</value>
+  </data>
+  <data name="StudioPulseTheme" xml:space="preserve">
+    <value>原创中性开发作品</value>
+  </data>
+  <data name="SwitchToTheTargetWindowAndTryThe" xml:space="preserve">
+    <value>切换到目标窗口，再从桌面入口重试。</value>
+  </data>
+  <data name="TargetAppOpened" xml:space="preserve">
+    <value>已打开目标应用。</value>
+  </data>
+  <data name="TargetAppOpenedWithoutMotion" xml:space="preserve">
+    <value>已打开目标应用，未播放动效。</value>
+  </data>
+  <data name="TargetNeedsConfirmation" xml:space="preserve">
+    <value>需要确认目标</value>
+  </data>
+  <data name="TargetToConfirm" xml:space="preserve">
+    <value>待确认目标</value>
+  </data>
+  <data name="TargetUnavailable" xml:space="preserve">
+    <value>目标不可用</value>
+  </data>
+  <data name="TestLaunch" xml:space="preserve">
+    <value>测试启动(_T)</value>
+  </data>
+  <data name="TestLaunch2" xml:space="preserve">
+    <value>测试启动</value>
+  </data>
+  <data name="TestingLaunch" xml:space="preserve">
+    <value>正在测试启动…</value>
+  </data>
+  <data name="TheAppWasAlreadyRunningStudioTriedTo" xml:space="preserve">
+    <value>目标已运行，已尝试切换到它的窗口。</value>
+  </data>
+  <data name="TheBindingChangedRefreshAndConfirmTheBinding" xml:space="preserve">
+    <value>绑定已改变，请刷新并重新确认绑定。</value>
+  </data>
+  <data name="TheBindingDidNotFinishRefreshAndChoose" xml:space="preserve">
+    <value>绑定未完成，请刷新并重新选择应用和作品。</value>
+  </data>
+  <data name="TheBundledRendererIsUnavailable" xml:space="preserve">
+    <value>内置渲染器不可用。</value>
+  </data>
+  <data name="TheConfigurationComesFromANewerVersionOpen" xml:space="preserve">
+    <value>配置来自较新版本，请使用相应版本打开。现有配置已保留。</value>
+  </data>
+  <data name="TheConfigurationIsAlreadyUpToDate" xml:space="preserve">
+    <value>配置已是当前状态。</value>
+  </data>
+  <data name="TheConfigurationIsInUseTryAgainShortly" xml:space="preserve">
+    <value>配置正在被另一项操作使用，请稍后重试。</value>
+  </data>
+  <data name="TheCurrentBuiltInWorksAreSilentStudio" xml:space="preserve">
+    <value>当前内置作品没有音频。静音偏好会保留。</value>
+  </data>
+  <data name="TheDesktopLocationChangedYouCanRecreateThe" xml:space="preserve">
+    <value>桌面位置已改变，可在当前桌面重建。</value>
+  </data>
+  <data name="TheDesktopOrLauncherIsUnavailable" xml:space="preserve">
+    <value>当前桌面或启动器不可用。</value>
+  </data>
+  <data name="TheDesktopShortcutIsInUseTryAgain" xml:space="preserve">
+    <value>桌面入口正被使用，请稍后重试。</value>
+  </data>
+  <data name="TheDesktopShortcutIsValid" xml:space="preserve">
+    <value>桌面入口有效。</value>
+  </data>
+  <data name="TheDiagnosticLogIsInUseRefreshTo" xml:space="preserve">
+    <value>诊断日志正被使用，请刷新。</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableChooseALocal" xml:space="preserve">
+    <value>启动入口不可用，请重新选择本地程序、快捷方式或已安装应用。</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableConfirmItAgain" xml:space="preserve">
+    <value>启动入口不可用，请重新确认入口。</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableConfirmItUnder" xml:space="preserve">
+    <value>启动入口不可用，请返回我的应用确认入口。</value>
+  </data>
+  <data name="TheLaunchEntryIsUnavailableOrTheConfiguration" xml:space="preserve">
+    <value>启动入口不可用或配置已改变，请刷新后重试。</value>
+  </data>
+  <data name="TheLauncherIsUnavailableRepairOrReinstallDesktop" xml:space="preserve">
+    <value>启动组件不可用。请修复或重新安装 Desktop Motion Studio。</value>
+  </data>
+  <data name="TheLibraryExceedsTheSupportedSizeCheckThe" xml:space="preserve">
+    <value>作品目录超出允许数量，请检查安装内容后重试。</value>
+  </data>
+  <data name="TheLocalLogFolderIsUnavailable" xml:space="preserve">
+    <value>本地日志目录不可用。</value>
+  </data>
+  <data name="TheLogCouldNotBeVerifiedTheOriginal" xml:space="preserve">
+    <value>日志内容无法验证，已保留原始记录。</value>
+  </data>
+  <data name="TheLogFormatIsUnsupportedTheOriginalLog" xml:space="preserve">
+    <value>日志版本不受支持，已保留原始记录。</value>
+  </data>
+  <data name="TheOperationDidNotFinishTheExistingConfiguration" xml:space="preserve">
+    <value>操作未完成，现有配置已保留。请刷新重试。</value>
+  </data>
+  <data name="ThePreviousAppIsNoLongerListedChoose" xml:space="preserve">
+    <value>原先的应用已不在列表中，请重新选择。</value>
+  </data>
+  <data name="ThePreviouslySelectedWorkIsUnavailableChooseAnother" xml:space="preserve">
+    <value>原先选择的作品暂不可用，请重新选择。</value>
+  </data>
+  <data name="TheRegisteredShortcutIsMissingAndCanBe" xml:space="preserve">
+    <value>登记的入口已缺失，可以修复。</value>
+  </data>
+  <data name="TheSaveDidNotCompleteCheckYourConfiguration" xml:space="preserve">
+    <value>保存未完成，请检查配置后重试。</value>
+  </data>
+  <data name="TheScanDidNotFinishRetryOrSelect" xml:space="preserve">
+    <value>发现未完成。可重试，或手动选择本地文件。</value>
+  </data>
+  <data name="TheScanTimedOutRetryOrSelectA" xml:space="preserve">
+    <value>发现超时。可重试，或手动选择本地文件。</value>
+  </data>
+  <data name="TheSelectedAppIsNoLongerAvailable" xml:space="preserve">
+    <value>所选应用已不存在。</value>
+  </data>
+  <data name="TheSelectedBindingIsNoLongerAvailable" xml:space="preserve">
+    <value>所选绑定已不存在。</value>
+  </data>
+  <data name="TheShortcutPointsToAnOldLauncherRepair" xml:space="preserve">
+    <value>桌面入口指向旧的启动器，请修复。</value>
+  </data>
+  <data name="TheTestTimedOutCheckWhetherTheTarget" xml:space="preserve">
+    <value>等待启动结果超时，请检查目标应用是否已打开。</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheBindingHasBeen" xml:space="preserve">
+    <value>
+作品暂不可用，绑定已保留。</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheBindingHasBeen2" xml:space="preserve">
+    <value>作品暂不可用，绑定已保留。请刷新后重试。</value>
+  </data>
+  <data name="TheWorkIsUnavailableTheMotionSettingWas" xml:space="preserve">
+    <value>作品暂不可用，启用状态未改变。</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>主题(_T)</value>
+  </data>
+  <data name="Theme2" xml:space="preserve">
+    <value>主题</value>
+  </data>
+  <data name="ThisAppAlreadyUsesTheSelectedWork" xml:space="preserve">
+    <value>此应用已使用所选作品。</value>
+  </data>
+  <data name="ThisAppIsAlreadyStartingTryAgainShortly" xml:space="preserve">
+    <value>同一个应用正在启动，请稍后重试。</value>
+  </data>
+  <data name="ThisAppWasRemovedChooseAnotherOne" xml:space="preserve">
+    <value>此应用配置已被移除，请重新选择。</value>
+  </data>
+  <data name="ThisAppWasRemovedRefreshTheList" xml:space="preserve">
+    <value>此应用配置已被移除，请刷新列表。</value>
+  </data>
+  <data name="ThisEntryIsAlreadySavedAs" xml:space="preserve">
+    <value>此启动入口已添加为“{0}”。</value>
+  </data>
+  <data name="ThisWorkIsUnavailableRefreshAndChooseIt" xml:space="preserve">
+    <value>作品暂不可用，请刷新后重新选择。</value>
+  </data>
+  <data name="ThisWorkIsUnavailableTheExistingBindingHas" xml:space="preserve">
+    <value>作品暂不可用，原有绑定已保留。</value>
+  </data>
+  <data name="ThisWorkIsUnavailableTheExistingBindingHas2" xml:space="preserve">
+    <value>作品暂不可用，原有绑定已保留。请刷新作品库。</value>
+  </data>
+  <data name="ThisWorkRequiresASupportedPlaybackVersion" xml:space="preserve">
+    <value>作品暂不可用：需要受支持的播放版本。</value>
+  </data>
+  <data name="TimedOut" xml:space="preserve">
+    <value>超时</value>
+  </data>
+  <data name="ToggleMotion" xml:space="preserve">
+    <value>切换动效启用状态</value>
+  </data>
+  <data name="Unavailable" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="Unavailable2" xml:space="preserve">
+    <value>暂不可用</value>
+  </data>
+  <data name="UpdatingDesktopShortcut" xml:space="preserve">
+    <value>正在处理桌面入口…</value>
+  </data>
+  <data name="WorkCover" xml:space="preserve">
+    <value>作品封面</value>
+  </data>
+  <data name="WorkFilesAreMissingDamagedOrUnreadable" xml:space="preserve">
+    <value>作品暂不可用：文件缺失、受损或无法读取。</value>
+  </data>
+  <data name="WorkUnavailable" xml:space="preserve">
+    <value> · 作品不可用</value>
+  </data>
+  <data name="WorkingDirectory" xml:space="preserve">
+    <value>工作目录</value>
+  </data>
+  <data name="WorkingDirectoryOptional" xml:space="preserve">
+    <value>工作目录（可选）</value>
+  </data>
+  <data name="WorksEachWorkCanBeUsedWithSeveral" xml:space="preserve">
+    <value>{0} 个作品 · 同一作品可用于多个应用。</value>
+  </data>
+  <data name="YouCanBindAWorkToSeveralApps" xml:space="preserve">
+    <value>同一作品可绑定多个应用；替换会保留此应用的绑定身份。</value>
+  </data>
+  <data name="ZeroBoundaryDescription" xml:space="preserve">
+    <value>冰蓝细光扫过石墨底色，两层精密光框逐步归位，收束后自然交接给应用窗口。作品约两秒，默认以居中大画幅播放。</value>
+  </data>
+  <data name="ZeroBoundaryName" xml:space="preserve">
+    <value>零界</value>
+  </data>
+  <data name="ZeroBoundaryStyle" xml:space="preserve">
+    <value>纯科技 · 精密光框</value>
+  </data>
+  <data name="ZeroBoundaryTheme" xml:space="preserve">
+    <value>石墨黑与冰蓝</value>
+  </data>
+  <data name="ImportMp4" xml:space="preserve"><value>导入 MP4</value></data>
+  <data name="MyMotions" xml:space="preserve"><value>我的动效</value></data>
+  <data name="EditImport" xml:space="preserve"><value>编辑视频</value></data>
+  <data name="RemoveImport" xml:space="preserve"><value>移除视频</value></data>
+  <data name="NoImportedMotions" xml:space="preserve"><value>导入一个本地 MP4 即可开始。</value></data>
+  <data name="RemoveImportConfirm" xml:space="preserve"><value>从「我的动效」移除“{0}”？已绑定的应用仍可正常启动。</value></data>
+  <data name="ImportName" xml:space="preserve"><value>作品名称</value></data>
+  <data name="ImportDuration" xml:space="preserve"><value>播放时长（秒）</value></data>
+  <data name="ImportDurationLimit" xml:space="preserve"><value>可设置 1 到 {0} 秒。</value></data>
+  <data name="ImportFit" xml:space="preserve"><value>画面适配</value></data>
+  <data name="ImportComplete" xml:space="preserve"><value>完整显示</value></data>
+  <data name="ImportFill" xml:space="preserve"><value>居中填充</value></data>
+  <data name="ImportSound" xml:space="preserve"><value>播放原声</value></data>
+  <data name="ImportSave" xml:space="preserve"><value>保存动效</value></data>
+  <data name="ImportCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="ImportChecking" xml:space="preserve"><value>正在检查视频…</value></data>
+  <data name="ImportedMotion" xml:space="preserve"><value>导入动效</value></data>
+  <data name="ImportPreviewing" xml:space="preserve"><value>正在预览…</value></data>
+  <data name="ImportErrorUnsafePath" xml:space="preserve"><value>请选择可读取的本地 MP4 文件。</value></data>
+  <data name="ImportErrorEmpty" xml:space="preserve"><value>文件为空，请选择其他 MP4。</value></data>
+  <data name="ImportErrorTooLarge" xml:space="preserve"><value>视频超过 64 MB，请导出较小的 MP4。</value></data>
+  <data name="ImportErrorInvalidMedia" xml:space="preserve"><value>无法解码此文件。请使用 H.264 MP4，音轨使用 AAC 或留空。</value></data>
+  <data name="ImportErrorDecoderUnavailable" xml:space="preserve"><value>视频播放器不可用，请检查软件安装和 Windows 媒体功能。</value></data>
+  <data name="ImportErrorTimedOut" xml:space="preserve"><value>视频检查超时，请重试或选择其他文件。</value></data>
+  <data name="ImportErrorInvalidOptions" xml:space="preserve"><value>请输入作品名称，并将时长设在显示的范围内。</value></data>
+  <data name="ImportErrorMissing" xml:space="preserve"><value>文件或动效已找不到，请刷新后重试。</value></data>
+  <data name="ImportErrorChanged" xml:space="preserve"><value>动效已被修改，请重新打开后再保存或移除。</value></data>
+  <data name="ImportErrorBusy" xml:space="preserve"><value>动效正在使用，请停止播放后重试。</value></data>
+  <data name="ImportErrorNoSpace" xml:space="preserve"><value>磁盘空间不足，无法保存动效副本。</value></data>
+  <data name="ImportErrorStorageUnavailable" xml:space="preserve"><value>无法访问本地动效目录，请检查权限后重试。</value></data>
+  <data name="OrbitIgnitionName" xml:space="preserve"><value>轨道点火</value></data>
+  <data name="OrbitIgnitionDescription" xml:space="preserve"><value>冷蓝机库中，飞行器点燃琥珀色尾焰，掠过轨道环，在星空中收成一点微光。全片约六秒。</value></data>
+  <data name="OrbitIgnitionStyle" xml:space="preserve"><value>纯科技 · 轨道发射</value></data>
+  <data name="OrbitIgnitionTheme" xml:space="preserve"><value>冷蓝与琥珀</value></data>
+  <data name="MotionGuideTitle" xml:space="preserve"><value>AI 动效制作指南</value></data>
+  <data name="MotionGuideIdea" xml:space="preserve"><value>动效创意</value></data>
+  <data name="MotionGuideStyle" xml:space="preserve"><value>视觉风格</value></data>
+  <data name="MotionGuideTech" xml:space="preserve"><value>纯科技</value></data>
+  <data name="MotionGuideAnime" xml:space="preserve"><value>二次元</value></data>
+  <data name="MotionGuideComedy" xml:space="preserve"><value>搞笑</value></data>
+  <data name="MotionGuideSpectacle" xml:space="preserve"><value>炫酷</value></data>
+  <data name="MotionGuideBrief" xml:space="preserve"><value>可复制的制作简报</value></data>
+  <data name="MotionGuideCopy" xml:space="preserve"><value>复制简报</value></data>
+  <data name="MotionGuideCopied" xml:space="preserve"><value>制作简报已复制。</value></data>
+  <data name="MotionGuideClipboardBusy" xml:space="preserve"><value>剪贴板正忙。请重试，或选中文本手动复制。</value></data>
+  <data name="MotionGuideExample" xml:space="preserve"><value>虚构飞行器在冷蓝轨道机库点火升空，最后消失在星空中。</value></data>
+  <data name="MotionGuideTemplate" xml:space="preserve"><value>请按以下创意制作一段 {2} 秒的启动动效
+{0}
+
+视觉风格 · {1}
+
+分镜与生成提示
+0–{3} 秒。建立场景、灯光和清楚的主体，让观众从画面中央认出主体。
+{3}–{4} 秒。表现一个与创意直接相关的动作。镜头运动有明确方向，主体造型保持一致，动作清晰可读。
+{4}–{2} 秒。完成主要动作，短暂停留在干净的构图上。开场和收尾均包含在设定时长内。
+
+构图与素材
+主体和关键细节放在画面中部，给居中裁切留出余量，并检查小窗和全屏。避免难读的文字、突然闪烁和长黑场。人物、画面、标识和音轨应使用原创或获得适用授权的素材。
+
+导出
+MP4，单条 H.264 视频轨，8-bit SDR，方形像素，最高 30 fps。编码档位选 Baseline、Main 或 High，色度采样选 4:2:0（yuv420p）。横屏最高 1920×1080，竖屏最高 1080×1920。把旋转直接写进画面。可以有一条 AAC 音轨。文件不超过 64 MiB。保留 {2} 秒可用画面，Studio 会自动加短淡入和淡出。
+
+在 Studio 验证
+导入 MP4，核对实际时长，设置画面适配并预览。原声默认关闭。保存到「我的动效」，绑定应用并测试一次冷启动。</value></data>
+</root>

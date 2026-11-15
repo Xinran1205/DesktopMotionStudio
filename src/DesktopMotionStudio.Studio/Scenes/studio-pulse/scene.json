@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "studio-pulse",
+  "sceneVersion": "0.1.0",
+  "name": "Studio Pulse（开发作品）",
+  "displayMode": "centered",
+  "assets": ["scene.playback.json"]
+}

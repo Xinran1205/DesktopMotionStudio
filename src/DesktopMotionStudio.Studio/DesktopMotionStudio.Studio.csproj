@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>../Branding/DesktopMotionStudio.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DesktopMotionStudio.Core/DesktopMotionStudio.Core.csproj" />
+    <ProjectReference Include="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="../DesktopMotionStudio.VideoHost/DesktopMotionStudio.VideoHost.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <Content Include="Scenes\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Resource Include="../Branding/DesktopMotionStudio.ico" Link="Branding/DesktopMotionStudio.ico" />
+    <Resource Include="../Branding/BrandMark.png" Link="Branding/BrandMark.png" />
+  </ItemGroup>
+  <Target Name="StageMotionHost" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true' And '$(StageBundledTools)' != 'false'">
+    <MSBuild Projects="../DesktopMotionStudio.MotionHost/DesktopMotionStudio.MotionHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_MotionHostTarget" />
+    </MSBuild>
+    <MSBuild Projects="../DesktopMotionStudio.VideoHost/DesktopMotionStudio.VideoHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_VideoHostTarget" />
+    </MSBuild>
+    <PropertyGroup>
+      <_MotionHostDirectory>@(_MotionHostTarget->'%(RootDir)%(Directory)')</_MotionHostDirectory>
+      <_VideoHostDirectory>@(_VideoHostTarget->'%(RootDir)%(Directory)')</_VideoHostDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BundledMotionHostFile Include="$(_MotionHostDirectory)*" Exclude="$(_MotionHostDirectory)*.pdb" />
+      <_BundledMotionHostFile Include="$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.exe;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.dll;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.deps.json;$(_VideoHostDirectory)DesktopMotionStudio.VideoHost.runtimeconfig.json" />
+      <Content Include="@(_BundledMotionHostFile)">
+        <Link>MotionHost/%(_BundledMotionHostFile.Filename)%(_BundledMotionHostFile.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+  <Target Name="StageLauncher" AfterTargets="ResolveProjectReferences" BeforeTargets="GetCopyToOutputDirectoryItems;ComputeFilesToPublish" Condition="'$(DesignTimeBuild)' != 'true' And '$(StageBundledTools)' != 'false'">
+    <MSBuild Projects="../DesktopMotionStudio.Launcher/DesktopMotionStudio.Launcher.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration);RuntimeIdentifier=$(RuntimeIdentifier)">
+      <Output TaskParameter="TargetOutputs" ItemName="_LauncherTarget" />
+    </MSBuild>
+    <PropertyGroup><_LauncherDirectory>@(_LauncherTarget->'%(RootDir)%(Directory)')</_LauncherDirectory></PropertyGroup>
+    <ItemGroup>
+      <_BundledLauncherFile Include="$(_LauncherDirectory)DesktopMotionStudio.Launcher.exe;$(_LauncherDirectory)DesktopMotionStudio.Launcher.dll;$(_LauncherDirectory)DesktopMotionStudio.Launcher.deps.json;$(_LauncherDirectory)DesktopMotionStudio.Launcher.runtimeconfig.json;$(_LauncherDirectory)DesktopMotionStudio.Core.dll" />
+      <Content Include="@(_BundledLauncherFile)">
+        <Link>Launcher/%(_BundledLauncherFile.Filename)%(_BundledLauncherFile.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+</Project>

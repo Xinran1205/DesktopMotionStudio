@@ -1,0 +1,14 @@
+MFStartup
+MFShutdown
+MFCreateAttributes
+MF_VERSION
+CLSID_MFMediaEngineClassFactory
+CLSID_WICImagingFactory
+MF_MEDIA_ENGINE_CALLBACK
+MF_MEDIA_ENGINE_VIDEO_OUTPUT_FORMAT
+GUID_WICPixelFormat32bppBGR
+IMFMediaEngineClassFactory
+IMFMediaEngineNotify
+MF_MEDIA_ENGINE_EVENT
+IWICImagingFactory
+DXGI_FORMAT

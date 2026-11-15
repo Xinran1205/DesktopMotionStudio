@@ -1,0 +1,14 @@
+# .NET outputs and local IDE state
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Local diagnostics
+*.log
+
+# Spec Kit owns additional machine-local ignores in .specify/.gitignore.
+
+# Local verified build checkpoints
+artifacts/
